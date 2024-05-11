@@ -642,7 +642,7 @@ progress {
     padding-right: var(--bs-gutter-x, .75rem);
     padding-left: var(--bs-gutter-x, .75rem);
     margin-right: auto;
-    margin-left: auto
+    margin-left: auto;
 }
 
 @media (min-width: 576px) {
@@ -7122,6 +7122,8 @@ fieldset:disabled .btn {
     overflow: hidden !important
 }
 
+.Ewaldo{
+}
 .overflow-visible {
     overflow: visible !important
 }
