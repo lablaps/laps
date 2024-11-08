@@ -45,5 +45,3 @@ Sinta-se à vontade para contribuir! Abra uma issue para relatar problemas, sugi
 Este projeto é licenciado sob a [Licença MIT](LICENSE) - veja o arquivo LICENSE.md para mais detalhes.
 
 ## Contato
-
-- Email: luis.20220086977@aluno.uema.br
