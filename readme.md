@@ -1,6 +1,8 @@
 # Laboratório de Aquisição e Processamento de Sinais (LAPS)
 
-Bem-vindo ao repositório do LAPS..! Este projeto utiliza HTML e o Live Server para criar uma interface para aquisição e processamento de sinais em um ambiente de laboratório.
+Bem-vindo ao repositório do LAPS! Este projeto utiliza HTML e o Live Server para criar uma interface para aquisição e processamento de sinais em um ambiente de laboratório.
+
+Site: https://lablaps.vercel.app/
 
 ## Como Iniciar
 
