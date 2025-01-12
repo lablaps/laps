@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>LAPS - Laboratorio de Aquisição e Processamento de Sinais</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="" name="keywords">
+    <meta content="" name="description">
+
+    <!-- Favicon -->
+    <link href="img/LAPS.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Icon Font Stylesheet -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="lib/animate/animate.min.css" rel="stylesheet">
+    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Spinner Start -->
+    <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="sr-only">Carregando...</span>
+        </div>
+    </div>
+    <!-- Spinner End -->
+
+
+    <!-- Navbar Start -->
+    <nav class="navbar navbar-expand-lg bg-white navbar-light shadow sticky-top p-0">
+        <a href="index.html" class="navbar-brand d-flex align-items-center px-4 px-lg-5">
+            <h2 class="m-0 text-primary"><i class=""></i>LAPS</h2>
+        </a>
+        <button type="button" class="navbar-toggler me-4" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <div class="navbar-nav ms-auto p-4 p-lg-0">
+                <a href="index.html" class="nav-item nav-link">Home</a>
+                <a href="about.html" class="nav-item nav-link">Sobre</a>
+                <a href="news.html" class="nav-item nav-link">Notícias</a>
+                <a href="events.html" class="nav-item nav-link">Eventos</a>
+                <a href="projects.html" class="nav-item nav-link active">Projetos</a>
+                <div class="nav-item dropdown">
+                    <!--
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Pages</a>
+                    <div class="dropdown-menu fade-down m-0">
+                        <a href="team.html" class="dropdown-item">Our Team</a>
+                        <a href="testimonial.html" class="dropdown-item">Testimonial</a>
+                        <a href="404.html" class="dropdown-item">404 Page</a>
+                    </div>
+
+                    -->
+                    
+                </div>
+                <a href="contact.html" class="nav-item nav-link">Contatos</a>
+            </div>
+            <a href="https://forms.gle/NTwE9Y5EmdFMs3eH9" class="btn btn-primary py-4 px-lg-5 d-none d-lg-block">Envie uma mensagem<i class="fa fa-arrow-right ms-3"></i></a>
+        </div>
+    </nav>
+    <!-- Navbar End -->
+
+
+    <!-- Header Start -->
+    <div class="container-fluid bg-primary py-5 mb-5 page-header">
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-10 text-center">
+                    <h1 class="display-3 text-white animated slideInDown">Projetos</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Header End -->
+
+
+    <!-- Categories Start -->
+    <div class="container-xxl py-5 category">
+        <div class="container">
+            <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+                <h6 class="section-title bg-white text-center text-primary px-3"></h6>
+                <h1 class="mb-5"></h1>
+            </div>
+            <div class="container-xxl py-5">
+                <div class="container">
+                    <div class="text-center wow fadeInUp" data-wow-delay="0.1s">
+                        <h1 class="mb-5 text-primary">Projetos LAPS</h1>
+                    </div>
+                    <div class="row g-4">
+                        <!-- Projeto 1 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.1s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Avaliação da Qualidade do Sono</h4>
+                                <p>Pesquisadores: Carlos Magno Sousa, Georlene Lima Morais</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 2 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.2s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Sistema de Auxílio ao Diagnóstico de Câncer</h4>
+                                <p>Descrição: Propor um sistema de auxílio ao diagnóstico de câncer de próstata utilizando informações dos pacientes e exames de rotina.</p>
+                                <p>Pesquisador: Wesley Batista Dominices de Araújo (Doutorando)</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 3 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.3s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Detecção de Ovócitos</h4>
+                                <p>Descrição: Desenvolvimento de uma metodologia para detectar automaticamente ovócitos utilizando redes neurais.</p>
+                                <p>Pesquisadoras: Yanna Cruz (Doutoranda), Lethicia (IC), Manuele (IC)</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 4 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.4s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Monitoramento Ambiental</h4>
+                                <p>Descrição: Desenvolvimento de metodologias para análise de biomarcadores de contaminação em peixes.</p>
+                                <p>Pesquisadores: Antonio Fhillipi (Doutorando), Lethicia (IC), Manuele (IC)</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 5 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.5s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Criação de uma Base de Dados</h4>
+                                <p>Descrição: Desenvolvimento de banco de dados para pesquisas em agroecologia.</p>
+                                <p>Pesquisadores: Guillaume Rousseau, Fhillipi, Pedro Jovino</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 6 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.6s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Projeto Guyamazon: SenCSoil</h4>
+                                <p>Descrição: Interrelações entre a erosão dos solos e o ciclo do carbono via rede de sensores.</p>
+                                <p>Parceria: LAPS-IRD</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 7 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.7s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Modelagem de Sensor à Ondas de Love</h4>
+                                <p>Pesquisadores: Dailan Bernardes (Doutorando), Marcelo Viana da Silva (Doutorando)</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 8 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.8s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">RSSF para Pavimentação</h4>
+                                <p>Pesquisadores: Dailan Bernardes (Doutorando), Marcelo Viana da Silva (Doutorando), Airton César (IC), Marcus Torres (IC)</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 9 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="0.9s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Algoritmo de Roteamento para RSSF</h4>
+                                <p>Pesquisadores: Allyx Fontaine (UMR Espace Dev), Rayanne Silveira (Doutoranda), Frank Rodrigues (Mestrando)</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 10 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="1.0s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Topologias para Redes de Sensores</h4>
+                                <p>Pesquisador: Freud Sebastian (Doutorando)</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 11 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="1.1s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Sistema para Aceite Técnico de Navios</h4>
+                                <p>Pesquisadores: Lúcio Flávio, Fhillipi, Paulo Alex, Renan</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 12 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="1.2s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Monitoramento Ambiental no Cerrado e Amazônia</h4>
+                                <p>Descrição: Uso de inteligência artificial para detecção de queimadas e desmatamento.</p>
+                                <p>Pesquisadores: Rony, Lorena (IC), Felipe Samuel (IC)</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 13 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="1.3s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Modernização de Produtos Digitais do IMESC</h4>
+                                <p>Pesquisadores: David, Ana Paula, Danilo e mais 6 alunos de graduação</p>
+                            </div>
+                        </div>
+            
+                        <!-- Projeto 14 -->
+                        <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="1.4s">
+                            <div class="project-item bg-light rounded shadow p-4">
+                                <h4 class="text-primary">Melhorias em Sistemas de Combate a Incêndio</h4>
+                                <p>Pesquisador: Jorge De Jesus Passinho Segundo</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            </div>
+        </div>
+    </div>
+    <!-- Categories Start -->
+
+
+    <!-- Courses Start -->
+    
+    <!-- Courses End -->
+        
+
+    <!-- Footer Start -->
+    <div class="container-fluid bg-dark text-light footer pt-5 mt-5 wow fadeIn" data-wow-delay="0.1s">
+        <div class="container py-5">
+            <div class="row g-5">
+                <div class="col-lg-3 col-md-6">
+                    <h4 class="text-white mb-3">Quick Link</h4>
+                    <a class="btn btn-link" href="about.html">About Us</a>
+                    <a class="btn btn-link" href="contact.html">Contact Us</a>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h4 class="text-white mb-3">Contact</h4>
+                    <p class="mb-2"><i class="fa fa-map-marker-alt me-3"></i>Cidade Universitária Paulo VI, Av, Lourenço Vieira da Silva, nº 1000, Jardim São Cristóvão, CEP: 65055-310, São Luís – MA</p>
+                    <!--<p class="mb-2"><i class="fa fa-phone-alt me-3"></i>+012 345 67890</p> -->
+                    <!--<p class="mb-2"><i class="fa fa-envelope me-3"></i>info@example.com</p>-->
+                    <div class="d-flex pt-2">
+                        <!--
+                            <a class="btn btn-outline-light btn-social" href=""><i class="fab fa-twitter"></i></a>
+                            <a class="btn btn-outline-light btn-social" href=""><i class="fab fa-facebook-f"></i></a>
+                            <a class="btn btn-outline-light btn-social" href=""><i class="fab fa-youtube"></i></a>
+                            <a class="btn btn-outline-light btn-social" href=""><i class="fab fa-linkedin-in"></i></a>
+
+                        -->
+                        </div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="copyright">
+                <div class="copyright">
+                    <div class="row">
+                        <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                            &copy; <a class="border-bottom" href="#">LAPS</a>, All Right Reserved.
+                               Designed By <a class="border-bottom" href="#">LAPS Development Equip</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Footer End -->
+
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/wow/wow.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/waypoints/waypoints.min.js"></script>
+    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+
+    <!-- Template Javascript -->
+    <script src="js/main.js"></script>
+</body>
+
+</html>
