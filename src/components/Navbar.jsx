@@ -16,7 +16,7 @@ const Navbar = () => {
             </button>
             <div className="collapse navbar-collapse" id="navbarCollapse">
                 <div className="navbar-nav ms-auto p-4 p-lg-0">
-                    <a href="Home" className="nav-item nav-link">Home</a>
+                    <a href="home" className="nav-item nav-link">Home</a>
                     <a href="about" className="nav-item nav-link">Sobre</a>
                     <a href="news" className="nav-item nav-link">Notícias</a>
                     <a href="events" className="nav-item nav-link">Eventos</a>
