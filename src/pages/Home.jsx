@@ -1,4 +1,5 @@
 import React from "react";
+import Footer from "../pages/Footer"; 
 
 const Home = () => {
     return (
@@ -1499,7 +1500,8 @@ const Home = () => {
                 </div>
             </div>
             {/* Iniciação Científica End */}
-
+            {/* Footer */}
+            <Footer />
         </>
     );
 };
