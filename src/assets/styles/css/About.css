@@ -1,0 +1,93 @@
+.about-container {
+  /* Tamanho e centralização */
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 3rem 2rem;
+
+  /* Fundo suave (gradiente sutil) */
+  background: linear-gradient(135deg, #ffffff 40%, #f2f2f2 100%);
+  border-radius: 12px;
+
+  /* Sombra mais "flutuante" */
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  /* Animação de "fade-in" */
+  animation: fadeIn 0.8s ease forwards;
+  opacity: 0; /* inicia invisível até a animação */
+}
+
+/* Keyframes da animação */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Efeito decorativo no background (opcional) */
+.about-container::before {
+  content: "";
+  position: absolute;
+  top: -80px;
+  left: -80px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, #162b4f 20%, transparent 60%);
+  opacity: 0.2; /* transparência leve */
+  pointer-events: none;
+  transform: rotate(25deg);
+}
+.about-container::after {
+  content: "";
+  position: absolute;
+  bottom: -80px;
+  right: -80px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, #162b4f 20%, transparent 60%);
+  opacity: 0.2;
+  pointer-events: none;
+  transform: rotate(-25deg);
+}
+
+/* Título */
+.about-title {
+  font-size: 2.4rem;
+  margin-bottom: 1.5rem;
+  margin-top: 0;
+  color: #162b4f; /* destacando em azul-escuro */
+  text-align: center;
+  font-weight: 700;
+  position: relative;
+}
+
+/* Linha decorativa sob o título */
+.about-title::after {
+  content: "";
+  display: block;
+  margin: 0.5rem auto 0;
+  width: 60px;
+  height: 4px;
+  background-color: #162b4f; /* cor do destaque */
+  border-radius: 2px;
+}
+
+/* Parágrafo */
+.about-paragraph {
+  font-size: 1.15rem;
+  line-height: 1.7;
+  color: #555;
+  text-align: justify;
+  margin-bottom: 2rem;
+}
+
+/* Efeito hover no container (opcional) */
+.about-container:hover {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}

@@ -1,4 +1,5 @@
 import React from "react";
+import Footer from "../pages/Footer"; 
 
 const Home = () => {
     return (
@@ -1504,29 +1505,7 @@ const Home = () => {
 
 
             {/* Footer */}
-            < div className="container-fluid bg-dark text-light footer pt-5 mt-5" >
-                <div className="container py-5">
-                    <div className="row g-5">
-                        <div className="col-lg-3 col-md-6">
-                            <h4 className="text-white mb-3">Quick Link</h4>
-                            <a className="btn btn-link" href="about.html">
-                                About Us
-                            </a>
-                            <a className="btn btn-link" href="contact.html">
-                                Contact Us
-                            </a>
-                        </div>
-                        <div className="col-lg-3 col-md-6">
-                            <h4 className="text-white mb-3">Contact</h4>
-                            <p className="mb-2">
-                                <i className="fa fa-map-marker-alt me-3"></i>Cidade
-                                Universitária Paulo VI, Av, Lourenço Vieira da Silva, nº 1000,
-                                Jardim São Cristóvão, São Luís – MA
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div >
+            <Footer />
         </>
     );
 };
