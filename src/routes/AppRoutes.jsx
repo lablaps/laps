@@ -5,6 +5,7 @@ import Sobre from '../pages/About';
 import Projetos from '../pages/Projects';
 import Noticias from '../pages/News';
 import Contato from '../pages/Contact';
+import Events from '../pages/Events';
 import '../assets/styles/css/bootstrap.min.css';
 
 const AppRoutes = () => {
@@ -19,9 +20,8 @@ const AppRoutes = () => {
         <Route path="/News" element={<Noticias />} />
         <Route path="/Projects" element={<Projetos />} />
         <Route path="/Contact" element={<Contato />} />
-
-
         {/* Adicione outras rotas conforme necessário */}
+        <Route path="/events" element={<Events />} />
       </Routes>
     </Router>
   );
