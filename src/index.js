@@ -1,8 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client'; // Biblioteca para renderizar o React no DOM
-import './index.css'; // Importação do arquivo global de estilos
 import App from './App'; // Componente principal da aplicação
-import './assets/styles/css/bootstrap.min.css'
+import './assets/styles/css/bootstrap.min.css';
+import './assets/styles/css/global.css'; // Se houver um arquivo CSS customizado.
+import 'font-awesome/css/font-awesome.min.css'; // Se for necessário para Font Awesome.
+
 
 // Seleciona o elemento com o ID 'root' no HTML
 const root = ReactDOM.createRoot(document.getElementById('root'));
