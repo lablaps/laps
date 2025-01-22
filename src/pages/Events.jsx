@@ -5,7 +5,6 @@ import timeGridPlugin from "@fullcalendar/timegrid"; // Visualização de grade 
 import interactionPlugin from "@fullcalendar/interaction"; // Permite interatividade (clicar e arrastar)
 
 
-
 const Events = () => {
   // Estado para os eventos
   const [events] = useState([

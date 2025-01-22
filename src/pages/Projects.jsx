@@ -1,10 +1,37 @@
 import React from "react";
 import "../assets/styles/css/Projects.css"; // Importe o CSS específico para projetos
-import Footer from "../pages/Footer"; 
 
 function Projects() {
   return (
     <>
+    {/* Header Start */}
+    <div className="container-fluid bg-primary py-5 mb-5 page-header">
+        <div className="container py-5">
+          <div className="row justify-content-center">
+            <div className="col-lg-10 text-center">
+              <h1 className="display-3 text-white animated slideInDown">
+                Projetos
+              </h1>
+              <nav aria-label="breadcrumb">
+                <ol className="breadcrumb justify-content-center">
+                  <li className="breadcrumb-item">
+                    <a className="text-white" href="/">
+                      Home
+                    </a>
+                  </li>
+                  <li
+                    className="breadcrumb-item text-white active"
+                    aria-current="page"
+                  >
+                    Projetos
+                  </li>
+                </ol>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Header End */}
     <div className="projects-container">
       <h1 className="projects-title">Projetos do LAPS</h1>
       <p className="projects-intro">
@@ -144,7 +171,6 @@ function Projects() {
         </div>
       </div>
     </div>
-    <Footer/>
     </>
   );
 }

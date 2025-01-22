@@ -1,10 +1,37 @@
 import React from "react";
 import "../assets/styles/css/News.css";
-import Footer from "../pages/Footer"; 
 
 function News() {
   return (
     <>
+    {/* Header Start */}
+    <div className="container-fluid bg-primary py-5 mb-5 page-header">
+        <div className="container py-5">
+          <div className="row justify-content-center">
+            <div className="col-lg-10 text-center">
+              <h1 className="display-3 text-white animated slideInDown">
+                Notícias
+              </h1>
+              <nav aria-label="breadcrumb">
+                <ol className="breadcrumb justify-content-center">
+                  <li className="breadcrumb-item">
+                    <a className="text-white" href="/">
+                      Home
+                    </a>
+                  </li>
+                  <li
+                    className="breadcrumb-item text-white active"
+                    aria-current="page"
+                  >
+                    Notícias
+                  </li>
+                </ol>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Header End */}
     <div className="news-container">
       <h1 className="news-title">Acompanhe as últimas notícias do LAPS</h1>
       <p className="news-intro">
@@ -35,7 +62,6 @@ function News() {
 
       {/* Você pode repetir o bloco .news-card com outras notícias */}
     </div>
-    <Footer />
     </>
   );
 }

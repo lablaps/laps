@@ -1,30 +1,40 @@
+// src/routes/AppRoutes.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; // Importando Navigate
-import Home from '../pages/Home';
-import Sobre from '../pages/About';
-import Projetos from '../pages/Projects';
-import Noticias from '../pages/News';
-import Contato from '../pages/Contact';
-import Events from '../pages/Events';
-import '../assets/styles/css/bootstrap.min.css';
+import { 
+  BrowserRouter as Router, 
+  Routes, 
+  Route, 
+  Navigate 
+} from 'react-router-dom';
 
-const AppRoutes = () => {
+// Import centralizado de components e pages
+import { 
+  Home, 
+  About, 
+  Contact, 
+  Events, 
+  News, 
+  Projects 
+} from '../pages';
+
+function AppRoutes() {
   return (
     <Router>
       <Routes>
-        {/* Redireciona da raiz para /Home */}
-        <Route path="/" element={<Navigate to="/Home" replace />} />
-        {/* Define a rota para o componente Home */}
-        <Route path="/Home" element={<Home />} />
-        <Route path="/About" element={<Sobre />} />
-        <Route path="/News" element={<Noticias />} />
-        <Route path="/Projects" element={<Projetos />} />
-        <Route path="/Contact" element={<Contato />} />
-        {/* Adicione outras rotas conforme necessário */}
-        <Route path="/events" element={<Events />} />
+        {/* Rota "pai" com o MainLayout que contém Navbar/Footer */}
+          {/* Redireciona "/" para "/Home" */}
+          <Route index element={<Navigate to="/Home" replace />} />
+          
+          {/* Rotas filhas: Home, About, etc. */}
+          <Route path="Home" element={<Home />} />
+          <Route path="About" element={<About />} />
+          <Route path="Contact" element={<Contact />} />
+          <Route path="Events" element={<Events />} />
+          <Route path="News" element={<News />} />
+          <Route path="Projects" element={<Projects />} />
       </Routes>
     </Router>
   );
-};
+}
 
 export default AppRoutes;
