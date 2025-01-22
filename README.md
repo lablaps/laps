@@ -7,36 +7,15 @@ Site: https://lablaps.vercel.app/
 ## Como Iniciar
 
 1. Certifique-se de ter o [Node.js](https://nodejs.org/) instalado.
-2. Instale o Live Server globalmente via npm (Node Package Manager):
 
-    ```bash
-    npm install -g live-server
-    ```
+2. Clone o projeto em https://github.com/Luluzao0/laps ou faça `git clone https://github.com/Luluzao0/laps`
 
-3. Clone este repositório:
-
-    ```bash
-    git clone https://github.com/Luluzao0/template-laps.git
-    ```
-
-4. Navegue até o diretório do projeto:
-
-    ```bash
-    cd template-laps
-    ```
-
-5. Inicie o Live Server:
-
-    ```bash
-    live-server
-    ```
-
-6. O Live Server abrirá automaticamente o projeto no seu navegador padrão. Se não, acesse [http://localhost:8080](http://localhost:8080).
+3. Entre na pasta do projeto pelo CMD e rode usando `npm start`
 
 ## Estrutura do Projeto
 
-- `index.html`: Página principal da interface do laboratório.
-- `assets/`: Diretório para armazenar recursos como imagens, estilos, etc.
+- `src/`: Diretório principal do projeto contendo os components e as pages.
+- `routes`: Diretório com o routes do projeto
 
 ## Contribuição
 
