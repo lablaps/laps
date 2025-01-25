@@ -114,3 +114,27 @@
   background-color: #00a0b2; /* levemente mais escuro */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
+
+/* Card image styling */
+.news-card-img {
+  background-size: cover;
+  background-position: center;
+  height: 300px;
+  border-top-left-radius: 0.25rem;
+  border-top-right-radius: 0.25rem;
+}
+
+/* Imagem para o primeiro card */
+.news-card-img-1 {
+  background-image: url('../../images/news/uema.jpg');
+}
+
+/* Imagem para o segundo card */
+.news-card-img-2 {
+  background-image: url('../../images/news/instagram.jpg');
+}
+
+/* Imagem para o terceiro card */
+.news-card-img-3 {
+  background-image: url('../../images/news/imirante.jpg');
+}
