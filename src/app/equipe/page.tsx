@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -50,22 +50,6 @@ export default function TeamPage() {
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'director':
-        return Award;
-      case 'doctor':
-        return GraduationCap;
-      case 'phd_student':
-        return BookOpen;
-      case 'master_student':
-        return User;
-      case 'undergrad_student':
-        return User;
-      default:
-        return User;
-    }
-  };
 
   // Organize members by role
   const director = members.filter(member => member.role === 'director');
@@ -74,7 +58,18 @@ export default function TeamPage() {
   const masterStudents = members.filter(member => member.role === 'master_student');
   const undergradStudents = members.filter(member => member.role === 'undergrad_student');
 
-  const MemberCard = ({ member, featured = false }: { member: any; featured?: boolean }) => (
+  type Member = {
+    name: string;
+    role?: string;
+    image?: string;
+    specialization?: string;
+    description?: string;
+    email?: string;
+    linkedin?: string;
+    lattes?: string;
+  };
+
+  const MemberCard = ({ member, featured = false }: { member: Member; featured?: boolean }) => (
     <Card className={`hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${featured ? 'border-2 border-blue-200 dark:border-blue-800' : ''}`}>
       <CardContent className="p-6">
         <div className="flex flex-col items-center text-center">
@@ -89,8 +84,8 @@ export default function TeamPage() {
             {member.name}
           </h3>
           
-          <Badge variant="secondary" className={`mb-3 ${getRoleColor(member.role)}`}>
-            {getRoleLabel(member.role)}
+          <Badge variant="secondary" className={`mb-3 ${getRoleColor(member.role ?? "")}`}>
+            {getRoleLabel(member.role ?? "")}
           </Badge>
           
           {member.specialization && (

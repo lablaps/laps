@@ -8,12 +8,10 @@ import {
   Users, 
   ExternalLink, 
   Search, 
-  Filter,
   Brain,
   Heart,
   Microscope,  Zap,
   ArrowRight,
-  Github,
   FileText
 } from "lucide-react";
 import Image from "next/image";
