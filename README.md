@@ -23,6 +23,6 @@ Sinta-se à vontade para contribuir! Abra uma issue para relatar problemas, sugi
 
 ## Licença
 
-Este projeto é licenciado sob a [Licença MIT](LICENSE) - veja o arquivo LICENSE.md para mais detalhes.
+Este projeto é licenciado sob a [Licença MIT](LICENSE) - veja o arquivo LICENSE.md para mais detalhes
 
 ## Contato
