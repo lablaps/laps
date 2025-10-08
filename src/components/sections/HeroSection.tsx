@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from 'react';
 
@@ -131,80 +131,85 @@ export default function HeroSection() {
   }, [dimensions]);
 
   return (
-    <section className="relative min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">      {/* Wave Animation at Top */}
-      <div className="absolute top-0 left-0 right-0 h-[250px] overflow-hidden z-10 bg-gradient-to-b from-white/80 via-white/60 to-transparent dark:from-gray-900/80 dark:via-gray-900/60 dark:to-transparent">
+    <section className="relative min-h-screen flex flex-col bg-gradient-to-b from-gray-50 via-white to-gray-50 dark:from-black dark:via-gray-950 dark:to-black">      
+      {/* Wave Animation at Top */}
+      <div className="absolute top-0 left-0 right-0 h-[250px] overflow-hidden z-10">
         <svg 
           ref={svgRef} 
           width="100%" 
           height="250"
           className="block"
-          style={{ filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.15))' }}
+          style={{ filter: 'drop-shadow(0 4px 20px rgba(0,122,255,0.12))' }}
         />
-        {/* Additional gradient overlay for smoother transition */}
-        <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-transparent to-white/30 dark:to-gray-900/30" />
+        {/* Gradient overlay for smoother transition */}
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-transparent via-white/20 to-transparent dark:via-black/20" />
       </div>
 
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>        {/* Content */}
-      <div className="flex-1 flex items-center justify-center pt-[250px]">
+      <div className="absolute inset-0 bg-grid-pattern opacity-100"></div>
+      
+      {/* Content */}
+      <div className="flex-1 flex items-center justify-center pt-[280px] pb-24">
         <div className="container mx-auto px-6 text-center relative z-10">
           <div className="max-w-4xl mx-auto">
 
-            {/* Main Title */}
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+            {/* Main Title - academic style without gradients */}
+            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight tracking-tight">
               Laboratório de Aquisição e
-              <span className="text-blue-600 dark:text-blue-400 block">
+              <span className="text-blue-700 dark:text-blue-400 block mt-2">
                 Processamento de Sinais
               </span>
             </h1>
 
-            {/* Subtitle */}
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+            {/* Subtitle - professional tone */}
+            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-10 max-w-3xl mx-auto font-normal leading-relaxed">
               Desenvolvendo tecnologias inovadoras em processamento de sinais e 
               inteligência artificial para impactar positivamente a sociedade
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button asChild size="lg" className="text-lg px-8 py-6">
+            {/* CTA Buttons - simple and professional */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+              <Button asChild size="lg" className="text-base px-8 py-6 rounded-lg ios-shadow hover-lift active-press font-medium bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 border-0">
                 <Link href="/projetos">
                   Nossos Projetos
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6">
+              <Button asChild variant="outline" size="lg" className="text-base px-8 py-6 rounded-lg ios-shadow hover-lift active-press font-medium bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                 <Link href="/sobre">
                   Conheça o LAPS
                 </Link>
               </Button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">15+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Anos de Pesquisa</div>
+            {/* Stats - clean cards without blur effects */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 ios-shadow hover-lift transition-ios border border-gray-200 dark:border-gray-700">
+                <div className="text-4xl md:text-5xl font-bold text-blue-700 dark:text-blue-400 mb-2">15+</div>
+                <div className="text-sm md:text-base text-gray-600 dark:text-gray-300 font-medium">Anos de Pesquisa</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">50+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Publicações</div>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 ios-shadow hover-lift transition-ios border border-gray-200 dark:border-gray-700">
+                <div className="text-4xl md:text-5xl font-bold text-green-700 dark:text-green-400 mb-2">50+</div>
+                <div className="text-sm md:text-base text-gray-600 dark:text-gray-300 font-medium">Publicações</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">20+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Projetos Ativos</div>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 ios-shadow hover-lift transition-ios border border-gray-200 dark:border-gray-700">
+                <div className="text-4xl md:text-5xl font-bold text-orange-700 dark:text-orange-400 mb-2">20+</div>
+                <div className="text-sm md:text-base text-gray-600 dark:text-gray-300 font-medium">Projetos Ativos</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">30+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Pesquisadores</div>
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 ios-shadow hover-lift transition-ios border border-gray-200 dark:border-gray-700">
+                <div className="text-4xl md:text-5xl font-bold text-purple-700 dark:text-purple-400 mb-2">30+</div>
+                <div className="text-sm md:text-base text-gray-600 dark:text-gray-300 font-medium">Pesquisadores</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <ChevronDown className="h-8 w-8 text-gray-400" />
+      {/* Scroll Indicator with iOS-style animation */}
+      <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="w-8 h-12 rounded-full border-2 border-gray-400 dark:border-gray-600 flex items-start justify-center p-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600 animate-pulse"></div>
+        </div>
       </div>
     </section>
   );

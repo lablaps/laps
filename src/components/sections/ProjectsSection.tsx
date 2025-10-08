@@ -39,29 +39,29 @@ export default function ProjectsSection() {
   };
 
   return (
-    <section className="py-20 bg-white dark:bg-gray-900">
+    <section className="py-24 md:py-32 bg-white dark:from-black">
       <div className="container mx-auto px-6">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <Badge variant="outline" className="mb-4">
+        {/* Header - academic professional style */}
+        <div className="text-center mb-20">
+          <Badge variant="outline" className="mb-6 px-4 py-2 rounded-lg border-gray-200 dark:border-gray-800 text-blue-700 dark:text-blue-400 font-semibold">
             Nossos Projetos
           </Badge>
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          <h2 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-8 tracking-tight">
             Pesquisa e Inovação
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-4xl mx-auto leading-relaxed font-normal">
             Desenvolvemos projetos de pesquisa que aplicam tecnologias avançadas 
             de processamento de sinais e inteligência artificial para resolver 
             problemas reais da sociedade.
           </p>
         </div>
 
-        {/* Featured Projects */}
-        <div className="grid lg:grid-cols-3 gap-8 mb-16">
+        {/* Featured Projects - academic professional style */}
+        <div className="grid lg:grid-cols-3 gap-8 mb-20">
           {featuredProjects.map((project, index) => (
-            <Card key={index} className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <Card key={index} className="overflow-hidden rounded-lg shadow-sm hover-lift transition-ios border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
               {project.image && (
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative h-56 overflow-hidden bg-gray-100 dark:from-gray-800">
                   <Image
                     src={project.image}
                     alt={project.title}
@@ -71,31 +71,33 @@ export default function ProjectsSection() {
                 </div>
               )}
               
-              <CardHeader>
-                <div className="flex justify-between items-start mb-2">
-                  <Badge variant="secondary" className={getStatusColor(project.status)}>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start mb-3 gap-2">
+                  <Badge variant="secondary" className={`${getStatusColor(project.status)} px-3 py-1 rounded-lg text-xs font-semibold border-0`}>
                     {getStatusLabel(project.status)}
                   </Badge>
                   {project.category && (
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="px-3 py-1 rounded-lg text-xs font-semibold border-gray-300 dark:border-gray-700">
                       {project.category}
                     </Badge>
                   )}
                 </div>
-                <CardTitle className="text-xl">{project.title}</CardTitle>
+                <CardTitle className="text-2xl font-bold leading-tight">{project.title}</CardTitle>
               </CardHeader>
               
               <CardContent>
-                <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+                <p className="text-gray-600 dark:text-gray-400 mb-6 line-clamp-3 leading-relaxed">
                   {project.description}
                 </p>
                 
                 {/* Project Details */}
-                <div className="space-y-2 mb-4 text-sm">
+                <div className="space-y-3 mb-6">
                   {project.startDate && (
-                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                      <Calendar className="h-4 w-4" />
-                      <span>
+                    <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                      <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-medium">
                         {new Date(project.startDate).getFullYear()}
                         {project.endDate && ` - ${new Date(project.endDate).getFullYear()}`}
                       </span>
@@ -103,24 +105,26 @@ export default function ProjectsSection() {
                   )}
                   
                   {project.teamMembers && project.teamMembers.length > 0 && (
-                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                      <Users className="h-4 w-4" />
-                      <span>{project.teamMembers.length} pesquisadores</span>
+                    <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                      <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-medium">{project.teamMembers.length} pesquisadores</span>
                     </div>
                   )}
                 </div>
 
                 {/* Technologies */}
                 {project.technologies && project.technologies.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex flex-wrap gap-1">
+                  <div className="mb-6">
+                    <div className="flex flex-wrap gap-2">
                       {project.technologies.slice(0, 3).map((tech, techIndex) => (
-                        <Badge key={techIndex} variant="outline" className="text-xs">
+                        <Badge key={techIndex} variant="outline" className="text-xs px-2 py-1 rounded-lg border-gray-300 dark:border-gray-700 font-medium">
                           {tech}
                         </Badge>
                       ))}
                       {project.technologies.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs px-2 py-1 rounded-lg border-gray-300 dark:border-gray-700 font-medium">
                           +{project.technologies.length - 3}
                         </Badge>
                       )}
@@ -129,12 +133,12 @@ export default function ProjectsSection() {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                <div className="flex gap-3">
+                  <Button variant="outline" size="sm" className="flex-1 rounded-lg shadow-sm active-press transition-ios font-semibold">
                     Saiba Mais
                   </Button>
                   {project.publicationUrl && (
-                    <Button variant="ghost" size="sm" asChild>
+                    <Button variant="ghost" size="sm" className="w-10 h-10 rounded-lg active-press transition-ios" asChild>
                       <a href={project.publicationUrl} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-4 w-4" />
                       </a>
@@ -146,42 +150,42 @@ export default function ProjectsSection() {
           ))}
         </div>
 
-        {/* Project Categories */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <Card className="text-center p-6">
-            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
-              <div className="text-2xl">🧠</div>
+        {/* Project Categories - academic professional style */}
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <Card className="text-center rounded-lg shadow-sm hover-lift transition-ios border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8">
+            <div className="w-16 h-16 bg-blue-700 rounded-lg flex items-center justify-center mx-auto mb-6 shadow-sm text-4xl">
+              🧠
             </div>
-            <h3 className="font-semibold text-lg mb-2">Inteligência Artificial</h3>
-            <p className="text-gray-600 dark:text-gray-300 text-sm">
+            <h3 className="font-bold text-xl mb-3 text-gray-900 dark:text-white">Inteligência Artificial</h3>
+            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
               Algoritmos de machine learning e deep learning para análise de dados complexos
             </p>
           </Card>
           
-          <Card className="text-center p-6">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-              <div className="text-2xl">🏥</div>
+          <Card className="text-center rounded-lg shadow-sm hover-lift transition-ios border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8">
+            <div className="w-16 h-16 bg-green-700 rounded-lg flex items-center justify-center mx-auto mb-6 shadow-sm text-4xl">
+              🏥
             </div>
-            <h3 className="font-semibold text-lg mb-2">Aplicações Médicas</h3>
-            <p className="text-gray-600 dark:text-gray-300 text-sm">
+            <h3 className="font-bold text-xl mb-3 text-gray-900 dark:text-white">Aplicações Médicas</h3>
+            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
               Ferramentas de diagnóstico e análise de sinais biomédicos
             </p>
           </Card>
           
-          <Card className="text-center p-6">
-            <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
-              <div className="text-2xl">📊</div>
+          <Card className="text-center rounded-lg shadow-sm hover-lift transition-ios border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-8">
+            <div className="w-16 h-16 bg-purple-700 rounded-lg flex items-center justify-center mx-auto mb-6 shadow-sm text-4xl">
+              📊
             </div>
-            <h3 className="font-semibold text-lg mb-2">Processamento de Sinais</h3>
-            <p className="text-gray-600 dark:text-gray-300 text-sm">
+            <h3 className="font-bold text-xl mb-3 text-gray-900 dark:text-white">Processamento de Sinais</h3>
+            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
               Técnicas avançadas de análise e filtragem de sinais digitais
             </p>
           </Card>
         </div>
 
-        {/* CTA */}
+        {/* CTA - academic professional style */}
         <div className="text-center">
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="text-lg px-10 py-7 rounded-lg shadow-sm hover-lift active-press font-semibold bg-blue-700 hover:bg-blue-800 dark:bg-blue-700 dark:hover:bg-blue-800 border-0">
             <Link href="/projetos">
               Ver Todos os Projetos
               <ArrowRight className="ml-2 h-5 w-5" />

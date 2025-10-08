@@ -70,57 +70,59 @@ export default function TeamPage() {
   };
 
   const MemberCard = ({ member, featured = false }: { member: Member; featured?: boolean }) => (
-    <Card className={`hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${featured ? 'border-2 border-blue-200 dark:border-blue-800' : ''}`}>
-      <CardContent className="p-6">
+    <Card className={`rounded-lg ios-shadow border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-ios hover-lift active-press ${featured ? 'ios-shadow-lg bg-blue-50 dark:bg-blue-950/50' : ''}`}>
+      <CardContent className="p-8">
         <div className="flex flex-col items-center text-center">
-          <Avatar className={`${featured ? 'w-32 h-32' : 'w-24 h-24'} mb-4`}>
-            <AvatarImage src={member.image} alt={member.name} />
-            <AvatarFallback className="text-lg">
-              {member.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-            </AvatarFallback>
-          </Avatar>
+          <div className={`${featured ? 'w-32 h-32' : 'w-24 h-24'} mb-6 relative`}>
+            <Avatar className="w-full h-full ring-4 ring-white dark:ring-gray-800 ios-shadow-md">
+              <AvatarImage src={member.image} alt={member.name} className="object-cover" />
+              <AvatarFallback className={`text-lg font-bold bg-blue-700 text-white ${featured ? 'text-xl' : ''}`}>
+                {member.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+          </div>
           
-          <h3 className={`font-semibold ${featured ? 'text-xl' : 'text-lg'} text-gray-900 dark:text-white mb-2`}>
+          <h3 className={`font-bold ${featured ? 'text-xl md:text-2xl' : 'text-lg'} text-gray-900 dark:text-white mb-3 tracking-tight`}>
             {member.name}
           </h3>
           
-          <Badge variant="secondary" className={`mb-3 ${getRoleColor(member.role ?? "")}`}>
+          <Badge className={`mb-4 rounded-md px-3 py-1 font-medium ${getRoleColor(member.role ?? "")}`}>
             {getRoleLabel(member.role ?? "")}
           </Badge>
           
           {member.specialization && (
-            <div className="mb-3">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Especialização:
+            <div className={`mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/50 ${featured ? 'w-full' : ''}`}>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mb-1 font-medium uppercase tracking-wide">
+                Especialização
               </p>
-              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
                 {member.specialization}
               </p>
             </div>
           )}
           
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+          <p className={`text-sm text-gray-600 dark:text-gray-300 mb-6 line-clamp-3 leading-relaxed ${featured ? 'text-base' : ''}`}>
             {member.description}
           </p>
           
           {/* Contact Links */}
           <div className="flex justify-center gap-2">
             {member.email && (
-              <Button variant="ghost" size="sm" asChild>
+              <Button variant="ghost" size="sm" className="rounded-lg w-9 h-9 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 transition-ios" asChild>
                 <a href={`mailto:${member.email}`}>
                   <Mail className="h-4 w-4" />
                 </a>
               </Button>
             )}
             {member.linkedin && (
-              <Button variant="ghost" size="sm" asChild>
+              <Button variant="ghost" size="sm" className="rounded-lg w-9 h-9 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 transition-ios" asChild>
                 <a href={member.linkedin} target="_blank" rel="noopener noreferrer">
                   <Linkedin className="h-4 w-4" />
                 </a>
               </Button>
             )}
             {member.lattes && (
-              <Button variant="ghost" size="sm" asChild>
+              <Button variant="ghost" size="sm" className="rounded-lg w-9 h-9 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 transition-ios" asChild>
                 <a href={member.lattes} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-4 w-4" />
                 </a>
@@ -134,20 +136,20 @@ export default function TeamPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
+      {/* Hero Section - professional academic */}
+      <section className="py-24 md:py-32 bg-gray-50 dark:bg-gray-800">
         <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge variant="outline" className="mb-6">
+          <div className="max-w-5xl mx-auto text-center">
+            <Badge variant="outline" className="mb-6 px-4 py-2 rounded-md border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 font-medium">
               Nossa Equipe
             </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-8 tracking-tight leading-tight">
               Pesquisadores de 
-              <span className="text-blue-600 dark:text-blue-400 block">
+              <span className="text-blue-700 dark:text-blue-400 block mt-2">
                 Excelência
               </span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 leading-relaxed font-normal">
               Conheça os pesquisadores que fazem do LAPS um centro de referência 
               em processamento de sinais e inteligência artificial.
             </p>
@@ -155,87 +157,87 @@ export default function TeamPage() {
         </div>
       </section>
 
-      {/* Search */}
-      <section className="py-8 bg-gray-50 dark:bg-gray-800">
+      {/* Search - professional academic */}
+      <section className="py-8 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-6">
           <div className="max-w-md mx-auto">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 placeholder="Buscar pesquisador..."
-                className="pl-10"
+                className="pl-12 h-12 rounded-lg border-gray-200 dark:border-gray-700 ios-shadow-sm"
               />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Team Stats */}
-      <section className="py-16">
+      {/* Team Stats - professional academic */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-16">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-16 max-w-6xl mx-auto">
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Award className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              <div className="w-16 h-16 bg-purple-700 dark:bg-purple-800 rounded-lg flex items-center justify-center mx-auto mb-4 ios-shadow">
+                <Award className="h-8 w-8 text-white" />
               </div>
-              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1">
+              <div className="text-3xl font-bold text-purple-700 dark:text-purple-400 mb-2">
                 {director.length}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Diretor</div>
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Diretor</div>
             </div>
             
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-3">
-                <GraduationCap className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <div className="w-16 h-16 bg-blue-700 dark:bg-blue-800 rounded-lg flex items-center justify-center mx-auto mb-4 ios-shadow">
+                <GraduationCap className="h-8 w-8 text-white" />
               </div>
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">
+              <div className="text-3xl font-bold text-blue-700 dark:text-blue-400 mb-2">
                 {doctors.length}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Doutores</div>
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Doutores</div>
             </div>
             
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-3">
-                <BookOpen className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <div className="w-16 h-16 bg-green-700 dark:bg-green-800 rounded-lg flex items-center justify-center mx-auto mb-4 ios-shadow">
+                <BookOpen className="h-8 w-8 text-white" />
               </div>
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
+              <div className="text-3xl font-bold text-green-700 dark:text-green-400 mb-2">
                 {phdStudents.length}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Doutorandos</div>
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Doutorandos</div>
             </div>
             
             <div className="text-center">
-              <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center mx-auto mb-3">
-                <User className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+              <div className="w-16 h-16 bg-orange-700 dark:bg-orange-800 rounded-lg flex items-center justify-center mx-auto mb-4 ios-shadow">
+                <User className="h-8 w-8 text-white" />
               </div>
-              <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-1">
+              <div className="text-3xl font-bold text-orange-700 dark:text-orange-400 mb-2">
                 {masterStudents.length}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Mestrandos</div>
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Mestrandos</div>
             </div>
             
             <div className="text-center">
-              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
-                <User className="h-8 w-8 text-gray-600 dark:text-gray-400" />
+              <div className="w-16 h-16 bg-gray-700 dark:bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-4 ios-shadow">
+                <User className="h-8 w-8 text-white" />
               </div>
-              <div className="text-3xl font-bold text-gray-600 dark:text-gray-400 mb-1">
+              <div className="text-3xl font-bold text-gray-700 dark:text-gray-400 mb-2">
                 {undergradStudents.length}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Graduandos</div>
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Graduandos</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Director */}
+      {/* Director - professional academic */}
       {director.length > 0 && (
-        <section className="py-16 bg-gray-50 dark:bg-gray-800">
+        <section className="py-20 bg-white dark:bg-gray-900">
           <div className="container mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            <div className="text-center mb-12 max-w-4xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
                 Direção
               </h2>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-lg text-gray-600 dark:text-gray-300">
                 Liderança acadêmica e científica do laboratório
               </p>
             </div>
@@ -249,20 +251,20 @@ export default function TeamPage() {
         </section>
       )}
 
-      {/* Doctors */}
+      {/* Doctors - professional academic */}
       {doctors.length > 0 && (
-        <section className="py-16">
+        <section className="py-20 bg-gray-50 dark:bg-gray-800">
           <div className="container mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            <div className="text-center mb-12 max-w-4xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
                 Doutores
               </h2>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-lg text-gray-600 dark:text-gray-300">
                 Pesquisadores seniores com vasta experiência
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {doctors.map((member, index) => (
                 <MemberCard key={index} member={member} />
               ))}
@@ -271,20 +273,20 @@ export default function TeamPage() {
         </section>
       )}
 
-      {/* PhD Students */}
+      {/* PhD Students - professional academic */}
       {phdStudents.length > 0 && (
-        <section className="py-16 bg-gray-50 dark:bg-gray-800">
+        <section className="py-20 bg-white dark:bg-gray-900">
           <div className="container mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            <div className="text-center mb-12 max-w-4xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
                 Doutorandos
               </h2>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-lg text-gray-600 dark:text-gray-300">
                 Pesquisadores em formação avançada
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
               {phdStudents.map((member, index) => (
                 <MemberCard key={index} member={member} />
               ))}
@@ -293,20 +295,20 @@ export default function TeamPage() {
         </section>
       )}
 
-      {/* Master Students */}
+      {/* Master Students - professional academic */}
       {masterStudents.length > 0 && (
-        <section className="py-16">
+        <section className="py-20 bg-gray-50 dark:bg-gray-800">
           <div className="container mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            <div className="text-center mb-12 max-w-4xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
                 Mestrandos
               </h2>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-lg text-gray-600 dark:text-gray-300">
                 Estudantes de pós-graduação em desenvolvimento
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
               {masterStudents.map((member, index) => (
                 <MemberCard key={index} member={member} />
               ))}
@@ -315,20 +317,20 @@ export default function TeamPage() {
         </section>
       )}
 
-      {/* Undergraduate Students */}
+      {/* Undergraduate Students - professional academic */}
       {undergradStudents.length > 0 && (
-        <section className="py-16 bg-gray-50 dark:bg-gray-800">
+        <section className="py-20 bg-white dark:bg-gray-900">
           <div className="container mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            <div className="text-center mb-12 max-w-4xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
                 Graduandos
               </h2>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-lg text-gray-600 dark:text-gray-300">
                 Estudantes de iniciação científica
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-6xl mx-auto">
               {undergradStudents.map((member, index) => (
                 <MemberCard key={index} member={member} />
               ))}
@@ -337,23 +339,28 @@ export default function TeamPage() {
         </section>
       )}
 
-      {/* Join Our Team */}
-      <section className="py-16">
+      {/* Join Our Team - professional academic */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="container mx-auto px-6">
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-12 text-center">
-              <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          <Card className="rounded-lg ios-shadow-xl border border-gray-200 dark:border-gray-700 bg-blue-700 dark:bg-blue-800 max-w-4xl mx-auto overflow-hidden">
+            <CardContent className="p-10 md:p-16 text-center relative z-10">
+              <div className="mb-6">
+                <div className="w-14 h-14 mx-auto rounded-lg bg-white/10 flex items-center justify-center mb-6">
+                  <span className="text-3xl">🎓</span>
+                </div>
+              </div>
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-6 tracking-tight">
                 Junte-se à Nossa Equipe
               </h3>
-              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+              <p className="text-base md:text-lg text-blue-50 mb-10 max-w-2xl mx-auto leading-relaxed">
                 Estamos sempre em busca de novos talentos para integrar nossa equipe 
                 de pesquisa. Confira as oportunidades disponíveis.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg">
+                <Button size="lg" className="h-12 rounded-lg px-8 bg-white text-blue-700 hover:bg-gray-100 font-medium transition-ios hover-lift active-press">
                   Ver Oportunidades
                 </Button>
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="lg" className="h-12 rounded-lg px-8 border-2 border-white text-white hover:bg-white/10 font-medium transition-ios hover-lift active-press">
                   Entre em Contato
                 </Button>
               </div>
@@ -362,19 +369,26 @@ export default function TeamPage() {
         </div>
       </section>
 
-      {/* Alumni Section */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-800">
+      {/* Alumni Section - professional academic */}
+      <section className="py-20 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Alumni do LAPS
-          </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-            Mais de 50 pesquisadores se formaram no LAPS e hoje atuam em 
-            universidades, empresas e instituições de pesquisa no Brasil e no exterior.
-          </p>
-          <Button variant="outline">
-            Conheça Nossos Alumni
-          </Button>
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-6">
+              <div className="w-14 h-14 mx-auto rounded-lg bg-blue-700 dark:bg-blue-800 flex items-center justify-center mb-6 ios-shadow">
+                <span className="text-3xl">🎯</span>
+              </div>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6 tracking-tight">
+              Alumni do LAPS
+            </h2>
+            <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Mais de 50 pesquisadores se formaram no LAPS e hoje atuam em 
+              universidades, empresas e instituições de pesquisa no Brasil e no exterior.
+            </p>
+            <Button variant="outline" className="h-12 rounded-lg px-8 font-medium ios-shadow transition-ios hover-lift active-press">
+              Conheça Nossos Alumni
+            </Button>
+          </div>
         </div>
       </section>
     </div>

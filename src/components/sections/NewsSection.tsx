@@ -35,28 +35,28 @@ export default function NewsSection() {
   };
 
   return (
-    <section className="py-20 bg-gray-50 dark:bg-gray-800">
+    <section className="py-24 md:py-32 bg-gray-50 dark:from-gray-950">
       <div className="container mx-auto px-6">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <Badge variant="outline" className="mb-4">
+        {/* Header - academic professional style */}
+        <div className="text-center mb-20">
+          <Badge variant="outline" className="mb-6 px-4 py-2 rounded-lg border-gray-200 dark:border-gray-800 text-blue-700 dark:text-blue-400 font-semibold">
             Últimas Notícias
           </Badge>
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
+          <h2 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-8 tracking-tight">
             Acompanhe Nossas Novidades
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-4xl mx-auto leading-relaxed font-normal">
             Fique por dentro das últimas descobertas, publicações, eventos 
             e conquistas do nosso laboratório de pesquisa.
           </p>
         </div>
 
-        {/* Latest News */}
-        <div className="grid lg:grid-cols-3 gap-8 mb-16">
+        {/* Latest News - academic professional style */}
+        <div className="grid lg:grid-cols-3 gap-8 mb-20">
           {latestNews.map((article, index) => (
-            <Card key={index} className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <Card key={index} className="overflow-hidden rounded-lg shadow-sm hover-lift transition-ios border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
               {article.image && (
-                <div className="relative h-48 overflow-hidden">
+                <div className="relative h-56 overflow-hidden bg-gray-100 dark:from-gray-800">
                   <Image
                     src={article.image}
                     alt={article.title}
@@ -64,34 +64,38 @@ export default function NewsSection() {
                     className="object-cover"
                   />
                   <div className="absolute top-4 left-4">
-                    <Badge variant="secondary" className="bg-white/90 text-gray-900">
+                    <Badge variant="secondary" className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-1 rounded-lg font-semibold border border-gray-200 dark:border-gray-800 shadow-sm">
                       {article.category}
                     </Badge>
                   </div>
                 </div>
               )}
               
-              <CardHeader>                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>{formatDate(article.date || article.publishDate.toISOString().split('T')[0])}</span>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  <span className="font-medium">{formatDate(article.date || article.publishDate.toISOString().split('T')[0])}</span>
                   <span>•</span>
                   <Clock className="h-4 w-4" />
-                  <span>{getTimeAgo(article.date || article.publishDate.toISOString().split('T')[0])}</span>
+                  <span className="font-medium">{getTimeAgo(article.date || article.publishDate.toISOString().split('T')[0])}</span>
                 </div>
-                <CardTitle className="text-xl line-clamp-2">{article.title}</CardTitle>
+                <CardTitle className="text-2xl line-clamp-2 font-bold leading-tight">{article.title}</CardTitle>
               </CardHeader>
-                <CardContent>
-                <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+                
+              <CardContent>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 line-clamp-3 leading-relaxed">
                   {article.excerpt}
                 </p>
                 
                 {article.author && (
-                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    Por: <span className="font-medium">{article.author}</span>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-6 font-medium">
+                    Por: <span className="font-semibold text-gray-900 dark:text-white">{article.author}</span>
                   </div>
                 )}
 
-                <Button variant="outline" size="sm" className="w-full">
+                <Button variant="outline" size="sm" className="w-full rounded-lg shadow-sm active-press transition-ios font-semibold">
                   Ler Mais
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -100,40 +104,51 @@ export default function NewsSection() {
           ))}
         </div>
 
-        {/* News Categories */}
-        <div className="grid md:grid-cols-4 gap-4 mb-12">
-          <Card className="text-center p-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer">
-            <div className="text-2xl mb-2">📰</div>
-            <h4 className="font-medium text-sm">Pesquisa</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Descobertas e estudos</p>
+        {/* News Categories - academic professional style */}
+        <div className="grid md:grid-cols-4 gap-6 mb-16">
+          <Card className="text-center rounded-lg shadow-sm hover-lift transition-ios border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 cursor-pointer active-press">
+            <div className="w-16 h-16 bg-blue-700 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm text-3xl">
+              📰
+            </div>
+            <h4 className="font-bold text-base mb-2 text-gray-900 dark:text-white">Pesquisa</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Descobertas e estudos</p>
           </Card>
           
-          <Card className="text-center p-4 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors cursor-pointer">
-            <div className="text-2xl mb-2">📚</div>
-            <h4 className="font-medium text-sm">Publicações</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Artigos e papers</p>
+          <Card className="text-center rounded-lg shadow-sm hover-lift transition-ios border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 cursor-pointer active-press">
+            <div className="w-16 h-16 bg-green-700 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm text-3xl">
+              📚
+            </div>
+            <h4 className="font-bold text-base mb-2 text-gray-900 dark:text-white">Publicações</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Artigos e papers</p>
           </Card>
           
-          <Card className="text-center p-4 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors cursor-pointer">
-            <div className="text-2xl mb-2">🎯</div>
-            <h4 className="font-medium text-sm">Eventos</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Conferências e workshops</p>
+          <Card className="text-center rounded-lg shadow-sm hover-lift transition-ios border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 cursor-pointer active-press">
+            <div className="w-16 h-16 bg-purple-700 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm text-3xl">
+              🎯
+            </div>
+            <h4 className="font-bold text-base mb-2 text-gray-900 dark:text-white">Eventos</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Conferências e workshops</p>
           </Card>
           
-          <Card className="text-center p-4 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors cursor-pointer">
-            <div className="text-2xl mb-2">🏆</div>
-            <h4 className="font-medium text-sm">Conquistas</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Prêmios e reconhecimentos</p>
+          <Card className="text-center rounded-lg shadow-sm hover-lift transition-ios border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 cursor-pointer active-press">
+            <div className="w-16 h-16 bg-orange-700 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm text-3xl">
+              🏆
+            </div>
+            <h4 className="font-bold text-base mb-2 text-gray-900 dark:text-white">Conquistas</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Prêmios e reconhecimentos</p>
           </Card>
         </div>
 
-        {/* Newsletter Signup */}
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
-          <CardContent className="p-8 text-center">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+        {/* Newsletter Signup - academic professional style */}
+        <Card className="rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 bg-blue-50 dark:from-blue-950 mb-16 overflow-hidden">
+          <CardContent className="p-10 md:p-12 text-center">
+            <div className="w-16 h-16 bg-blue-700 rounded-lg flex items-center justify-center mx-auto mb-6 shadow-sm text-4xl">
+              ✉️
+            </div>
+            <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
               Mantenha-se Atualizado
             </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
               Receba as últimas notícias, descobertas e eventos do LAPS 
               diretamente no seu email.
             </p>
@@ -141,18 +156,18 @@ export default function NewsSection() {
               <input
                 type="email"
                 placeholder="Seu email"
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="flex-1 px-6 py-4 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm font-medium transition-ios focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <Button>
+              <Button className="px-8 py-4 rounded-lg shadow-sm active-press transition-ios font-semibold bg-blue-700 hover:bg-blue-800 dark:bg-blue-700 dark:hover:bg-blue-800 border-0">
                 Inscrever-se
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* CTA */}
-        <div className="text-center mt-12">
-          <Button asChild size="lg">
+        {/* CTA - academic professional style */}
+        <div className="text-center">
+          <Button asChild size="lg" className="text-lg px-10 py-7 rounded-lg shadow-sm hover-lift active-press font-semibold bg-blue-700 hover:bg-blue-800 dark:bg-blue-700 dark:hover:bg-blue-800 border-0">
             <Link href="/noticias">
               Ver Todas as Notícias
               <ArrowRight className="ml-2 h-5 w-5" />
