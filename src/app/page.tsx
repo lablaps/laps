@@ -7,7 +7,7 @@ import { PartnersSection } from "@/components/sections/PartnersSection";
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen pt-24">
       <HeroSection />
       <AboutSection />
       <TeamSection />

@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" fill="#0066CC"/>
+  
+  <!-- Vertical line -->
+  <rect x="14" y="2" width="3" height="28" fill="#00A8B5"/>
+  
+  <!-- Horizontal line -->
+  <rect x="2" y="14" width="28" height="3" fill="#00A8B5"/>
+  
+  <!-- L shape (black) -->
+  <rect x="9" y="7" width="4" height="12" fill="#000000"/>
+  <rect x="9" y="19" width="10" height="4" fill="#000000"/>
+</svg>

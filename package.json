@@ -21,14 +21,16 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "framer-motion": "^12.15.0",
+    "framer-motion": "^12.23.26",
     "lucide-react": "^0.511.0",
     "maplibre-gl": "^5.14.0",
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-force-graph-2d": "^1.29.0",
     "react-hook-form": "^7.68.0",
     "tailwind-merge": "^3.3.0",
+    "three": "^0.182.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {

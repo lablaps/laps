@@ -24,6 +24,8 @@ export interface Publication {
   authors: string[];
   journal?: string;
   conference?: string;
+  venue?: string;
+  keywords?: string[];
   year: number;
   url?: string;
   doi?: string;
@@ -89,20 +91,6 @@ export interface Event {
   registrationUrl?: string;
   maxAttendees?: number;
   currentAttendees?: number;
-}
-
-export interface Publication {
-  id: string;
-  title: string;
-  authors: string[];
-  venue: string;
-  year: number;
-  type: 'journal' | 'conference' | 'book' | 'thesis' | 'technical_report';
-  doi?: string;
-  url?: string;
-  abstract?: string;
-  keywords: string[];
-  citationCount?: number;
 }
 
 export interface User {
