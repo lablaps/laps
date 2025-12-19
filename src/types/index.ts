@@ -5,6 +5,7 @@ export interface Member {
   category: 'director' | 'doctor' | 'phd_student' | 'master_student' | 'undergraduate';
   image?: string;
   lattesUrl?: string;
+  researchGateUrl?: string;
   email?: string;
   phone?: string; // For form compatibility
   bio?: string; // For form compatibility
@@ -17,11 +18,27 @@ export interface Member {
   joinDate: Date;
 }
 
+export interface Publication {
+  id: string;
+  title: string;
+  authors: string[];
+  journal?: string;
+  conference?: string;
+  year: number;
+  url?: string;
+  doi?: string;
+  type: 'article' | 'thesis' | 'patent' | 'other';
+}
+
 export interface Project {
   id: string;
+  slug: string;
   title: string;
   description: string;
   fullDescription?: string; // For form compatibility
+  objectives?: string;
+  methodology?: string;
+  results?: string;
   researchers: string[];
   startDate: Date;
   endDate?: Date;
@@ -42,6 +59,7 @@ export interface Project {
 
 export interface News {
   id: string;
+  slug: string;
   title: string;
   content: string;
   excerpt: string;

@@ -13,7 +13,7 @@ export default function TeamSection() {
   const director = members.find(member => member.category === 'director');
   
   // Get team statistics
-  const doctors = members.filter(member => member.category === 'doctor');
+  const doctors = members.filter(member => member.category === 'doctor' || member.category === 'director');
   const phdStudents = members.filter(member => member.category === 'phd_student');
   const masterStudents = members.filter(member => member.category === 'master_student');
   const undergraduates = members.filter(member => member.category === 'undergraduate');

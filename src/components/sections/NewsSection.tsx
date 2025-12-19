@@ -91,9 +91,11 @@ export default function NewsSection() {
                   </div>
                 )}
 
-                <Button variant="outline" size="sm" className="w-full">
-                  Ler Mais
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <Link href={`/noticias/${article.slug}`}>
+                    Ler Mais
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
