@@ -3,15 +3,17 @@ import AboutSection from "@/components/sections/AboutSection";
 import TeamSection from "@/components/sections/TeamSection";
 import ProjectsSection from "@/components/sections/ProjectsSection";
 import NewsSection from "@/components/sections/NewsSection";
+import { PartnersSection } from "@/components/sections/PartnersSection";
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen pt-24">
       <HeroSection />
       <AboutSection />
       <TeamSection />
       <ProjectsSection />
       <NewsSection />
+      <PartnersSection />
     </main>
   );
 }

@@ -15,8 +15,7 @@
 
 # next.js
 /.next/
-# Don't ignore /out/ for GitHub Pages deployment
-# /out/
+/out/
 
 # production
 /build
@@ -47,3 +46,21 @@ next-env.d.ts
 
 # GitHub Pages specific
 .nojekyll
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database (local development only)
+src/data/team-db.json
+
+# Logs
+logs/
+*.log

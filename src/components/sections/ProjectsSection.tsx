@@ -130,8 +130,10 @@ export default function ProjectsSection() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    Saiba Mais
+                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                    <Link href={`/projetos/${project.slug}`}>
+                      Saiba Mais
+                    </Link>
                   </Button>
                   {project.publicationUrl && (
                     <Button variant="ghost" size="sm" asChild>
