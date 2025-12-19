@@ -1,5 +1,3 @@
-import Image from 'next/image';
-
 const partners = [
   { name: 'UEMA', logo: '/images/partners/uema-logo.png', url: 'https://www.uema.br' },
   { name: 'CNPq', logo: '/images/partners/cnpq-logo.png', url: 'https://www.gov.br/cnpq' },

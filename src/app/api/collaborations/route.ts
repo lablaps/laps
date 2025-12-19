@@ -1,63 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getAllCollaborations,
+  getCollaborationById,
   createCollaboration,
   deleteCollaboration,
-  getAllMembers,
-} from '@/lib/database';
+} from '@/lib/supabase';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const collaborations = getAllCollaborations();
-    const members = getAllMembers();
+    const id = request.nextUrl.searchParams.get('id');
 
-    // Converte IDs para objetos completos para o frontend
-    const enrichedCollaborations = collaborations.map((collab) => ({
-      ...collab,
-      member1: members.find((m) => m.id === collab.memberId1),
-      member2: members.find((m) => m.id === collab.memberId2),
-    }));
+    if (id) {
+      const collab = await getCollaborationById(id);
+      if (!collab) {
+        return NextResponse.json({ error: 'Collaboration not found' }, { status: 404 });
+      }
+      return NextResponse.json(collab);
+    }
 
-    return NextResponse.json(enrichedCollaborations);
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const collaborations = await getAllCollaborations();
+    return NextResponse.json(collaborations);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    console.error('GET /api/collaborations error:', error);
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
+    const data = await request.json() as Record<string, unknown>;
 
-    if (!data.memberId1 || !data.memberId2 || data.strength === undefined) {
+    // Validação
+    if (!data.member_id_1 || !data.member_id_2 || data.strength === undefined) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: member_id_1, member_id_2, strength' },
         { status: 400 }
       );
     }
 
-    // Validar que membros existem
-    const members = getAllMembers();
-    if (
-      !members.find((m) => m.id === data.memberId1) ||
-      !members.find((m) => m.id === data.memberId2)
-    ) {
-      return NextResponse.json(
-        { error: 'One or both members do not exist' },
-        { status: 400 }
-      );
-    }
-
-    const newCollab = createCollaboration({
-      memberId1: data.memberId1,
-      memberId2: data.memberId2,
-      type: data.type || 'collaboration',
-      strength: Math.max(1, Math.min(5, data.strength)),
-      description: data.description,
+    const newCollab = await createCollaboration({
+      member_id_1: data.member_id_1 as string,
+      member_id_2: data.member_id_2 as string,
+      collaboration_type: (data.collaboration_type as string) || 'collaboration',
+      strength: data.strength as number,
+      description: data.description as string | undefined,
+      start_date: data.start_date as string | undefined,
+      end_date: data.end_date as string | undefined,
+      active: data.active !== false,
     });
 
     return NextResponse.json(newCollab, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    console.error('POST /api/collaborations error:', error);
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
@@ -68,13 +71,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    const deleted = deleteCollaboration(id);
-    if (!deleted) {
+    await deleteCollaboration(id);
+    return NextResponse.json({ success: true, id });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    console.error('DELETE /api/collaborations error:', error);
+    if (errorMessage.includes('not found')) {
       return NextResponse.json({ error: 'Collaboration not found' }, { status: 404 });
     }
-
-    return NextResponse.json({ success: true, id });
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    );
   }
 }

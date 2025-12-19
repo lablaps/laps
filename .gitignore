@@ -52,6 +52,19 @@ next-env.d.ts
 .idea/
 *.swp
 *.swo
+
+# Build logs
+build-*.log
+build-*.txt
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
 *~
 
 # OS

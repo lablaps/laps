@@ -1,9 +1,8 @@
 import { projects } from '@/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Users, Target, FlaskConical, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Calendar, Users, Target, FlaskConical, CheckCircle } from 'lucide-react';
 
 interface ProjectPageProps {
   params: Promise<{
@@ -28,7 +27,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   return (
     <div className="container mx-auto px-4 py-12">
       <Link href="/projetos" className="inline-flex items-center text-primary hover:underline mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" />
+        <ChevronLeft className="mr-2 h-4 w-4" />
         Voltar para Projetos
       </Link>
 

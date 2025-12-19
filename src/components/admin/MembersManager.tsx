@@ -1,47 +1,91 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, AlertCircle } from 'lucide-react';
+
+interface Role {
+  id: number;
+  name: string;
+  level: number;
+  description?: string;
+}
 
 interface TeamMember {
   id: string;
   name: string;
-  role: 'director' | 'doctor' | 'phd_student' | 'master_student' | 'undergraduate';
+  role_id: number;
+  bio?: string;
+  expertise: string[];
+  research_areas: string[];
+  email?: string;
+  photo_url?: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface FormData {
+  name: string;
+  role_id: number;
   bio: string;
   expertise: string[];
-  researchAreas: string[];
-  email?: string;
-  image?: string;
+  research_areas: string[];
+  email: string;
   active: boolean;
-  joinDate: string;
 }
 
 export function MembersManager() {
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState<Partial<TeamMember>>({});
+  const [formData, setFormData] = useState<Partial<FormData>>({
+    expertise: [],
+    research_areas: [],
+    active: true,
+  });
 
-  // Carrega membros
+  // Carrega membros e roles
   useEffect(() => {
-    fetchMembers();
+    loadData();
   }, []);
 
-  async function fetchMembers() {
+  async function loadData() {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/members');
-      const data = await res.json();
-      setMembers(data);
-    } catch (error) {
-      console.error('Erro ao carregar membros:', error);
+      const [membersRes, rolesRes] = await Promise.all([
+        fetch('/api/members'),
+        fetch('/api/roles'),
+      ]);
+
+      if (!membersRes.ok) throw new Error('Erro ao carregar membros');
+      if (!rolesRes.ok) throw new Error('Erro ao carregar papéis');
+
+      const membersData = await membersRes.json();
+      const rolesData = await rolesRes.json();
+
+      setMembers(membersData);
+      setRoles(rolesData);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(message);
+      console.error('Erro ao carregar dados:', err);
     } finally {
       setLoading(false);
     }
   }
 
   async function handleSave() {
+    if (!formData.name || !formData.role_id || !formData.bio) {
+      setError('Preencha os campos obrigatórios: Nome, Papel e Biografia');
+      return;
+    }
+
     try {
+      setError(null);
       if (editingId) {
         // Atualizar
         const res = await fetch(`/api/members?id=${editingId}`, {
@@ -49,10 +93,12 @@ export function MembersManager() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
-        if (res.ok) {
-          const updated = await res.json();
-          setMembers(members.map((m) => (m.id === editingId ? updated : m)));
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Erro ao atualizar membro');
         }
+        const updated = await res.json();
+        setMembers(members.map((m) => (m.id === editingId ? updated : m)));
       } else {
         // Criar novo
         const res = await fetch('/api/members', {
@@ -60,14 +106,18 @@ export function MembersManager() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
-        if (res.ok) {
-          const newMember = await res.json();
-          setMembers([...members, newMember]);
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Erro ao criar membro');
         }
+        const newMember = await res.json();
+        setMembers([...members, newMember]);
       }
       resetForm();
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(message);
+      console.error('Erro ao salvar:', err);
     }
   }
 
@@ -75,35 +125,50 @@ export function MembersManager() {
     if (!confirm('Tem certeza que deseja deletar este membro?')) return;
 
     try {
+      setError(null);
       const res = await fetch(`/api/members?id=${id}`, {
         method: 'DELETE',
       });
-      if (res.ok) {
-        setMembers(members.filter((m) => m.id !== id));
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao deletar membro');
       }
-    } catch (error) {
-      console.error('Erro ao deletar:', error);
+      setMembers(members.filter((m) => m.id !== id));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(message);
+      console.error('Erro ao deletar:', err);
     }
   }
 
   function startEdit(member: TeamMember) {
-    setFormData(member);
+    setFormData({
+      name: member.name,
+      role_id: member.role_id,
+      bio: member.bio || '',
+      expertise: member.expertise,
+      research_areas: member.research_areas,
+      email: member.email,
+      active: member.active,
+    });
     setEditingId(member.id);
     setShowForm(true);
+    setError(null);
   }
 
   function resetForm() {
-    setFormData({});
+    setFormData({
+      expertise: [],
+      research_areas: [],
+      active: true,
+    });
     setEditingId(null);
     setShowForm(false);
+    setError(null);
   }
 
-  const roleLabels: Record<string, string> = {
-    director: 'Diretor',
-    doctor: 'Doutor',
-    phd_student: 'Doutorando',
-    master_student: 'Mestrando',
-    undergraduate: 'Graduando',
+  const getRoleName = (roleId: number) => {
+    return roles.find((r) => r.id === roleId)?.name || 'Desconhecido';
   };
 
   if (loading) return <div className="text-center py-8">Carregando...</div>;
@@ -123,43 +188,55 @@ export function MembersManager() {
         )}
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="glass-panel backdrop-blur-xl bg-red-50/80 border border-red-200 rounded-2xl p-4 flex gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+          <div>
+            <p className="font-medium text-red-900">Erro</p>
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        </div>
+      )}
+
       {/* Form */}
       {showForm && (
         <div className="glass-panel backdrop-blur-xl bg-white/80 border border-white/50 rounded-2xl p-6">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-1">
-                Nome
+                Nome <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
                 value={formData.name || ''}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Nome completo"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-900 mb-1">
-                  Papel
+                  Papel <span className="text-red-600">*</span>
                 </label>
                 <select
-                  value={formData.role || ''}
+                  value={formData.role_id || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      role: e.target.value as TeamMember['role'],
+                      role_id: parseInt(e.target.value),
                     })
                   }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Selecione...</option>
-                  <option value="director">Diretor</option>
-                  <option value="doctor">Doutor</option>
-                  <option value="phd_student">Doutorando</option>
-                  <option value="master_student">Mestrando</option>
-                  <option value="undergraduate">Graduando</option>
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.description || role.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -171,20 +248,22 @@ export function MembersManager() {
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="email@example.com"
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-1">
-                Biografia
+                Biografia <span className="text-red-600">*</span>
               </label>
               <textarea
                 value={formData.bio || ''}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
+                placeholder="Breve descrição sobre o membro"
               />
             </div>
 
@@ -198,10 +277,14 @@ export function MembersManager() {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    expertise: e.target.value.split(',').map((s) => s.trim()),
+                    expertise: e.target.value
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter((s) => s),
                   })
                 }
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: Machine Learning, Image Processing"
               />
             </div>
 
@@ -211,15 +294,32 @@ export function MembersManager() {
               </label>
               <input
                 type="text"
-                value={(formData.researchAreas || []).join(', ')}
+                value={(formData.research_areas || []).join(', ')}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    researchAreas: e.target.value.split(',').map((s) => s.trim()),
+                    research_areas: e.target.value
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter((s) => s),
                   })
                 }
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: Computer Vision, Pattern Recognition"
               />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="active"
+                checked={formData.active !== false}
+                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                className="w-4 h-4 border border-slate-300 rounded"
+              />
+              <label htmlFor="active" className="text-sm font-medium text-slate-900">
+                Membro ativo
+              </label>
             </div>
 
             <div className="flex gap-2 pt-4">
@@ -244,32 +344,50 @@ export function MembersManager() {
 
       {/* Members List */}
       <div className="space-y-3">
-        {members.map((member) => (
-          <div
-            key={member.id}
-            className="glass-panel backdrop-blur-xl bg-white/80 border border-white/50 rounded-xl p-4 flex justify-between items-start"
-          >
-            <div className="flex-1">
-              <h3 className="font-bold text-slate-900">{member.name}</h3>
-              <p className="text-sm text-slate-600">{roleLabels[member.role]}</p>
-              <p className="text-xs text-slate-500 mt-1">{member.bio}</p>
+        {members.length === 0 ? (
+          <p className="text-center text-slate-500 py-8">Nenhum membro cadastrado</p>
+        ) : (
+          members.map((member) => (
+            <div
+              key={member.id}
+              className="glass-panel backdrop-blur-xl bg-white/80 border border-white/50 rounded-xl p-4 flex justify-between items-start"
+            >
+              <div className="flex-1">
+                <h3 className="font-bold text-slate-900">{member.name}</h3>
+                <p className="text-sm text-slate-600">{getRoleName(member.role_id)}</p>
+                <p className="text-xs text-slate-500 mt-1">{member.bio}</p>
+                {member.expertise.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {member.expertise.slice(0, 2).map((exp, i) => (
+                      <span key={i} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                        {exp}
+                      </span>
+                    ))}
+                    {member.expertise.length > 2 && (
+                      <span className="text-xs text-slate-500">+{member.expertise.length - 2}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => startEdit(member)}
+                  className="p-2 hover:bg-blue-100 rounded-lg transition text-blue-600"
+                  title="Editar"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(member.id)}
+                  className="p-2 hover:bg-red-100 rounded-lg transition text-red-600"
+                  title="Deletar"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => startEdit(member)}
-                className="p-2 hover:bg-blue-100 rounded-lg transition text-blue-600"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDelete(member.id)}
-                className="p-2 hover:bg-red-100 rounded-lg transition text-red-600"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

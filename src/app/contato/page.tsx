@@ -5,11 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  MapPin, 
   MessageSquare,
   CheckCircle,
   AlertCircle
@@ -55,7 +53,8 @@ export default function ContactPage() {
       console.log(values);
       setIsSuccess(true);
       form.reset();
-    } catch (err) {
+    } catch (error) {
+      console.error('Erro ao enviar:', error);
       setError("Ocorreu um erro ao enviar sua mensagem. Tente novamente.");
     } finally {
       setIsSubmitting(false);
