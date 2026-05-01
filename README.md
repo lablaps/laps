@@ -1,6 +1,6 @@
 # LAPS - Laboratório de Aquisição e Processamento de Sinais
 
-Site oficial do Laboratório de Aquisição e Processamento de Sinais (LAPS) da Universidade Estadual de Maringá (UEM).
+Site oficial do Laboratório de Aquisição e Processamento de Sinais (LAPS) da Universidade Estadual do Maranhão (UEMA).
 
 ## 🚀 Deploy no GitHub Pages
 
@@ -107,11 +107,11 @@ src/
 ## 📞 Contato
 
 **LAPS - Laboratório de Aquisição e Processamento de Sinais**  
-Universidade Estadual de Maringá (UEM)  
+Universidade Estadual do Maranhão (UEMA)  
 Departamento de Informática  
 
 **Website:** [Será disponibilizado após o deploy]
 
 ## 📝 Licença
 
-Este projeto é desenvolvido para fins acadêmicos pela UEM.
+Este projeto é desenvolvido para fins acadêmicos pela UEMA.
