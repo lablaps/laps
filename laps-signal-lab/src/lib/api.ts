@@ -107,6 +107,10 @@ export interface ApiMember {
   githubUrl: string | null;
   contactEmail: string | null;
   roadmap: string | null;
+  areas: string | null;
+  interests: string | null;
+  bannerColor: string | null;
+  bannerImageUrl: string | null;
   deletedAt: string | null;
 }
 
@@ -211,7 +215,7 @@ export const api = {
 
   // Me — extended payload with auth-flow flags (mustChangePassword, emailVerified).
   me: () => request<MyProfile | null>("/api/v1/me", { swallow401: true }),
-  meUpdate: (body: Partial<MyProfile> & { email?: string }) =>
+  meUpdate: (body: Partial<MyProfile> & { email?: string; areas?: string; interests?: string; bannerColor?: string; bannerImageUrl?: string }) =>
     request<ApiMember>("/api/v1/me", { method: "PUT", body }),
   meChangePassword: (currentPassword: string, newPassword: string) =>
     request<{ message: string }>("/api/v1/me/password", {
@@ -228,11 +232,44 @@ export const api = {
   myProjects: () => request<ApiMemberProjectLink[]>("/api/v1/me/projects"),
   updateMyProjects: (links: { projectId: string; role: string }[]) =>
     request<void>("/api/v1/me/projects", { method: "PUT", body: links }),
+  meCreateProject: (body: {
+    titlePt: string;
+    descriptionPt?: string;
+    status?: string;
+    year?: number | null;
+    articleUrl?: string;
+    tags?: string[];
+    advisorId?: string | null;
+    participantIds?: string[];
+  }) => request<ApiProject>("/api/v1/me/projects/new", { method: "POST", body }),
   /** Member photo upload — multipart to /me/media/photo. */
   meUploadPhoto: async (file: File): Promise<{ url: string }> => {
     const form = new FormData();
     form.append("file", file);
     const res = await fetch(`${API_BASE}/api/v1/me/media/photo`, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    });
+    const text = await res.text();
+    const parsed = text ? JSON.parse(text) : null;
+    if (!res.ok) {
+      const message =
+        parsed && typeof parsed === "object" && "message" in parsed && typeof parsed.message === "string"
+          ? parsed.message
+          : res.statusText || `Upload failed: ${res.status}`;
+      throw new ApiError(res.status, message, parsed);
+    }
+    const rel = (parsed as { url: string }).url;
+    const url = rel.startsWith("http") ? rel : `${API_BASE}${rel}`;
+    return { url };
+  },
+
+  /** Banner image upload — multipart to /me/media/banner. */
+  meUploadBanner: async (file: File): Promise<{ url: string }> => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE}/api/v1/me/media/banner`, {
       method: "POST",
       credentials: "include",
       body: form,

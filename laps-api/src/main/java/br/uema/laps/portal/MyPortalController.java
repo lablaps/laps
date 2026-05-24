@@ -4,6 +4,9 @@ import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
 import br.uema.laps.project.MemberProject;
 import br.uema.laps.project.MemberProjectRepository;
+import br.uema.laps.project.Project;
+import br.uema.laps.project.ProjectRepository;
+import br.uema.laps.project.ProjectStatus;
 import br.uema.laps.publication.Publication;
 import br.uema.laps.publication.PublicationRepository;
 import br.uema.laps.security.AuthenticatedMember;
@@ -20,8 +23,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +42,7 @@ public class MyPortalController {
     private final MemberRepository memberRepository;
     private final PublicationRepository publicationRepository;
     private final MemberProjectRepository memberProjectRepository;
+    private final ProjectRepository projectRepository;
     private final PasswordEncoder passwordEncoder;
     private final TranslationService translationService;
 
@@ -44,11 +50,13 @@ public class MyPortalController {
             MemberRepository memberRepository,
             PublicationRepository publicationRepository,
             MemberProjectRepository memberProjectRepository,
+            ProjectRepository projectRepository,
             PasswordEncoder passwordEncoder,
             TranslationService translationService) {
         this.memberRepository = memberRepository;
         this.publicationRepository = publicationRepository;
         this.memberProjectRepository = memberProjectRepository;
+        this.projectRepository = projectRepository;
         this.passwordEncoder = passwordEncoder;
         this.translationService = translationService;
     }
@@ -76,6 +84,10 @@ public class MyPortalController {
         out.put("githubUrl", me.getGithubUrl());
         out.put("contactEmail", me.getContactEmail());
         out.put("roadmap", me.getRoadmap());
+        out.put("areas", me.getAreas());
+        out.put("interests", me.getInterests());
+        out.put("bannerColor", me.getBannerColor());
+        out.put("bannerImageUrl", me.getBannerImageUrl());
         out.put("mustChangePassword", me.isMustChangePassword());
         out.put("emailVerified", me.isEmailVerified());
         // Expose the resolved security role (MANAGER / MEMBER) so the SPA can
@@ -257,6 +269,14 @@ public class MyPortalController {
             me.setContactEmail(u.contactEmail());
         if (u.roadmap() != null)
             me.setRoadmap(u.roadmap());
+        if (u.areas() != null)
+            me.setAreas(u.areas());
+        if (u.interests() != null)
+            me.setInterests(u.interests());
+        if (u.bannerColor() != null)
+            me.setBannerColor(u.bannerColor().isBlank() ? null : u.bannerColor());
+        if (u.bannerImageUrl() != null)
+            me.setBannerImageUrl(u.bannerImageUrl().isBlank() ? null : u.bannerImageUrl());
         // Email change invalidates verification — the SPA's snackbar will
         // re-fire prompting the member to verify the new address.
         if (u.email() != null && !u.email().equals(me.getEmail())) {
@@ -267,10 +287,75 @@ public class MyPortalController {
         }
     }
 
+    /**
+     * Creates a project owned by the authenticated member. The member is added
+     * as CO_LEAD (or RESEARCHER if no advisor is selected). An optional advisor
+     * (any HEAD/COORDINATOR) is added as LEAD. Additional participants are added
+     * as RESEARCHER. Title and description are auto-translated PT→EN/FR.
+     */
+    @PostMapping("/projects/new")
+    @Transactional
+    public ResponseEntity<Project> createMyProject(@RequestBody MemberProjectCreate req) {
+        Member me = loadMe();
+        guardLockedUntilPasswordChanged(me);
+
+        Project p = new Project();
+        p.setSlug(toSlug(req.titlePt()) + "-" + UUID.randomUUID().toString().substring(0, 8));
+        p.setStatus(req.status() != null ? ProjectStatus.valueOf(req.status()) : ProjectStatus.ACTIVE);
+        p.setTitlePt(req.titlePt());
+        p.setDescriptionPt(req.descriptionPt());
+        if (req.titlePt() != null && !req.titlePt().isBlank()) {
+            p.setTitleEn(translationService.translate(req.titlePt(), "en"));
+            p.setTitleFr(translationService.translate(req.titlePt(), "fr"));
+        }
+        if (req.descriptionPt() != null && !req.descriptionPt().isBlank()) {
+            p.setDescriptionEn(translationService.translate(req.descriptionPt(), "en"));
+            p.setDescriptionFr(translationService.translate(req.descriptionPt(), "fr"));
+        }
+        if (req.tags() != null)
+            p.setTags(req.tags());
+        if (req.year() != null)
+            p.setYear(req.year().shortValue());
+        if (req.articleUrl() != null && !req.articleUrl().isBlank())
+            p.setArticleUrl(req.articleUrl());
+
+        Project saved = projectRepository.save(p);
+
+        // Advisor → LEAD
+        if (req.advisorId() != null) {
+            memberProjectRepository.save(new MemberProject(saved.getId(), req.advisorId(), "LEAD"));
+        }
+
+        // Creator → CO_LEAD when an advisor exists, otherwise RESEARCHER
+        String myRole = req.advisorId() != null ? "CO_LEAD" : "RESEARCHER";
+        memberProjectRepository.save(new MemberProject(saved.getId(), me.getId(), myRole));
+
+        // Additional participants → RESEARCHER (skip creator and advisor)
+        if (req.participantIds() != null) {
+            for (UUID pid : req.participantIds()) {
+                if (!pid.equals(me.getId()) && !pid.equals(req.advisorId())) {
+                    memberProjectRepository.save(new MemberProject(saved.getId(), pid, "RESEARCHER"));
+                }
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
     private static String randomToken() {
         byte[] buf = new byte[32];
         RNG.nextBytes(buf);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
+    }
+
+    private static String toSlug(String text) {
+        if (text == null || text.isBlank()) return "project";
+        String normalized = Normalizer.normalize(text, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        String slug = normalized.toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+        return slug.length() > 60 ? slug.substring(0, 60) : slug;
     }
 
     public record MyProfileUpdate(
@@ -283,7 +368,11 @@ public class MyPortalController {
             @Size(max = 500) String githubUrl,
             @Size(max = 255) String contactEmail,
             @Size(max = 255) String email,
-            @Size(max = 8000) String roadmap) {
+            @Size(max = 8000) String roadmap,
+            @Size(max = 4000) String areas,
+            @Size(max = 4000) String interests,
+            @Size(max = 50) String bannerColor,
+            @Size(max = 500) String bannerImageUrl) {
     }
 
     public record ChangePasswordRequest(
@@ -297,5 +386,16 @@ public class MyPortalController {
     public record MyProjectLink(
             @NotNull UUID projectId,
             @NotBlank String role) {
+    }
+
+    public record MemberProjectCreate(
+            @NotBlank String titlePt,
+            String descriptionPt,
+            String status,
+            Integer year,
+            String articleUrl,
+            List<String> tags,
+            UUID advisorId,
+            List<UUID> participantIds) {
     }
 }

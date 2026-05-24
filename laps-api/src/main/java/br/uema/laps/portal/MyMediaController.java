@@ -30,4 +30,9 @@ public class MyMediaController {
     public Map<String, String> uploadPhoto(@RequestParam("file") MultipartFile file) throws IOException {
         return Map.of("url", photoUploadService.store(file));
     }
+
+    @PostMapping(value = "/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, String> uploadBanner(@RequestParam("file") MultipartFile file) throws IOException {
+        return Map.of("url", photoUploadService.store(file));
+    }
 }

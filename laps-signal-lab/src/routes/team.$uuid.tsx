@@ -163,8 +163,12 @@ function TeamMemberPage() {
   const { Icon } = cfg;
 
   const seed = staticTeam.find((s) => s.id === member.slug);
-  const memberAreas: AreaSlug[] = seed?.areas ?? [];
-  const tags = seed?.tags ?? [];
+  const memberAreas: AreaSlug[] = member.areas
+    ? (member.areas.split(",").map((s) => s.trim()).filter(Boolean) as AreaSlug[])
+    : (seed?.areas ?? []);
+  const tags = member.interests
+    ? member.interests.split(",").map((s) => s.trim()).filter(Boolean)
+    : (seed?.tags ?? []);
 
   const bioObj: Record<string, string | null> = {
     pt: member.bioPt,
@@ -246,7 +250,14 @@ function TeamMemberPage() {
 
           {/* HERO — cover band + identity */}
           <div className="relative overflow-hidden rounded-3xl border border-laps-blue/15 bg-white shadow-[0_20px_60px_-30px_rgba(11,78,141,0.35)]">
-            <div className={`relative h-40 bg-gradient-to-r ${cfg.band} md:h-48`}>
+            <div
+              className={`relative h-40 md:h-48 ${!member.bannerImageUrl ? `bg-gradient-to-r ${cfg.band}` : ""}`}
+              style={member.bannerImageUrl
+                ? { backgroundImage: `url(${member.bannerImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                : member.bannerColor
+                  ? { background: `linear-gradient(to right, ${member.bannerColor}, ${member.bannerColor}99)` }
+                  : undefined}
+            >
               <svg
                 className="absolute bottom-0 left-0 h-10 w-full text-white/45"
                 viewBox="0 0 200 20"

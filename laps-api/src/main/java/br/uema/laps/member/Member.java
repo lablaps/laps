@@ -85,6 +85,18 @@ public class Member {
     @Column(columnDefinition = "text")
     private String roadmap;
 
+    @Column(columnDefinition = "text")
+    private String areas;
+
+    @Column(columnDefinition = "text")
+    private String interests;
+
+    @Column(name = "banner_color", length = 50)
+    private String bannerColor;
+
+    @Column(name = "banner_image_url", columnDefinition = "text")
+    private String bannerImageUrl;
+
     @Column(name = "deleted_at")
     private Instant deletedAt;
 

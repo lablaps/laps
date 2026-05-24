@@ -1,20 +1,39 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
+  ArrowLeft,
+  BookOpen,
+  Briefcase,
+  Calendar,
   CheckCircle2,
+  Compass,
+  Crown,
+  Edit2,
+  GraduationCap,
+  ImageIcon,
   KeyRound,
   Lock,
   Mail,
+  Microscope,
+  Palette,
+  Plus,
   Save,
+  Shield,
   ShieldCheck,
+  Sparkles,
   Upload,
+  UserCheck,
+  Users,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { api, ApiError, type ApiProject, type MyProfile } from "@/lib/api";
+import { api, ApiError, type ApiMember, type ApiProject, type ApiResearchArea, type MyProfile } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { initials } from "@/lib/team-data";
+import { areas as staticAreas, type AreaSlug } from "@/lib/areas-data";
+import type { Tier } from "@/lib/team-data";
 
 export const Route = createFileRoute("/portal")({
   component: PortalPage,
@@ -25,6 +44,83 @@ export const Route = createFileRoute("/portal")({
     ],
   }),
 });
+
+// ───── Tier config (mirrors team.$uuid) ─────
+
+const tierMap: Record<string, Tier> = {
+  HEAD: "head",
+  COORDINATOR: "coordinator",
+  MANAGER: "manager",
+  DOCTORATE: "doctorate",
+  MASTER: "master",
+  UNDERGRAD: "undergrad",
+};
+
+const tierConfig: Record<Tier, { gradient: string; ring: string; chip: string; band: string; label: string; Icon: typeof Crown }> = {
+  head: {
+    gradient: "from-laps-navy to-laps-blue",
+    band: "from-laps-navy via-laps-blue to-laps-light",
+    ring: "ring-laps-light/40",
+    chip: "bg-gradient-to-r from-laps-navy to-laps-blue text-white",
+    label: "HEAD",
+    Icon: Crown,
+  },
+  coordinator: {
+    gradient: "from-violet-700 to-violet-400",
+    band: "from-violet-700 via-violet-400 to-violet-200",
+    ring: "ring-violet-200",
+    chip: "bg-violet-50 text-violet-700",
+    label: "COORDINATOR",
+    Icon: Shield,
+  },
+  manager: {
+    gradient: "from-purple-600 to-purple-300",
+    band: "from-purple-600 via-purple-300 to-purple-100",
+    ring: "ring-purple-200",
+    chip: "bg-purple-50 text-purple-700",
+    label: "MANAGER",
+    Icon: Briefcase,
+  },
+  doctorate: {
+    gradient: "from-laps-blue to-laps-light",
+    band: "from-laps-blue via-laps-light to-blue-200",
+    ring: "ring-laps-blue/30",
+    chip: "bg-laps-ghost text-laps-blue",
+    label: "DOCTORATE",
+    Icon: Microscope,
+  },
+  master: {
+    gradient: "from-emerald-500 to-emerald-300",
+    band: "from-emerald-500 via-emerald-300 to-emerald-100",
+    ring: "ring-emerald-200",
+    chip: "bg-emerald-50 text-emerald-700",
+    label: "MASTER",
+    Icon: GraduationCap,
+  },
+  undergrad: {
+    gradient: "from-amber-400 to-amber-200",
+    band: "from-amber-400 via-amber-200 to-amber-50",
+    ring: "ring-amber-200",
+    chip: "bg-amber-50 text-amber-700",
+    label: "UNDERGRAD",
+    Icon: Users,
+  },
+};
+
+// ───── Preset banner options ─────
+
+const BANNER_PRESETS = [
+  { label: "Navy Blue", value: "#0B4E8D" },
+  { label: "Sky", value: "#0EA5E9" },
+  { label: "Violet", value: "#7C3AED" },
+  { label: "Emerald", value: "#059669" },
+  { label: "Amber", value: "#D97706" },
+  { label: "Rose", value: "#E11D48" },
+  { label: "Slate", value: "#475569" },
+  { label: "Teal", value: "#0D9488" },
+];
+
+// ───── Main page ─────
 
 function PortalPage() {
   const navigate = useNavigate();
@@ -37,6 +133,33 @@ function PortalPage() {
     }
   }, [auth.isLoading, auth.isAuthenticated, navigate]);
 
+  const areasQuery = useQuery({
+    queryKey: ["areas"],
+    queryFn: () => api.areas(),
+    staleTime: 60_000,
+  });
+
+  const allMembersQuery = useQuery({
+    queryKey: ["members"],
+    queryFn: async () => {
+      const page = await api.members();
+      return page.content;
+    },
+    staleTime: 30_000,
+  });
+
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => api.projects(),
+    staleTime: 30_000,
+  });
+
+  const myProjectLinksQuery = useQuery({
+    queryKey: ["my-projects"],
+    queryFn: () => api.myProjects(),
+    staleTime: 10_000,
+  });
+
   if (auth.isLoading || !me) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-laps-ghost/20">
@@ -45,57 +168,1257 @@ function PortalPage() {
     );
   }
 
+  const tierKey = tierMap[me.currentRole] ?? "undergrad";
+  const cfg = tierConfig[tierKey];
+  const allMembers = allMembersQuery.data ?? [];
+  const allProjects = projectsQuery.data ?? [];
+  const myProjectLinks = myProjectLinksQuery.data ?? [];
+
+  // My linked projects
+  const linkedProjectIds = new Set(myProjectLinks.map((l) => l.projectId));
+  const myProjects = allProjects.filter((p) => linkedProjectIds.has(p.id));
+
+  // All projects I appear in as leader (created by me)
+  const myCreatedProjects = allProjects.filter((p) =>
+    p.leaders?.some((l) => l.memberId === me.id || l.member?.id === me.id)
+  );
+
+  // Combine and deduplicate
+  const portfolioProjects = [
+    ...myCreatedProjects,
+    ...myProjects.filter((p) => !myCreatedProjects.find((cp) => cp.id === p.id)),
+  ];
+
+  // Parse areas from DB or seed
+  const memberAreas = me.areas
+    ? me.areas.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+  const memberInterests = me.interests
+    ? me.interests.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  // Role start date
+  const roleStart = me.currentRoleStartedAt
+    ? new Date(me.currentRoleStartedAt).toLocaleDateString("pt-BR", { year: "numeric", month: "short" })
+    : null;
+
   return (
-    <div className="min-h-screen bg-laps-ghost/20">
-      <PortalHeader me={me} onLogout={() => api.logout().then(() => navigate({ to: "/login" }))} />
+    <div className="min-h-screen bg-gradient-to-b from-laps-ghost/30 via-white to-white">
+      {/* Top bar */}
+      <div className="mx-auto max-w-6xl px-6 pt-8">
+        <div className="mb-4 flex items-center justify-between">
+          <Link
+            to="/team"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-laps-navy/70 transition hover:text-laps-blue"
+          >
+            <ArrowLeft className="h-4 w-4" /> LAPS Researcher Network
+          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/team/$uuid"
+              params={{ uuid: me.id }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/25 bg-white px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-ghost"
+            >
+              Ver perfil público
+            </Link>
+            <button
+              type="button"
+              onClick={() => api.logout().then(() => navigate({ to: "/login" }))}
+              className="inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-white px-4 py-2 text-xs font-semibold text-laps-navy/75 transition hover:border-laps-blue/30 hover:text-laps-blue"
+            >
+              Sair
+            </button>
+          </div>
+        </div>
 
-      <main className="mx-auto max-w-5xl space-y-6 px-6 py-10">
-        {/* Account-state banners.
-            New users see (1) an info banner explaining the email-first flow
-            and (2) the email verification card. Once verified, both disappear
-            and the change-password card unlocks. */}
-        {auth.mustChangePassword && <FirstLoginBanner emailVerified={auth.emailVerified} />}
-        {!auth.emailVerified && <EmailVerificationBanner me={me} />}
+        {/* HERO CARD */}
+        <HeroCard
+          me={me}
+          cfg={cfg}
+          tierKey={tierKey}
+          roleStart={roleStart}
+          memberAreas={memberAreas}
+          portfolioProjects={portfolioProjects}
+        />
 
-        <ProfileEditor me={me} />
-        <ProjectsEditor />
-        <PasswordChangeCard emailVerified={auth.emailVerified} />
-      </main>
+        {/* TWO-COLUMN BODY */}
+        <div className="mt-8 grid gap-6 md:grid-cols-[1fr_2fr]">
+          {/* SIDEBAR */}
+          <aside className="flex flex-col gap-6">
+            {auth.mustChangePassword && <FirstLoginBanner emailVerified={auth.emailVerified} />}
+            {!auth.emailVerified && <EmailVerificationBanner me={me} />}
+
+            <AboutEditor me={me} />
+            <ResearchAreasEditor
+              me={me}
+              dbAreas={areasQuery.data ?? []}
+              currentAreas={memberAreas}
+            />
+            <InterestsEditor me={me} currentInterests={memberInterests} />
+          </aside>
+
+          {/* MAIN */}
+          <main className="flex flex-col gap-6">
+            <RoadmapEditor me={me} />
+            <ProjectsSection
+              me={me}
+              allMembers={allMembers}
+              portfolioProjects={portfolioProjects}
+              myProjectLinks={myProjectLinks}
+              allProjects={allProjects}
+            />
+            <PasswordChangeCard emailVerified={auth.emailVerified} />
+          </main>
+        </div>
+
+        <div className="pb-16" />
+      </div>
     </div>
   );
 }
 
-function PortalHeader({ me, onLogout }: { me: MyProfile; onLogout: () => void }) {
+// ───── Hero card ─────
+
+function HeroCard({
+  me,
+  cfg,
+  tierKey,
+  roleStart,
+  memberAreas,
+  portfolioProjects,
+}: {
+  me: MyProfile;
+  cfg: (typeof tierConfig)[Tier];
+  tierKey: Tier;
+  roleStart: string | null;
+  memberAreas: string[];
+  portfolioProjects: ApiProject[];
+}) {
+  const { Icon } = cfg;
+
   return (
-    <header className="border-b border-laps-navy/10 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-laps-blue">
-            LAPS · Portal
-          </p>
-          <h1 className="mt-0.5 text-base font-bold text-laps-navy">{me.fullName}</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden text-right md:block">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-laps-navy/55">
-              @{me.username ?? me.slug}
-            </p>
-            <p className="text-xs text-laps-navy/70">{me.email ?? "Sem email cadastrado"}</p>
+    <div className="relative overflow-hidden rounded-3xl border border-laps-blue/15 bg-white shadow-[0_20px_60px_-30px_rgba(11,78,141,0.35)]">
+      {/* Banner */}
+      <BannerEditor me={me} cfg={cfg} />
+
+      <div className="px-6 pb-10 md:px-10">
+        {/* Avatar */}
+        <AvatarEditor me={me} cfg={cfg} />
+
+        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-start md:justify-between md:gap-8">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-display text-3xl font-bold leading-tight text-laps-navy md:text-4xl">
+              {me.fullName}
+            </h1>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider ${cfg.chip}`}
+              >
+                <Icon className="h-3.5 w-3.5" /> {cfg.label}
+              </span>
+              {roleStart && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-laps-ghost/70 px-3 py-1.5 text-xs font-medium text-laps-navy/75">
+                  <Calendar className="h-3.5 w-3.5" /> desde {roleStart}
+                </span>
+              )}
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-white px-4 py-2 text-xs font-semibold text-laps-navy/75 transition hover:border-laps-blue/30 hover:text-laps-blue"
-          >
-            Sair
-          </button>
+
+          <div className="flex flex-wrap items-center gap-2 md:shrink-0">
+            {me.linkedinUrl && (
+              <a
+                href={me.linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-laps-navy px-3 py-2 text-xs font-semibold text-white transition hover:bg-laps-blue"
+              >
+                LinkedIn
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Quick stats */}
+        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+          <StatCard icon={Compass} label="RESEARCH AREAS" value={memberAreas.length} />
+          <StatCard icon={Sparkles} label="PROJECTS" value={portfolioProjects.length} />
+          <StatCard icon={BookOpen} label="PUBLICATIONS" value={0} />
         </div>
       </div>
-    </header>
+    </div>
   );
 }
 
-// ───── First-login info banner ─────
+// ───── Banner editor ─────
+
+function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tier] }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [customColor, setCustomColor] = useState(me.bannerColor ?? "");
+  const bannerRef = useRef<HTMLInputElement>(null);
+
+  const saveMutation = useMutation({
+    mutationFn: (patch: { bannerColor?: string; bannerImageUrl?: string }) =>
+      api.meUpdate(patch),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setOpen(false);
+    },
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => api.meUploadBanner(file),
+    onSuccess: (res) => {
+      saveMutation.mutate({ bannerImageUrl: res.url });
+    },
+  });
+
+  const bannerStyle = me.bannerImageUrl
+    ? { backgroundImage: `url(${me.bannerImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+    : me.bannerColor
+      ? { background: `linear-gradient(to right, ${me.bannerColor}, ${me.bannerColor}99)` }
+      : undefined;
+
+  return (
+    <div
+      className={`relative h-40 md:h-48 ${!me.bannerImageUrl && !me.bannerColor ? `bg-gradient-to-r ${cfg.band}` : ""}`}
+      style={bannerStyle}
+    >
+      <svg
+        className="absolute bottom-0 left-0 h-10 w-full text-white/45"
+        viewBox="0 0 200 20"
+        preserveAspectRatio="none"
+      >
+        <path
+          d="M0,10 Q25,2 50,10 T100,10 T150,10 T200,10"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          fill="none"
+        />
+      </svg>
+
+      {/* Edit button */}
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50"
+      >
+        <Palette className="h-3.5 w-3.5" /> Editar capa
+      </button>
+
+      {/* Banner editor panel */}
+      {open && (
+        <div className="absolute right-4 top-14 z-10 w-72 rounded-2xl border border-laps-navy/15 bg-white p-4 shadow-xl">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+            Cor de fundo
+          </p>
+          <div className="mb-3 grid grid-cols-4 gap-2">
+            {BANNER_PRESETS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => saveMutation.mutate({ bannerColor: p.value, bannerImageUrl: "" })}
+                title={p.label}
+                className="h-8 w-full rounded-lg border-2 border-transparent transition hover:border-laps-blue/50"
+                style={{ background: p.value }}
+              />
+            ))}
+          </div>
+          <div className="mb-3 flex gap-2">
+            <input
+              type="color"
+              value={customColor || "#0B4E8D"}
+              onChange={(e) => setCustomColor(e.target.value)}
+              className="h-9 w-10 cursor-pointer rounded border border-laps-navy/20 p-0.5"
+            />
+            <input
+              type="text"
+              value={customColor}
+              onChange={(e) => setCustomColor(e.target.value)}
+              placeholder="#0B4E8D"
+              className="flex-1 rounded-md border border-laps-navy/15 px-2 text-xs text-laps-navy"
+            />
+            <button
+              type="button"
+              onClick={() => saveMutation.mutate({ bannerColor: customColor, bannerImageUrl: "" })}
+              disabled={!customColor || saveMutation.isPending}
+              className="rounded-md bg-laps-blue px-3 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+            >
+              OK
+            </button>
+          </div>
+          <div className="border-t border-laps-navy/10 pt-3">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Imagem de capa
+            </p>
+            <input
+              ref={bannerRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadMutation.mutate(file);
+                e.target.value = "";
+              }}
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => bannerRef.current?.click()}
+                disabled={uploadMutation.isPending || saveMutation.isPending}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-laps-blue/25 bg-white px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-ghost disabled:opacity-60"
+              >
+                <ImageIcon className="h-3.5 w-3.5" />
+                {uploadMutation.isPending ? "Enviando…" : "Enviar imagem"}
+              </button>
+              {me.bannerImageUrl && (
+                <button
+                  type="button"
+                  onClick={() => saveMutation.mutate({ bannerImageUrl: "" })}
+                  className="rounded-md border border-red-200 bg-white px-2 text-xs text-red-600 hover:bg-red-50"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="mt-3 w-full rounded-md bg-laps-ghost/60 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+          >
+            Fechar
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ───── Avatar editor ─────
+
+function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tier] }) {
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { Icon } = cfg;
+
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => api.meUploadPhoto(file),
+    onSuccess: (res) => {
+      api.meUpdate({ photoUrl: res.url }).then(() => {
+        qc.invalidateQueries({ queryKey: ["me"] });
+      });
+    },
+  });
+
+  return (
+    <div className="-mt-20 flex justify-start">
+      <div className={`group relative h-36 w-36 shrink-0 rounded-full bg-white p-1.5 shadow-xl ring-4 ${cfg.ring}`}>
+        {me.photoUrl ? (
+          <img src={me.photoUrl} alt={me.fullName} className="h-full w-full rounded-full object-cover" />
+        ) : (
+          <div className={`flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br ${cfg.gradient} text-4xl font-bold text-white`}>
+            {initials(me.fullName)}
+          </div>
+        )}
+        <div className="absolute -right-1 -top-1 flex h-10 w-10 items-center justify-center rounded-full bg-white text-laps-blue shadow ring-2 ring-white">
+          <Icon className="h-5 w-5" />
+        </div>
+        {/* Upload overlay */}
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploadMutation.isPending}
+          className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100"
+        >
+          <Upload className="h-6 w-6 text-white" />
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) uploadMutation.mutate(file);
+            e.target.value = "";
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ───── About / Bio editor ─────
+
+function AboutEditor({ me }: { me: MyProfile }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(me.bioPt ?? "");
+  const [saved, setSaved] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: (text: string) => api.meUpdate({ bioPt: text }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setSaved(true);
+      setEditing(false);
+      setTimeout(() => setSaved(false), 2000);
+    },
+  });
+
+  return (
+    <PortfolioCard
+      title="SOBRE"
+      icon={UserCheck}
+      action={
+        !editing ? (
+          <button
+            type="button"
+            onClick={() => { setValue(me.bioPt ?? ""); setEditing(true); }}
+            className="inline-flex items-center gap-1 rounded-md border border-laps-navy/15 px-2 py-1 text-[10px] font-semibold text-laps-navy/60 hover:border-laps-blue/30 hover:text-laps-blue"
+          >
+            <Edit2 className="h-3 w-3" /> Editar
+          </button>
+        ) : null
+      }
+    >
+      {editing ? (
+        <div className="space-y-2">
+          <textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={4}
+            className="w-full rounded-md border border-laps-navy/15 bg-white px-3 py-2 text-sm text-laps-navy outline-none focus:border-laps-blue/40 focus:ring-2 focus:ring-laps-blue/15"
+            placeholder="Escreva sua bio em português…"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => mutation.mutate(value)}
+              disabled={mutation.isPending}
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {mutation.isPending ? "Salvando…" : "Salvar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="rounded-md border border-laps-navy/15 px-3 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <p className="text-sm leading-relaxed text-laps-navy/80">
+            {me.bioPt || <span className="italic text-laps-navy/40">Sem bio ainda. Clique em Editar para adicionar.</span>}
+          </p>
+          {saved && (
+            <p className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-700">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
+            </p>
+          )}
+        </div>
+      )}
+    </PortfolioCard>
+  );
+}
+
+// ───── Research areas editor ─────
+
+function ResearchAreasEditor({
+  me,
+  dbAreas,
+  currentAreas,
+}: {
+  me: MyProfile;
+  dbAreas: ApiResearchArea[];
+  currentAreas: string[];
+}) {
+  const qc = useQueryClient();
+  const [areas, setAreas] = useState<string[]>(currentAreas);
+  const [newArea, setNewArea] = useState("");
+  const [showInput, setShowInput] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: (next: string[]) => api.meUpdate({ areas: next.join(",") }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setDirty(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    },
+  });
+
+  function addArea(slug: string) {
+    const trimmed = slug.trim();
+    if (!trimmed || areas.includes(trimmed)) return;
+    const next = [...areas, trimmed];
+    setAreas(next);
+    setDirty(true);
+    setNewArea("");
+    setShowInput(false);
+  }
+
+  function removeArea(slug: string) {
+    const next = areas.filter((a) => a !== slug);
+    setAreas(next);
+    setDirty(true);
+  }
+
+  // Resolve color from dbAreas if it's a known slug
+  function areaColor(slug: string): string | undefined {
+    const found = dbAreas.find((a) => a.slug === slug);
+    return found?.color;
+  }
+
+  function areaLabel(slug: string): string {
+    const found = dbAreas.find((a) => a.slug === slug);
+    return found?.namePt ?? slug;
+  }
+
+  const unused = dbAreas.filter((a) => !areas.includes(a.slug));
+
+  return (
+    <PortfolioCard
+      title="ÁREAS DE PESQUISA"
+      icon={Compass}
+      action={
+        dirty ? (
+          <button
+            type="button"
+            onClick={() => mutation.mutate(areas)}
+            disabled={mutation.isPending}
+            className="inline-flex items-center gap-1 rounded-md bg-laps-blue px-2 py-1 text-[10px] font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+          >
+            <Save className="h-3 w-3" /> {mutation.isPending ? "…" : "Salvar"}
+          </button>
+        ) : null
+      }
+    >
+      <div className="space-y-3">
+        {/* Current areas */}
+        <div className="flex flex-wrap gap-1.5">
+          {areas.map((slug) => {
+            const color = areaColor(slug);
+            return (
+              <span
+                key={slug}
+                className="inline-flex items-center gap-1.5 rounded-full border border-laps-light/40 bg-white px-2.5 py-1 text-[11px] font-medium text-laps-navy/80"
+              >
+                <span
+                  className="inline-block h-2 w-2 shrink-0 rounded-full"
+                  style={{ background: color ?? "#94a3b8" }}
+                />
+                {areaLabel(slug)}
+                <button
+                  type="button"
+                  onClick={() => removeArea(slug)}
+                  className="ml-0.5 rounded-full text-laps-navy/40 hover:text-red-600"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setShowInput(!showInput)}
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-laps-blue/40 px-2.5 py-1 text-[11px] font-medium text-laps-blue/70 transition hover:border-laps-blue hover:text-laps-blue"
+          >
+            <Plus className="h-3 w-3" /> Adicionar
+          </button>
+        </div>
+
+        {/* Add area panel */}
+        {showInput && (
+          <div className="space-y-2 rounded-xl border border-laps-navy/10 bg-laps-ghost/20 p-3">
+            {unused.length > 0 && (
+              <div>
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-laps-navy/50">
+                  Áreas existentes
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {unused.map((a) => (
+                    <button
+                      key={a.slug}
+                      type="button"
+                      onClick={() => addArea(a.slug)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-laps-light/40 bg-white px-2.5 py-1 text-[11px] font-medium text-laps-navy/70 transition hover:border-laps-blue/40 hover:text-laps-blue"
+                    >
+                      <span
+                        className="inline-block h-2 w-2 rounded-full"
+                        style={{ background: a.color }}
+                      />
+                      {a.namePt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div>
+              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-laps-navy/50">
+                Nova área (texto livre)
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  value={newArea}
+                  onChange={(e) => setNewArea(e.target.value)}
+                  placeholder="Ex: Processamento de Sinais"
+                  className="h-8 flex-1 text-xs"
+                  onKeyDown={(e) => e.key === "Enter" && addArea(newArea)}
+                />
+                <button
+                  type="button"
+                  onClick={() => addArea(newArea)}
+                  disabled={!newArea.trim()}
+                  className="rounded-md bg-laps-blue px-3 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+                >
+                  Adicionar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {saved && (
+          <p className="inline-flex items-center gap-1 text-xs text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
+          </p>
+        )}
+      </div>
+    </PortfolioCard>
+  );
+}
+
+// ───── Interests / tags editor ─────
+
+function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInterests: string[] }) {
+  const qc = useQueryClient();
+  const [interests, setInterests] = useState<string[]>(currentInterests);
+  const [newTag, setNewTag] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: (next: string[]) => api.meUpdate({ interests: next.join(",") }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setDirty(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    },
+  });
+
+  function addTag(tag: string) {
+    const trimmed = tag.trim();
+    if (!trimmed || interests.includes(trimmed)) return;
+    const next = [...interests, trimmed];
+    setInterests(next);
+    setDirty(true);
+    setNewTag("");
+  }
+
+  function removeTag(tag: string) {
+    const next = interests.filter((t) => t !== tag);
+    setInterests(next);
+    setDirty(true);
+  }
+
+  return (
+    <PortfolioCard
+      title="INTERESSES"
+      icon={Sparkles}
+      action={
+        dirty ? (
+          <button
+            type="button"
+            onClick={() => mutation.mutate(interests)}
+            disabled={mutation.isPending}
+            className="inline-flex items-center gap-1 rounded-md bg-laps-blue px-2 py-1 text-[10px] font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+          >
+            <Save className="h-3 w-3" /> {mutation.isPending ? "…" : "Salvar"}
+          </button>
+        ) : null
+      }
+    >
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-1.5">
+          {interests.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-ghost/60 px-2 py-0.5 text-[11px] font-medium text-laps-blue"
+            >
+              {tag}
+              <button
+                type="button"
+                onClick={() => removeTag(tag)}
+                className="rounded-full text-laps-blue/50 hover:text-red-600"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Input
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            placeholder="Ex: Machine Learning"
+            className="h-8 flex-1 text-xs"
+            onKeyDown={(e) => e.key === "Enter" && addTag(newTag)}
+          />
+          <button
+            type="button"
+            onClick={() => addTag(newTag)}
+            disabled={!newTag.trim()}
+            className="inline-flex items-center gap-1 rounded-md border border-laps-blue/25 bg-white px-2 py-1.5 text-xs font-semibold text-laps-blue hover:bg-laps-ghost disabled:opacity-60"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        {saved && (
+          <p className="inline-flex items-center gap-1 text-xs text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
+          </p>
+        )}
+      </div>
+    </PortfolioCard>
+  );
+}
+
+// ───── Roadmap editor ─────
+
+function RoadmapEditor({ me }: { me: MyProfile }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(me.roadmap ?? "");
+  const [saved, setSaved] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: (text: string) => api.meUpdate({ roadmap: text }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setSaved(true);
+      setEditing(false);
+      setTimeout(() => setSaved(false), 2000);
+    },
+  });
+
+  if (!editing && !me.roadmap) return null;
+
+  return (
+    <PortfolioCard
+      title="ROTEIRO DE PESQUISA"
+      icon={Compass}
+      action={
+        !editing ? (
+          <button
+            type="button"
+            onClick={() => { setValue(me.roadmap ?? ""); setEditing(true); }}
+            className="inline-flex items-center gap-1 rounded-md border border-laps-navy/15 px-2 py-1 text-[10px] font-semibold text-laps-navy/60 hover:border-laps-blue/30 hover:text-laps-blue"
+          >
+            <Edit2 className="h-3 w-3" /> Editar
+          </button>
+        ) : null
+      }
+    >
+      {editing ? (
+        <div className="space-y-2">
+          <textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={4}
+            className="w-full rounded-md border border-laps-navy/15 bg-white px-3 py-2 text-sm text-laps-navy outline-none focus:border-laps-blue/40 focus:ring-2 focus:ring-laps-blue/15"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => mutation.mutate(value)}
+              disabled={mutation.isPending}
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {mutation.isPending ? "Salvando…" : "Salvar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="rounded-md border border-laps-navy/15 px-3 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="whitespace-pre-line text-sm leading-relaxed text-laps-navy/80">{me.roadmap}</p>
+      )}
+      {saved && (
+        <p className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-700">
+          <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
+        </p>
+      )}
+    </PortfolioCard>
+  );
+}
+
+// ───── Projects section ─────
+
+function ProjectsSection({
+  me,
+  allMembers,
+  portfolioProjects,
+  myProjectLinks,
+  allProjects,
+}: {
+  me: MyProfile;
+  allMembers: ApiMember[];
+  portfolioProjects: ApiProject[];
+  myProjectLinks: { projectId: string; role: string }[];
+  allProjects: ApiProject[];
+}) {
+  const [creating, setCreating] = useState(false);
+  const qc = useQueryClient();
+
+  return (
+    <PortfolioCard title="PROJETOS" icon={Sparkles}>
+      <div className="space-y-3">
+        {/* Existing projects */}
+        {portfolioProjects.map((p) => (
+          <ProjectCard key={p.id} project={p} me={me} />
+        ))}
+
+        {portfolioProjects.length === 0 && !creating && (
+          <p className="text-sm italic text-laps-navy/45">
+            Nenhum projeto ainda. Crie um abaixo!
+          </p>
+        )}
+
+        {/* Create new project */}
+        {creating ? (
+          <CreateProjectForm
+            me={me}
+            allMembers={allMembers}
+            onCancel={() => setCreating(false)}
+            onCreated={() => {
+              setCreating(false);
+              qc.invalidateQueries({ queryKey: ["projects"] });
+              qc.invalidateQueries({ queryKey: ["my-projects"] });
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-laps-blue/40 py-3 text-sm font-semibold text-laps-blue/70 transition hover:border-laps-blue hover:text-laps-blue hover:bg-laps-ghost/20"
+          >
+            <Plus className="h-4 w-4" /> Criar novo projeto
+          </button>
+        )}
+      </div>
+
+      {/* Link to existing projects section */}
+      <div className="mt-6 border-t border-laps-navy/8 pt-4">
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-laps-navy/50">
+          Vincular a projetos existentes
+        </p>
+        <ExistingProjectLinker
+          me={me}
+          allProjects={allProjects}
+          myProjectLinks={myProjectLinks}
+        />
+      </div>
+    </PortfolioCard>
+  );
+}
+
+function ProjectCard({ project, me }: { project: ApiProject; me: MyProfile }) {
+  const myLink = project.leaders?.find(
+    (l) => l.memberId === me.id || l.member?.id === me.id
+  );
+  const roleLabel =
+    myLink?.role === "LEAD" ? "Orientador" :
+    myLink?.role === "CO_LEAD" ? "Co-orientador" : "Pesquisador";
+
+  return (
+    <div className="rounded-xl border border-laps-blue/15 bg-gradient-to-br from-white to-laps-ghost/30 p-4 transition hover:border-laps-blue/30 hover:shadow-sm">
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <h4 className="text-sm font-bold text-laps-navy">
+          {project.titlePt || project.titleEn || project.slug}
+        </h4>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+            project.status === "ACTIVE"
+              ? "bg-laps-blue/10 text-laps-blue"
+              : "bg-laps-navy/10 text-laps-navy"
+          }`}
+        >
+          {project.status === "ACTIVE" ? "Ativo" : "Concluído"}
+        </span>
+      </div>
+      {myLink && myLink.role !== "RESEARCHER" && (
+        <div className="mb-2 inline-flex rounded-full bg-laps-ghost px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-laps-blue">
+          {roleLabel}
+        </div>
+      )}
+      {project.tags.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {project.tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded border border-laps-light/40 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-laps-navy/70"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+      {project.descriptionPt && (
+        <p className="text-xs leading-relaxed text-laps-navy/70">{project.descriptionPt}</p>
+      )}
+    </div>
+  );
+}
+
+function CreateProjectForm({
+  me,
+  allMembers,
+  onCancel,
+  onCreated,
+}: {
+  me: MyProfile;
+  allMembers: ApiMember[];
+  onCancel: () => void;
+  onCreated: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState<"ACTIVE" | "COMPLETED">("ACTIVE");
+  const [year, setYear] = useState("");
+  const [articleUrl, setArticleUrl] = useState("");
+  const [tagInput, setTagInput] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [advisorId, setAdvisorId] = useState("");
+  const [participantIds, setParticipantIds] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      api.meCreateProject({
+        titlePt: title,
+        descriptionPt: description,
+        status,
+        year: year ? parseInt(year) : null,
+        articleUrl: articleUrl || undefined,
+        tags,
+        advisorId: advisorId || null,
+        participantIds,
+      }),
+    onSuccess: onCreated,
+    onError: (err) => setError(err instanceof ApiError ? err.message : "Erro ao criar projeto."),
+  });
+
+  // Filter HEAD and COORDINATOR members as potential advisors
+  const potentialAdvisors = allMembers.filter(
+    (m) => (m.currentRole === "HEAD" || m.currentRole === "COORDINATOR") && m.id !== me.id
+  );
+
+  // All other members as potential participants (excluding self and selected advisor)
+  const potentialParticipants = allMembers.filter(
+    (m) => m.id !== me.id && m.id !== advisorId && m.status === "ACTIVE"
+  );
+
+  function addTag() {
+    const t = tagInput.trim();
+    if (t && !tags.includes(t)) setTags([...tags, t]);
+    setTagInput("");
+  }
+
+  function toggleParticipant(id: string) {
+    setParticipantIds((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-laps-blue/20 bg-gradient-to-br from-laps-ghost/30 to-white p-4 shadow-sm">
+      <h4 className="mb-4 text-sm font-bold text-laps-navy">Novo projeto</h4>
+
+      <div className="space-y-3">
+        {/* Title */}
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+            Título *
+          </label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Título do projeto"
+            className="h-10 text-sm"
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+            Descrição
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Descrição breve do projeto…"
+            className="w-full rounded-md border border-laps-navy/15 bg-white px-3 py-2 text-sm text-laps-navy outline-none focus:border-laps-blue/40 focus:ring-2 focus:ring-laps-blue/15"
+          />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          {/* Status */}
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Status
+            </label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as "ACTIVE" | "COMPLETED")}
+              className="w-full rounded-md border border-laps-navy/15 bg-white px-2 py-2 text-sm text-laps-navy"
+            >
+              <option value="ACTIVE">Ativo</option>
+              <option value="COMPLETED">Concluído</option>
+            </select>
+          </div>
+
+          {/* Year */}
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Ano
+            </label>
+            <Input
+              type="number"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              placeholder="2024"
+              className="h-10 text-sm"
+            />
+          </div>
+
+          {/* Article URL */}
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Link do artigo
+            </label>
+            <Input
+              value={articleUrl}
+              onChange={(e) => setArticleUrl(e.target.value)}
+              placeholder="https://…"
+              className="h-10 text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+            Tags
+          </label>
+          <div className="flex gap-2">
+            <Input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              placeholder="Ex: Computer Vision"
+              className="h-9 flex-1 text-xs"
+              onKeyDown={(e) => e.key === "Enter" && addTag()}
+            />
+            <button
+              type="button"
+              onClick={addTag}
+              className="rounded-md border border-laps-blue/25 bg-white px-2 text-xs font-semibold text-laps-blue hover:bg-laps-ghost"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          {tags.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {tags.map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center gap-1 rounded border border-laps-light/40 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-laps-navy/70"
+                >
+                  {t}
+                  <button type="button" onClick={() => setTags(tags.filter((x) => x !== t))}>
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Advisor */}
+        {potentialAdvisors.length > 0 && (
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Orientador / Professor responsável
+            </label>
+            <select
+              value={advisorId}
+              onChange={(e) => setAdvisorId(e.target.value)}
+              className="w-full rounded-md border border-laps-navy/15 bg-white px-2 py-2 text-sm text-laps-navy"
+            >
+              <option value="">— Nenhum —</option>
+              {potentialAdvisors.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.fullName}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Participants */}
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+            Outros participantes
+          </label>
+          <div className="max-h-36 overflow-y-auto rounded-lg border border-laps-navy/10 bg-laps-ghost/10 p-2 space-y-1">
+            {potentialParticipants.length === 0 ? (
+              <p className="text-xs text-laps-navy/40 p-1">Nenhum outro membro disponível.</p>
+            ) : (
+              potentialParticipants.map((m) => (
+                <label
+                  key={m.id}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-xs font-medium text-laps-navy/80 hover:bg-laps-ghost/40"
+                >
+                  <input
+                    type="checkbox"
+                    checked={participantIds.includes(m.id)}
+                    onChange={() => toggleParticipant(m.id)}
+                    className="rounded border-laps-navy/30 text-laps-blue"
+                  />
+                  {m.fullName}
+                  <span className="text-[10px] text-laps-navy/40">({m.currentRole})</span>
+                </label>
+              ))
+            )}
+          </div>
+        </div>
+
+        {error && (
+          <p className="flex items-center gap-1.5 text-xs text-red-700">
+            <AlertCircle className="h-3.5 w-3.5" /> {error}
+          </p>
+        )}
+
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending || !title.trim()}
+            className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-4 py-2 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+          >
+            <Save className="h-3.5 w-3.5" />
+            {mutation.isPending ? "Criando…" : "Criar projeto"}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-md border border-laps-navy/15 px-4 py-2 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ExistingProjectLinker({
+  me,
+  allProjects,
+  myProjectLinks,
+}: {
+  me: MyProfile;
+  allProjects: ApiProject[];
+  myProjectLinks: { projectId: string; role: string }[];
+}) {
+  const qc = useQueryClient();
+  const [pending, setPending] = useState<{ projectId: string; role: string }[] | null>(null);
+  const editable = pending ?? myProjectLinks.map((l) => ({ projectId: l.projectId, role: l.role }));
+
+  const mutation = useMutation({
+    mutationFn: (next: { projectId: string; role: string }[]) => api.updateMyProjects(next),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-projects"] });
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      setPending(null);
+    },
+  });
+
+  // Only show projects not already in the portfolio (created by them)
+  const linkable = allProjects.filter(
+    (p) => !p.leaders?.some((l) => l.memberId === me.id || l.member?.id === me.id)
+  );
+
+  function toggle(p: ApiProject) {
+    const current = editable.find((l) => l.projectId === p.id);
+    const next = current
+      ? editable.filter((l) => l.projectId !== p.id)
+      : [...editable, { projectId: p.id, role: "RESEARCHER" }];
+    setPending(next);
+  }
+
+  if (linkable.length === 0) return <p className="text-xs text-laps-navy/40">Não há outros projetos para vincular.</p>;
+
+  return (
+    <div className="space-y-2">
+      {linkable.map((p) => {
+        const linked = !!editable.find((l) => l.projectId === p.id);
+        return (
+          <div
+            key={p.id}
+            className={`flex items-center justify-between gap-2 rounded-lg border p-2.5 transition ${
+              linked ? "border-laps-blue/30 bg-laps-ghost/20" : "border-laps-navy/10 bg-white"
+            }`}
+          >
+            <span className="truncate text-xs font-medium text-laps-navy/85">
+              {p.titlePt || p.titleEn || p.slug}
+            </span>
+            <button
+              type="button"
+              onClick={() => toggle(p)}
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
+                linked
+                  ? "border border-red-200 bg-white text-red-600 hover:bg-red-50"
+                  : "border border-laps-blue/25 bg-white text-laps-blue hover:bg-laps-ghost"
+              }`}
+            >
+              {linked ? "Remover" : "Vincular"}
+            </button>
+          </div>
+        );
+      })}
+      {pending && (
+        <button
+          type="button"
+          onClick={() => mutation.mutate(editable)}
+          disabled={mutation.isPending}
+          className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+        >
+          <Save className="h-3.5 w-3.5" />
+          {mutation.isPending ? "Salvando…" : "Salvar vínculos"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ───── Account ─────
 
 function FirstLoginBanner({ emailVerified }: { emailVerified: boolean }) {
   return (
@@ -125,12 +1448,8 @@ function FirstLoginBanner({ emailVerified }: { emailVerified: boolean }) {
   );
 }
 
-// ───── Email verification banner ─────
-
 function EmailVerificationBanner({ me }: { me: MyProfile }) {
-  const [tokenIssued, setTokenIssued] = useState<{ token: string; expiresAt: string } | null>(
-    null
-  );
+  const [tokenIssued, setTokenIssued] = useState<{ token: string; expiresAt: string } | null>(null);
   const [verifyToken, setVerifyToken] = useState("");
   const [error, setError] = useState<string | null>(null);
   const qc = useQueryClient();
@@ -220,363 +1539,6 @@ function EmailVerificationBanner({ me }: { me: MyProfile }) {
   );
 }
 
-// ───── Profile editor ─────
-
-function ProfileEditor({ me }: { me: MyProfile }) {
-  const qc = useQueryClient();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({
-    email: me.email ?? "",
-    bioPt: me.bioPt ?? "",
-    photoUrl: me.photoUrl ?? "",
-    linkedinUrl: me.linkedinUrl ?? "",
-    lattesUrl: me.lattesUrl ?? "",
-    githubUrl: me.githubUrl ?? "",
-    contactEmail: me.contactEmail ?? "",
-    roadmap: me.roadmap ?? "",
-  });
-  const [savedAt, setSavedAt] = useState<number | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-
-  const saveMutation = useMutation({
-    mutationFn: () =>
-      api.meUpdate({
-        ...form,
-        // PT only — backend auto-translates to EN/FR on save.
-        bioEn: undefined,
-        bioFr: undefined,
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["me"] });
-      qc.invalidateQueries({ queryKey: ["members"] });
-      qc.invalidateQueries({ queryKey: ["graph"] });
-      setSavedAt(Date.now());
-    },
-  });
-
-  const uploadMutation = useMutation({
-    mutationFn: (file: File) => api.meUploadPhoto(file),
-    onSuccess: (res) => {
-      setForm((f) => ({ ...f, photoUrl: res.url }));
-      setUploadError(null);
-    },
-    onError: (err) =>
-      setUploadError(err instanceof ApiError ? err.message : "Falha no upload."),
-  });
-
-  function patch<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
-    setForm((f) => ({ ...f, [key]: value }));
-  }
-
-  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) uploadMutation.mutate(file);
-    e.target.value = "";
-  }
-
-  return (
-    <section className="rounded-2xl border border-laps-navy/10 bg-white p-6 shadow-sm">
-      <header className="mb-5 flex items-center justify-between">
-        <div>
-          <h2 className="font-display text-base font-bold text-laps-navy">Meu perfil</h2>
-          <p className="text-xs text-laps-navy/55">
-            Suas informações aparecem em <code>/team/{me.id}</code>.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => saveMutation.mutate()}
-          disabled={saveMutation.isPending}
-          className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-4 py-2 text-xs font-semibold text-white transition hover:bg-laps-navy disabled:opacity-60"
-        >
-          <Save className="h-3.5 w-3.5" />
-          {saveMutation.isPending ? "Salvando…" : "Salvar"}
-        </button>
-      </header>
-
-      {/* Photo uploader */}
-      <div className="mb-6 flex items-center gap-5">
-        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-laps-blue to-laps-light p-0.5 ring-2 ring-white shadow-sm">
-          {form.photoUrl ? (
-            <img
-              src={form.photoUrl}
-              alt={me.fullName}
-              className="h-full w-full rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center rounded-full text-xl font-bold text-white">
-              {initials(me.fullName)}
-            </div>
-          )}
-        </div>
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-            Foto de perfil
-          </p>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={onPickFile}
-          />
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploadMutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded-md border border-laps-blue/25 bg-white px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-ghost disabled:opacity-60"
-            >
-              <Upload className="h-3.5 w-3.5" />
-              {uploadMutation.isPending ? "Enviando…" : "Trocar foto"}
-            </button>
-            {form.photoUrl && (
-              <button
-                type="button"
-                onClick={() => patch("photoUrl", "")}
-                className="text-xs text-laps-navy/55 hover:text-red-600"
-              >
-                Remover
-              </button>
-            )}
-          </div>
-          <p className="mt-1 text-[10px] text-laps-navy/45">
-            JPG, PNG ou WebP. Clique em Salvar para aplicar.
-          </p>
-          {uploadError && (
-            <p className="mt-1 text-[11px] text-red-700">{uploadError}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <TextField
-          label="Email (login + recuperação)"
-          value={form.email}
-          onChange={(v) => patch("email", v)}
-        />
-        <TextField
-          label="Email de contato (público)"
-          value={form.contactEmail}
-          onChange={(v) => patch("contactEmail", v)}
-        />
-        <TextField label="LinkedIn" value={form.linkedinUrl} onChange={(v) => patch("linkedinUrl", v)} />
-        <TextField label="Lattes" value={form.lattesUrl} onChange={(v) => patch("lattesUrl", v)} />
-        <TextField label="GitHub" value={form.githubUrl} onChange={(v) => patch("githubUrl", v)} />
-      </div>
-
-      <div className="mt-4">
-        <TextArea
-          label="Bio (PT — traduzida automaticamente para EN e FR ao salvar)"
-          value={form.bioPt}
-          onChange={(v) => patch("bioPt", v)}
-        />
-      </div>
-
-      <div className="mt-4">
-        <TextArea
-          label="Roadmap pessoal"
-          value={form.roadmap}
-          onChange={(v) => patch("roadmap", v)}
-          rows={3}
-        />
-      </div>
-
-      {savedAt && (
-        <p className="mt-4 inline-flex items-center gap-1.5 text-xs text-emerald-700">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
-        </p>
-      )}
-    </section>
-  );
-}
-
-function TextField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-        {label}
-      </label>
-      <Input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-10 border-laps-navy/15 bg-white text-sm"
-      />
-    </div>
-  );
-}
-
-function TextArea({
-  label,
-  value,
-  onChange,
-  rows = 4,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  rows?: number;
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-        {label}
-      </label>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        rows={rows}
-        className="w-full rounded-md border border-laps-navy/15 bg-white px-3 py-2 text-sm text-laps-navy outline-none focus:border-laps-blue/40 focus:ring-2 focus:ring-laps-blue/15"
-      />
-    </div>
-  );
-}
-
-// ───── Project links ─────
-
-function ProjectsEditor() {
-  const qc = useQueryClient();
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: () => api.projects(),
-    staleTime: 30_000,
-  });
-  const linksQuery = useQuery({
-    queryKey: ["my-projects"],
-    queryFn: () => api.myProjects(),
-    staleTime: 10_000,
-  });
-
-  const links = linksQuery.data ?? [];
-  const projects = projectsQuery.data ?? [];
-
-  const [pending, setPending] = useState<{ projectId: string; role: string }[] | null>(null);
-  const editable = pending ?? links.map((l) => ({ projectId: l.projectId, role: l.role }));
-
-  const mutation = useMutation({
-    mutationFn: (next: { projectId: string; role: string }[]) => api.updateMyProjects(next),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["my-projects"] });
-      qc.invalidateQueries({ queryKey: ["projects"] });
-      qc.invalidateQueries({ queryKey: ["graph"] });
-      setPending(null);
-    },
-  });
-
-  const isDirty = useMemo(() => {
-    if (!pending) return false;
-    if (pending.length !== links.length) return true;
-    const a = [...pending].sort((x, y) => x.projectId.localeCompare(y.projectId));
-    const b = [...links]
-      .map((l) => ({ projectId: l.projectId, role: l.role }))
-      .sort((x, y) => x.projectId.localeCompare(y.projectId));
-    return a.some((p, i) => p.projectId !== b[i]?.projectId || p.role !== b[i]?.role);
-  }, [pending, links]);
-
-  function toggle(p: ApiProject) {
-    const current = editable.find((l) => l.projectId === p.id);
-    const next = current
-      ? editable.filter((l) => l.projectId !== p.id)
-      : [...editable, { projectId: p.id, role: "RESEARCHER" }];
-    setPending(next);
-  }
-
-  function setRole(projectId: string, role: string) {
-    setPending(editable.map((l) => (l.projectId === projectId ? { ...l, role } : l)));
-  }
-
-  return (
-    <section className="rounded-2xl border border-laps-navy/10 bg-white p-6 shadow-sm">
-      <header className="mb-4 flex items-center justify-between">
-        <div>
-          <h2 className="font-display text-base font-bold text-laps-navy">Meus projetos</h2>
-          <p className="text-xs text-laps-navy/55">
-            Apenas a coordenação cria projetos. Você se vincula aos existentes.
-          </p>
-        </div>
-        {isDirty && (
-          <button
-            type="button"
-            onClick={() => mutation.mutate(editable)}
-            disabled={mutation.isPending}
-            className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-4 py-2 text-xs font-semibold text-white transition hover:bg-laps-navy disabled:opacity-60"
-          >
-            <Save className="h-3.5 w-3.5" />
-            {mutation.isPending ? "Salvando…" : "Salvar vínculos"}
-          </button>
-        )}
-      </header>
-
-      <div className="grid gap-2">
-        {projects.map((p) => {
-          const link = editable.find((l) => l.projectId === p.id);
-          const linked = !!link;
-          return (
-            <div
-              key={p.id}
-              className={`flex flex-col gap-2 rounded-xl border p-3 transition md:flex-row md:items-center md:justify-between ${
-                linked
-                  ? "border-laps-blue/40 bg-laps-ghost/30"
-                  : "border-laps-navy/10 bg-white hover:border-laps-blue/20"
-              }`}
-            >
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-laps-navy">
-                  {p.titlePt || p.titleEn || p.slug}
-                </p>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {p.tags.slice(0, 5).map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded border border-laps-light/40 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-laps-navy/65"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {linked && (
-                  <select
-                    value={link!.role}
-                    onChange={(e) => setRole(p.id, e.target.value)}
-                    className="rounded-md border border-laps-navy/15 bg-white px-2 py-1.5 text-xs text-laps-navy"
-                  >
-                    <option value="RESEARCHER">Pesquisador</option>
-                    <option value="CO_LEAD">Co-orientador</option>
-                    <option value="LEAD">Orientador</option>
-                  </select>
-                )}
-                <button
-                  type="button"
-                  onClick={() => toggle(p)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    linked
-                      ? "border border-red-200 bg-white text-red-600 hover:bg-red-50"
-                      : "border border-laps-blue/25 bg-white text-laps-blue hover:bg-laps-ghost"
-                  }`}
-                >
-                  {linked ? "Remover" : "Vincular"}
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-// ───── Change password card (locked until email verified) ─────
-
 function PasswordChangeCard({ emailVerified }: { emailVerified: boolean }) {
   const qc = useQueryClient();
   const [current, setCurrent] = useState("");
@@ -601,14 +1563,8 @@ function PasswordChangeCard({ emailVerified }: { emailVerified: boolean }) {
     e.preventDefault();
     setError(null);
     setOk(false);
-    if (next.length < 8) {
-      setError("A nova senha deve ter pelo menos 8 caracteres.");
-      return;
-    }
-    if (next !== confirm) {
-      setError("As senhas não coincidem.");
-      return;
-    }
+    if (next.length < 8) { setError("A nova senha deve ter pelo menos 8 caracteres."); return; }
+    if (next !== confirm) { setError("As senhas não coincidem."); return; }
     mutation.mutate({ a: current, b: next });
   }
 
@@ -616,18 +1572,15 @@ function PasswordChangeCard({ emailVerified }: { emailVerified: boolean }) {
     return (
       <section className="relative rounded-2xl border border-laps-navy/10 bg-white p-6 shadow-sm">
         <div className="pointer-events-none absolute inset-0 rounded-2xl bg-white/55" />
-        <div className="relative">
-          <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-laps-navy/8 text-laps-navy/60">
-              <Lock className="h-4 w-4" />
-            </div>
-            <div>
-              <h2 className="font-display text-base font-bold text-laps-navy/65">Trocar senha</h2>
-              <p className="mt-1 text-xs text-laps-navy/55">
-                Cadastre e verifique seu email antes de definir uma senha pessoal — isso garante
-                que você consiga recuperá-la caso a perca. Seu nome de usuário não pode ser alterado.
-              </p>
-            </div>
+        <div className="relative flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-laps-navy/8 text-laps-navy/60">
+            <Lock className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="font-display text-base font-bold text-laps-navy/65">Trocar senha</h2>
+            <p className="mt-1 text-xs text-laps-navy/55">
+              Cadastre e verifique seu email antes de definir uma senha pessoal.
+            </p>
           </div>
         </div>
       </section>
@@ -637,32 +1590,11 @@ function PasswordChangeCard({ emailVerified }: { emailVerified: boolean }) {
   return (
     <section className="rounded-2xl border border-laps-navy/10 bg-white p-6 shadow-sm">
       <h2 className="font-display mb-1 text-base font-bold text-laps-navy">Trocar senha</h2>
-      <p className="mb-4 text-xs text-laps-navy/55">
-        Email verificado — você pode definir uma senha pessoal agora. O nome de usuário continua
-        fixo.
-      </p>
+      <p className="mb-4 text-xs text-laps-navy/55">Email verificado — defina sua senha pessoal.</p>
       <form onSubmit={submit} className="grid gap-3 md:grid-cols-3">
-        <PasswordField
-          id="pwd-current"
-          label="Senha atual"
-          value={current}
-          onChange={setCurrent}
-          autoComplete="current-password"
-        />
-        <PasswordField
-          id="pwd-next"
-          label="Nova senha"
-          value={next}
-          onChange={setNext}
-          autoComplete="new-password"
-        />
-        <PasswordField
-          id="pwd-confirm"
-          label="Confirmar"
-          value={confirm}
-          onChange={setConfirm}
-          autoComplete="new-password"
-        />
+        <PasswordField id="pwd-current" label="Senha atual" value={current} onChange={setCurrent} autoComplete="current-password" />
+        <PasswordField id="pwd-next" label="Nova senha" value={next} onChange={setNext} autoComplete="new-password" />
+        <PasswordField id="pwd-confirm" label="Confirmar" value={confirm} onChange={setConfirm} autoComplete="new-password" />
         {error && (
           <p className="md:col-span-3 flex items-center gap-1.5 text-sm text-red-700">
             <AlertCircle className="h-4 w-4" /> {error}
@@ -689,24 +1621,13 @@ function PasswordChangeCard({ emailVerified }: { emailVerified: boolean }) {
 }
 
 function PasswordField({
-  id,
-  label,
-  value,
-  onChange,
-  autoComplete,
+  id, label, value, onChange, autoComplete,
 }: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  autoComplete: string;
+  id: string; label: string; value: string; onChange: (v: string) => void; autoComplete: string;
 }) {
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55"
-      >
+      <label htmlFor={id} className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
         {label}
       </label>
       <Input
@@ -717,6 +1638,61 @@ function PasswordField({
         onChange={(e) => onChange(e.target.value)}
         className="h-10 border-laps-navy/15 bg-white text-sm"
       />
+    </div>
+  );
+}
+
+// ───── Shared UI components ─────
+
+function PortfolioCard({
+  title,
+  icon: IconComp,
+  children,
+  action,
+}: {
+  title: string;
+  icon: typeof Crown;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-laps-blue/12 bg-white p-5 shadow-[0_2px_20px_rgba(25,58,89,0.04)]">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-laps-ghost text-laps-blue">
+            <IconComp className="h-4 w-4" />
+          </span>
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-laps-navy/70">
+            {title}
+          </h3>
+        </div>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function StatCard({
+  icon: IconComp,
+  label,
+  value,
+}: {
+  icon: typeof Crown;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-laps-blue/12 bg-white p-4">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-laps-ghost text-laps-blue">
+        <IconComp className="h-5 w-5" />
+      </span>
+      <div>
+        <div className="font-display text-2xl font-bold text-laps-navy">{value}</div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-laps-navy/60">
+          {label}
+        </div>
+      </div>
     </div>
   );
 }
