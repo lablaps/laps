@@ -1,7 +1,7 @@
 spring:
   datasource:
-    # In prod, prefer Render's DATABASE_URL. Falls back to the env-composed URL
-    # if you're hosting Postgres elsewhere — sslmode=require is the prod default.
+    # DatabaseConfig auto-converts Render's postgresql://user:pass@host/db format
+    # to jdbc:postgresql://host/db + sets username/password. Paste as-is.
     url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}?sslmode=${DB_SSLMODE:require}}
 
   jpa:
