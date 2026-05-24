@@ -39,7 +39,7 @@ export const team: TeamMember[] = [
   {
     id: "ewaldo-eder-santana",
     uuid: "f1c1c1e5-2087-4d7d-bbc0-ab2eaf140afb",
-    fullName: "Ph.D Ewaldo Eder Santana",
+    fullName: "Dr. Ewaldo Eder Santana",
     tier: "head",
     status: "ACTIVE",
     primaryArea: "signal-processing",

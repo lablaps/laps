@@ -91,7 +91,7 @@ const PUB_TYPE_LABELS: Record<string, { pt: string; en: string; fr: string }> = 
   CONFERENCE: { pt: "Conferência", en: "Conference", fr: "Conférence" },
   WORKSHOP: { pt: "Workshop", en: "Workshop", fr: "Atelier" },
   DISSERTATION: { pt: "Dissertação", en: "MSc Dissertation", fr: "Mémoire" },
-  THESIS: { pt: "Tese", en: "PhD Thesis", fr: "Thèse" },
+  THESIS: { pt: "Tese de Doutorado", en: "Doctoral Thesis", fr: "Thèse de Doctorat" },
 };
 
 export const Route = createFileRoute("/team/$uuid")({

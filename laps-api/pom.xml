@@ -77,6 +77,14 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Cloudinary SDK — used by PhotoUploadService when CLOUDINARY_* env vars are set.
+             Falls back to local disk when credentials are absent (dev / CI). -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http45</artifactId>
+            <version>1.39.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

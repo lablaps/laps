@@ -13,7 +13,7 @@ export const Route = createFileRoute("/projects")({
   head: () => ({
     meta: [
       { title: "Projects — LAPS" },
-      { name: "description", content: "Active research projects at LAPS — biomedical signals, AI, diagnostics." },
+      { name: "description", content: "Active research projects at LAPS — signal processing, AI, diagnostics." },
     ],
   }),
 });

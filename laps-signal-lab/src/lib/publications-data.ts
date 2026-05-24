@@ -178,7 +178,7 @@ export const publications: Publication[] = [
     id: "yanna-oocyte-phd-thesis",
     title:
       "Uma abordagem para a detecção automática dos estágios de maturação ovocitária da espécie Centropomus undecimalis via aprendizagem profunda",
-    venue: "UFMA · PhD thesis (in progress)",
+    venue: "UFMA · Tese de Doutorado (em andamento)",
     year: 2026,
     type: "THESIS",
     status: "IN_PROGRESS",

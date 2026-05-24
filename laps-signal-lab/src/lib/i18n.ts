@@ -24,7 +24,7 @@ export const translations = {
       chip: "Sobre o LAPS",
       title: "Inovação em Processamento de Sinais",
       body:
-        "O LAPS é um laboratório de pesquisa dedicado ao desenvolvimento de tecnologias avançadas em processamento de sinais biomédicos e inteligência artificial. Nossa equipe multidisciplinar trabalha na fronteira entre engenharia, neurociência e ciência de dados.",
+        "O LAPS é um laboratório de pesquisa dedicado ao desenvolvimento de tecnologias avançadas em processamento de sinais e inteligência artificial. Nossa equipe multidisciplinar trabalha na fronteira entre engenharia, computação e ciência de dados.",
       missionTitle: "Nossa Missão",
       missionBody:
         "Desenvolver soluções tecnológicas inovadoras em processamento de sinais e inteligência artificial que contribuam para o avanço da ciência e melhoria da qualidade de vida da sociedade.",
@@ -35,10 +35,10 @@ export const translations = {
     areas: {
       title: "Áreas de Pesquisa",
       items: [
-        { t: "Inteligência Artificial", d: "Algoritmos de machine learning e deep learning para análise de sinais biomédicos." },
-        { t: "Sinais Biomédicos", d: "Processamento e análise de sinais cardiovasculares, neurológicos e outros sinais vitais." },
+        { t: "Inteligência Artificial", d: "Algoritmos de machine learning e deep learning para análise e classificação de sinais." },
+        { t: "Processamento de Sinais", d: "Filtragem, análise espectral, extração de características e separação de fontes em qualquer domínio de sinal." },
         { t: "Diagnóstico Médico", d: "Ferramentas computacionais para auxílio ao diagnóstico e detecção precoce de doenças." },
-        { t: "Processamento de Sinais", d: "Técnicas avançadas para filtragem, análise espectral e extração de características." },
+        { t: "Sensores e Aquisição", d: "Instrumentação, redes de sensores e sistemas embarcados para captura de sinais do mundo real." },
       ],
     },
     values: { title: "Nossos Valores", items: ["Confiabilidade", "Tecnologia", "Avanço", "Conhecimento"] },
@@ -90,7 +90,7 @@ export const translations = {
       items: [
         { t: "NeuroSignal AI", d: "Detecção precoce de epilepsia através de redes neurais profundas em sinais EEG." },
         { t: "CardioWave", d: "Plataforma de análise de variabilidade da frequência cardíaca em tempo real." },
-        { t: "BioFilter", d: "Biblioteca open-source de filtros adaptativos para sinais biomédicos ruidosos." },
+        { t: "BioFilter", d: "Biblioteca open-source de filtros adaptativos para sinais ruidosos." },
       ],
     },
     exchange: {
@@ -132,7 +132,7 @@ export const translations = {
       langName: { pt: "Português", en: "Inglês", fr: "Francês", it: "Italiano" },
     },
     footer: {
-      desc: "Pesquisa de ponta em processamento de sinais biomédicos e inteligência artificial.",
+      desc: "Pesquisa de ponta em processamento de sinais e inteligência artificial.",
       navTitle: "Navegação",
       contactTitle: "Contato",
       address: "Universidade Estadual do Maranhão — UEMA — São Cristóvão, São Luís - MA",
@@ -158,7 +158,7 @@ export const translations = {
       chip: "About LAPS",
       title: "Innovation in Signal Processing",
       body:
-        "LAPS is a research laboratory dedicated to advanced biomedical signal processing and artificial intelligence. Our multidisciplinary team works at the frontier of engineering, neuroscience and data science.",
+        "LAPS is a research laboratory dedicated to advanced signal processing and artificial intelligence. Our multidisciplinary team works at the frontier of engineering, computing and data science.",
       missionTitle: "Our Mission",
       missionBody:
         "To develop innovative technological solutions in signal processing and artificial intelligence that contribute to the advancement of science and improve quality of life.",
@@ -169,10 +169,10 @@ export const translations = {
     areas: {
       title: "Research Areas",
       items: [
-        { t: "Artificial Intelligence", d: "Machine learning and deep learning algorithms for biomedical signal analysis." },
-        { t: "Biomedical Signals", d: "Processing and analysis of cardiovascular, neurological and other vital signals." },
+        { t: "Artificial Intelligence", d: "Machine learning and deep learning algorithms for signal analysis and classification." },
+        { t: "Signal Processing", d: "Filtering, spectral analysis, feature extraction and source separation across any signal domain." },
         { t: "Medical Diagnostics", d: "Computational tools for diagnostic support and early disease detection." },
-        { t: "Signal Processing", d: "Advanced techniques for filtering, spectral analysis and feature extraction." },
+        { t: "Sensors & Acquisition", d: "Instrumentation, sensor networks and embedded systems for real-world signal capture." },
       ],
     },
     values: { title: "Our Values", items: ["Reliability", "Technology", "Advancement", "Knowledge"] },
@@ -180,7 +180,7 @@ export const translations = {
     structure: {
       chip: "Our Team",
       title: "LAPS Researcher Network",
-      body: "Explore our team as a living neural network — the head, PhD students, MSc students and undergrads connected through collaborative work. Click any node to meet the researcher.",
+      body: "Explore our team as a living neural network — the head, doctoral students, MSc students and undergrads connected through collaborative work. Click any node to meet the researcher.",
       headTitle: "Head of the Laboratory",
       headSubtitle: "Scientific and administrative leadership of LAPS",
       headRole: "Head of the Laboratory",
@@ -188,17 +188,17 @@ export const translations = {
       areasLabel: "Research Areas:",
       compTitle: "Team Composition",
       tiers: [
-        { label: "PhD Students", value: 10 },
+        { label: "Doutorando(a)s", value: 10 },
         { label: "MSc Students", value: 14 },
         { label: "Undergrads", value: 21 },
         { label: "Total", value: 46 },
       ],
       researchersTitle: "Researcher Network",
-      roles: { chefe: "Head of Laboratory", doutor: "Doctor", doutorando: "PhD Student" },
+      roles: { chefe: "Head of Laboratory", doutor: "Doutor", doutorando: "Doutorando" },
       network: {
         helper: "Hover a node to reveal its connections. Click to open the profile.",
         legendTitle: "Legend:",
-        tier: { head: "Head", coordinator: "Coordinator", manager: "Manager", doctorate: "PhD Student", master: "MSc Student", undergrad: "Undergrad" },
+        tier: { head: "Head", coordinator: "Coordinator", manager: "Manager", doctorate: "Doutorando", master: "Mestrando", undergrad: "Graduando" },
         linkedin: "View on LinkedIn",
         noLinkedin: "LinkedIn coming soon",
         areas: "Research Areas",
@@ -224,7 +224,7 @@ export const translations = {
       items: [
         { t: "NeuroSignal AI", d: "Early epilepsy detection via deep neural networks on EEG signals." },
         { t: "CardioWave", d: "Real-time heart rate variability analysis platform." },
-        { t: "BioFilter", d: "Open-source adaptive filter library for noisy biomedical signals." },
+        { t: "BioFilter", d: "Open-source adaptive filter library for noisy signals." },
       ],
     },
     exchange: {
@@ -246,7 +246,7 @@ export const translations = {
       opportunity: {
         title: "Opportunities at LAPS — at every level",
         body:
-          "LAPS supports international mobility for the entire research body: undergrads, MSc and PhD students. Partner-university agreements, CAPES/CNPq cooperation calls, Erasmus+ and BRAFITEC programs and host-institution grants open doors in European and American labs. If you're in the lab, there's a path for you to join the next generation of exchange researchers.",
+          "LAPS supports international mobility for the entire research body: undergrads, MSc and doctoral students. Partner-university agreements, CAPES/CNPq cooperation calls, Erasmus+ and BRAFITEC programs and host-institution grants open doors in European and American labs. If you're in the lab, there's a path for you to join the next generation of exchange researchers.",
       },
       labels: {
         students: "exchange researchers",
@@ -259,14 +259,14 @@ export const translations = {
         head: "Head of Laboratory",
         coordinator: "Coordinator",
         manager: "Manager",
-        doctorate: "PhD Student",
+        doctorate: "Doutorando",
         master: "MSc Student",
         undergrad: "Undergrad",
       },
       langName: { pt: "Portuguese", en: "English", fr: "French", it: "Italian" },
     },
     footer: {
-      desc: "Frontier research in biomedical signal processing and artificial intelligence.",
+      desc: "Frontier research in signal processing and artificial intelligence.",
       navTitle: "Navigation",
       contactTitle: "Contact",
       address: "State University of Maranhão — UEMA — São Cristóvão, São Luís - MA",
@@ -292,7 +292,7 @@ export const translations = {
       chip: "À propos de LAPS",
       title: "Innovation en Traitement du Signal",
       body:
-        "LAPS est un laboratoire de recherche dédié au traitement avancé des signaux biomédicaux et à l'intelligence artificielle. Notre équipe pluridisciplinaire travaille à la frontière de l'ingénierie, des neurosciences et de la science des données.",
+        "LAPS est un laboratoire de recherche dédié au traitement avancé des signaux et à l'intelligence artificielle. Notre équipe pluridisciplinaire travaille à la frontière de l'ingénierie, de l'informatique et de la science des données.",
       missionTitle: "Notre Mission",
       missionBody:
         "Développer des solutions technologiques innovantes en traitement du signal et IA qui contribuent à l'avancement de la science et à l'amélioration de la qualité de vie.",
@@ -303,10 +303,10 @@ export const translations = {
     areas: {
       title: "Domaines de Recherche",
       items: [
-        { t: "Intelligence Artificielle", d: "Algorithmes de machine learning et deep learning pour l'analyse des signaux biomédicaux." },
-        { t: "Signaux Biomédicaux", d: "Traitement et analyse de signaux cardiovasculaires, neurologiques et vitaux." },
+        { t: "Intelligence Artificielle", d: "Algorithmes de machine learning et deep learning pour l'analyse et la classification des signaux." },
+        { t: "Traitement du Signal", d: "Filtrage, analyse spectrale, extraction de caractéristiques et séparation de sources dans tout domaine de signal." },
         { t: "Diagnostic Médical", d: "Outils computationnels pour l'aide au diagnostic et la détection précoce." },
-        { t: "Traitement du Signal", d: "Techniques avancées de filtrage, analyse spectrale et extraction de caractéristiques." },
+        { t: "Capteurs & Acquisition", d: "Instrumentation, réseaux de capteurs et systèmes embarqués pour la capture de signaux réels." },
       ],
     },
     values: { title: "Nos Valeurs", items: ["Fiabilité", "Technologie", "Avancée", "Connaissance"] },
@@ -358,7 +358,7 @@ export const translations = {
       items: [
         { t: "NeuroSignal AI", d: "Détection précoce de l'épilepsie via réseaux neuronaux profonds sur signaux EEG." },
         { t: "CardioWave", d: "Plateforme d'analyse en temps réel de la variabilité cardiaque." },
-        { t: "BioFilter", d: "Bibliothèque open-source de filtres adaptatifs pour signaux biomédicaux." },
+        { t: "BioFilter", d: "Bibliothèque open-source de filtres adaptatifs pour signaux bruités." },
       ],
     },
     exchange: {
@@ -400,7 +400,7 @@ export const translations = {
       langName: { pt: "Portugais", en: "Anglais", fr: "Français", it: "Italien" },
     },
     footer: {
-      desc: "Recherche de pointe en traitement des signaux biomédicaux et intelligence artificielle.",
+      desc: "Recherche de pointe en traitement des signaux et intelligence artificielle.",
       navTitle: "Navigation",
       contactTitle: "Contact",
       address: "Université d'État du Maranhão — UEMA — São Cristóvão, São Luís - MA",

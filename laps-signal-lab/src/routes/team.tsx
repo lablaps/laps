@@ -90,7 +90,7 @@ export const Route = createFileRoute("/team")({
       {
         name: "description",
         content:
-          "The LAPS researcher network — head, PhD students, MSc students and undergrad researchers, presented as an interactive neural mesh, hierarchy and list.",
+          "The LAPS researcher network — head, doctoral students, MSc students and undergrad researchers, presented as an interactive neural mesh, hierarchy and list.",
       },
     ],
   }),

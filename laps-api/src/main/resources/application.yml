@@ -76,6 +76,12 @@ laps:
     upload-dir: ${LAPS_MEDIA_DIR:./uploads}
     public-base-url: "/uploads"
     max-bytes: 5242880   # 5 MiB
+    # Cloudinary — when all three are set, uploads go to the CDN instead of disk.
+    # Leave blank in local dev; set in Render environment variables for production.
+    cloudinary-cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+    cloudinary-api-key: ${CLOUDINARY_API_KEY:}
+    cloudinary-api-secret: ${CLOUDINARY_API_SECRET:}
+    cloudinary-folder: ${CLOUDINARY_FOLDER:laps}
   translate:
     provider: ${LAPS_TRANSLATE_PROVIDER:mymemory}
     base-url: ${LAPS_TRANSLATE_BASE_URL:}
