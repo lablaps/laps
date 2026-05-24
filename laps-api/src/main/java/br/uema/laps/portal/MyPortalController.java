@@ -90,6 +90,7 @@ public class MyPortalController {
         out.put("bannerImageUrl", me.getBannerImageUrl());
         out.put("mustChangePassword", me.isMustChangePassword());
         out.put("emailVerified", me.isEmailVerified());
+        out.put("exchangeCountry", me.getExchangeCountry());
         // Expose the resolved security role (MANAGER / MEMBER) so the SPA can
         // gate admin access without duplicating the manager-email allowlist.
         out.put("role", AuthenticatedMember.role());

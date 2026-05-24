@@ -32,6 +32,8 @@ import {
 } from "@/lib/api";
 import { applyOverlay, decoratePhotoUrl } from "@/lib/static-source";
 import { PublicLayout } from "@/components/PublicLayout";
+import { COUNTRIES, type CountryCode } from "@/lib/exchange-data";
+import { FLAGS } from "@/lib/flags";
 
 type Lang = "pt" | "en" | "fr";
 
@@ -309,6 +311,14 @@ function TeamMemberPage() {
                     >
                       <Icon className="h-3.5 w-3.5" /> {labels.tier[tierKey as Tier]}
                     </span>
+                    {member.exchangeCountry && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/25 bg-laps-ghost/80 px-3 py-1.5 text-xs font-semibold text-laps-navy">
+                        <span className="inline-block h-3.5 w-5 overflow-hidden rounded-sm shadow-sm shrink-0">
+                          {FLAGS[member.exchangeCountry as CountryCode]}
+                        </span>
+                        Intercambista · {COUNTRIES[member.exchangeCountry as CountryCode]?.name.pt}
+                      </span>
+                    )}
                     {member.status && member.status !== "ACTIVE" && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">
                         {tx.status[member.status as "COMPLETED" | "INACTIVE"]}

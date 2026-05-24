@@ -97,6 +97,9 @@ public class Member {
     @Column(name = "banner_image_url", columnDefinition = "text")
     private String bannerImageUrl;
 
+    @Column(name = "exchange_country", length = 10)
+    private String exchangeCountry;
+
     @Column(name = "deleted_at")
     private Instant deletedAt;
 

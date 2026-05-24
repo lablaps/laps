@@ -245,6 +245,7 @@ function PortalPage() {
         <div className="mt-8 grid gap-6 md:grid-cols-[1fr_2fr]">
           {/* SIDEBAR */}
           <aside className="flex flex-col gap-6">
+            <ContactEditor me={me} />
             {auth.mustChangePassword && <FirstLoginBanner emailVerified={auth.emailVerified} />}
             {!auth.emailVerified && <EmailVerificationBanner me={me} />}
 
@@ -351,10 +352,15 @@ function HeroCard({
 
 // ───── Banner editor ─────
 
+// Canvas dimensions for the banner output image
+const BANNER_CANVAS_W = 1200;
+const BANNER_CANVAS_H = 300;
+
 function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tier] }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [customColor, setCustomColor] = useState(me.bannerColor ?? "");
+  const [editorFile, setEditorFile] = useState<File | null>(null);
   const bannerRef = useRef<HTMLInputElement>(null);
 
   const saveMutation = useMutation({
@@ -373,6 +379,12 @@ function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
     },
   });
 
+  function handleEditorConfirm(blob: Blob) {
+    const file = new File([blob], "banner.jpg", { type: "image/jpeg" });
+    setEditorFile(null);
+    uploadMutation.mutate(file);
+  }
+
   const bannerStyle = me.bannerImageUrl
     ? { backgroundImage: `url(${me.bannerImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
     : me.bannerColor
@@ -380,118 +392,364 @@ function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
       : undefined;
 
   return (
-    <div
-      className={`relative h-40 md:h-48 ${!me.bannerImageUrl && !me.bannerColor ? `bg-gradient-to-r ${cfg.band}` : ""}`}
-      style={bannerStyle}
-    >
-      <svg
-        className="absolute bottom-0 left-0 h-10 w-full text-white/45"
-        viewBox="0 0 200 20"
-        preserveAspectRatio="none"
-      >
-        <path
-          d="M0,10 Q25,2 50,10 T100,10 T150,10 T200,10"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          fill="none"
+    <>
+      {/* Image transform editor modal */}
+      {editorFile && (
+        <BannerImageEditor
+          file={editorFile}
+          onConfirm={handleEditorConfirm}
+          onCancel={() => setEditorFile(null)}
         />
-      </svg>
+      )}
 
-      {/* Edit button */}
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50"
+      <div
+        className={`relative h-40 md:h-48 ${!me.bannerImageUrl && !me.bannerColor ? `bg-gradient-to-r ${cfg.band}` : ""}`}
+        style={bannerStyle}
       >
-        <Palette className="h-3.5 w-3.5" /> Editar capa
-      </button>
+        <svg
+          className="absolute bottom-0 left-0 h-10 w-full text-white/45"
+          viewBox="0 0 200 20"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0,10 Q25,2 50,10 T100,10 T150,10 T200,10"
+            stroke="currentColor"
+            strokeWidth="1.2"
+            fill="none"
+          />
+        </svg>
 
-      {/* Banner editor panel */}
-      {open && (
-        <div className="absolute right-4 top-14 z-10 w-72 rounded-2xl border border-laps-navy/15 bg-white p-4 shadow-xl">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-            Cor de fundo
-          </p>
-          <div className="mb-3 grid grid-cols-4 gap-2">
-            {BANNER_PRESETS.map((p) => (
-              <button
-                key={p.value}
-                type="button"
-                onClick={() => saveMutation.mutate({ bannerColor: p.value, bannerImageUrl: "" })}
-                title={p.label}
-                className="h-8 w-full rounded-lg border-2 border-transparent transition hover:border-laps-blue/50"
-                style={{ background: p.value }}
-              />
-            ))}
+        {/* Uploading overlay */}
+        {(uploadMutation.isPending || saveMutation.isPending) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <p className="text-xs font-semibold text-white">Salvando…</p>
           </div>
-          <div className="mb-3 flex gap-2">
-            <input
-              type="color"
-              value={customColor || "#0B4E8D"}
-              onChange={(e) => setCustomColor(e.target.value)}
-              className="h-9 w-10 cursor-pointer rounded border border-laps-navy/20 p-0.5"
-            />
-            <input
-              type="text"
-              value={customColor}
-              onChange={(e) => setCustomColor(e.target.value)}
-              placeholder="#0B4E8D"
-              className="flex-1 rounded-md border border-laps-navy/15 px-2 text-xs text-laps-navy"
-            />
-            <button
-              type="button"
-              onClick={() => saveMutation.mutate({ bannerColor: customColor, bannerImageUrl: "" })}
-              disabled={!customColor || saveMutation.isPending}
-              className="rounded-md bg-laps-blue px-3 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
-            >
-              OK
-            </button>
-          </div>
-          <div className="border-t border-laps-navy/10 pt-3">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-              Imagem de capa
+        )}
+
+        {/* Edit button */}
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50"
+        >
+          <Palette className="h-3.5 w-3.5" /> Editar capa
+        </button>
+
+        {/* Banner editor panel */}
+        {open && (
+          <div className="absolute right-4 top-14 z-10 w-72 rounded-2xl border border-laps-navy/15 bg-white p-4 shadow-xl">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Cor de fundo
             </p>
-            <input
-              ref={bannerRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) uploadMutation.mutate(file);
-                e.target.value = "";
-              }}
-            />
-            <div className="flex gap-2">
+            <div className="mb-3 grid grid-cols-4 gap-2">
+              {BANNER_PRESETS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => saveMutation.mutate({ bannerColor: p.value, bannerImageUrl: "" })}
+                  title={p.label}
+                  className="h-8 w-full rounded-lg border-2 border-transparent transition hover:border-laps-blue/50"
+                  style={{ background: p.value }}
+                />
+              ))}
+            </div>
+            <div className="mb-3 flex gap-2">
+              <input
+                type="color"
+                value={customColor || "#0B4E8D"}
+                onChange={(e) => setCustomColor(e.target.value)}
+                className="h-9 w-10 cursor-pointer rounded border border-laps-navy/20 p-0.5"
+              />
+              <input
+                type="text"
+                value={customColor}
+                onChange={(e) => setCustomColor(e.target.value)}
+                placeholder="#0B4E8D"
+                className="flex-1 rounded-md border border-laps-navy/15 px-2 text-xs text-laps-navy"
+              />
               <button
                 type="button"
-                onClick={() => bannerRef.current?.click()}
-                disabled={uploadMutation.isPending || saveMutation.isPending}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-laps-blue/25 bg-white px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-ghost disabled:opacity-60"
+                onClick={() => saveMutation.mutate({ bannerColor: customColor, bannerImageUrl: "" })}
+                disabled={!customColor || saveMutation.isPending}
+                className="rounded-md bg-laps-blue px-3 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
               >
-                <ImageIcon className="h-3.5 w-3.5" />
-                {uploadMutation.isPending ? "Enviando…" : "Enviar imagem"}
+                OK
               </button>
-              {me.bannerImageUrl && (
+            </div>
+            <div className="border-t border-laps-navy/10 pt-3">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+                Imagem de capa
+              </p>
+              <input
+                ref={bannerRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) { setEditorFile(file); setOpen(false); }
+                  e.target.value = "";
+                }}
+              />
+              <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => saveMutation.mutate({ bannerImageUrl: "" })}
-                  className="rounded-md border border-red-200 bg-white px-2 text-xs text-red-600 hover:bg-red-50"
+                  onClick={() => bannerRef.current?.click()}
+                  disabled={uploadMutation.isPending || saveMutation.isPending}
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-laps-blue/25 bg-white px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-ghost disabled:opacity-60"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <ImageIcon className="h-3.5 w-3.5" />
+                  Selecionar imagem…
                 </button>
-              )}
+                {me.bannerImageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => saveMutation.mutate({ bannerImageUrl: "" })}
+                    className="rounded-md border border-red-200 bg-white px-2 text-xs text-red-600 hover:bg-red-50"
+                    title="Remover imagem"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              <p className="mt-1.5 text-[10px] text-laps-navy/40">
+                Após selecionar, você poderá ajustar posição, escala e rotação.
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="mt-3 w-full rounded-md bg-laps-ghost/60 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+            >
+              Fechar
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="mt-3 w-full rounded-md bg-laps-ghost/60 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
-          >
-            Fechar
+        )}
+      </div>
+    </>
+  );
+}
+
+// ───── Banner image transform editor ─────
+
+function BannerImageEditor({
+  file,
+  onConfirm,
+  onCancel,
+}: {
+  file: File;
+  onConfirm: (blob: Blob) => void;
+  onCancel: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  const [scale, setScale] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  // dragRef tracks the drag start state without triggering re-renders on mousemove
+  const dragRef = useRef<{
+    startClientX: number;
+    startClientY: number;
+    startOffsetX: number;
+    startOffsetY: number;
+  } | null>(null);
+
+  // Load the image and set an initial scale that fills the canvas
+  useEffect(() => {
+    const image = new Image();
+    const url = URL.createObjectURL(file);
+    image.onload = () => {
+      const fillScale = Math.max(
+        BANNER_CANVAS_W / image.width,
+        BANNER_CANVAS_H / image.height
+      );
+      setScale(fillScale);
+      setImg(image);
+    };
+    image.src = url;
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  // Redraw whenever transform changes
+  useEffect(() => {
+    if (!img || !canvasRef.current) return;
+    const ctx = canvasRef.current.getContext("2d")!;
+    ctx.clearRect(0, 0, BANNER_CANVAS_W, BANNER_CANVAS_H);
+    ctx.save();
+    ctx.translate(BANNER_CANVAS_W / 2 + offset.x, BANNER_CANVAS_H / 2 + offset.y);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    ctx.restore();
+  }, [img, scale, rotation, offset]);
+
+  // Ratio between canvas pixels and displayed CSS pixels
+  function pixelRatio() {
+    if (!canvasRef.current) return 1;
+    return BANNER_CANVAS_W / canvasRef.current.getBoundingClientRect().width;
+  }
+
+  function startDrag(clientX: number, clientY: number) {
+    dragRef.current = {
+      startClientX: clientX,
+      startClientY: clientY,
+      startOffsetX: offset.x,
+      startOffsetY: offset.y,
+    };
+  }
+
+  function moveDrag(clientX: number, clientY: number) {
+    if (!dragRef.current) return;
+    const r = pixelRatio();
+    setOffset({
+      x: dragRef.current.startOffsetX + (clientX - dragRef.current.startClientX) * r,
+      y: dragRef.current.startOffsetY + (clientY - dragRef.current.startClientY) * r,
+    });
+  }
+
+  function endDrag() {
+    dragRef.current = null;
+  }
+
+  function reset() {
+    if (!img) return;
+    setScale(Math.max(BANNER_CANVAS_W / img.width, BANNER_CANVAS_H / img.height));
+    setRotation(0);
+    setOffset({ x: 0, y: 0 });
+  }
+
+  function confirm() {
+    canvasRef.current?.toBlob(
+      (blob) => { if (blob) onConfirm(blob); },
+      "image/jpeg",
+      0.92
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-bold text-laps-navy">Ajustar imagem da capa</h3>
+          <button type="button" onClick={onCancel} className="rounded-full p-1 text-laps-navy/50 hover:bg-laps-ghost hover:text-laps-navy">
+            <X className="h-4 w-4" />
           </button>
         </div>
-      )}
+
+        {/* Canvas preview — same 4:1 aspect as the actual banner */}
+        <div className="mb-3 overflow-hidden rounded-xl border border-laps-navy/10 bg-laps-ghost/30">
+          {!img ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-xs text-laps-navy/40">Carregando imagem…</p>
+            </div>
+          ) : (
+            <canvas
+              ref={canvasRef}
+              width={BANNER_CANVAS_W}
+              height={BANNER_CANVAS_H}
+              className="w-full cursor-grab select-none active:cursor-grabbing"
+              onMouseDown={(e) => startDrag(e.clientX, e.clientY)}
+              onMouseMove={(e) => moveDrag(e.clientX, e.clientY)}
+              onMouseUp={endDrag}
+              onMouseLeave={endDrag}
+              onTouchStart={(e) => { const t = e.touches[0]; startDrag(t.clientX, t.clientY); }}
+              onTouchMove={(e) => { e.preventDefault(); const t = e.touches[0]; moveDrag(t.clientX, t.clientY); }}
+              onTouchEnd={endDrag}
+            />
+          )}
+        </div>
+
+        <p className="mb-4 text-center text-[10px] text-laps-navy/40">
+          Arraste para reposicionar · Use os controles abaixo para escala e rotação
+        </p>
+
+        {/* Transform controls */}
+        <div className="mb-5 space-y-4">
+          <SliderControl
+            label="Escala"
+            value={scale}
+            min={0.05}
+            max={10}
+            step={0.01}
+            displayValue={`${Math.round(scale * 100)}%`}
+            onChange={setScale}
+          />
+          <SliderControl
+            label="Rotação"
+            value={rotation}
+            min={-180}
+            max={180}
+            step={1}
+            displayValue={`${rotation}°`}
+            onChange={setRotation}
+          />
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={confirm}
+            disabled={!img}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-laps-blue px-4 py-2 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" /> Confirmar
+          </button>
+          <button
+            type="button"
+            onClick={reset}
+            className="rounded-md border border-laps-navy/15 px-3 py-2 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+          >
+            Resetar
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-md border border-laps-navy/15 px-3 py-2 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SliderControl({
+  label,
+  value,
+  min,
+  max,
+  step,
+  displayValue,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  displayValue?: string;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+          {label}
+        </label>
+        <span className="text-[10px] font-mono font-semibold text-laps-navy/70">
+          {displayValue ?? value}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="w-full accent-laps-blue"
+      />
     </div>
   );
 }
@@ -546,6 +804,209 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
           }}
         />
       </div>
+    </div>
+  );
+}
+
+// ───── Contact / links editor ─────
+
+function ContactEditor({ me }: { me: MyProfile }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({
+    email: me.email ?? "",
+    contactEmail: me.contactEmail ?? "",
+    linkedinUrl: me.linkedinUrl ?? "",
+    lattesUrl: me.lattesUrl ?? "",
+    githubUrl: me.githubUrl ?? "",
+  });
+  const [saved, setSaved] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: () => api.meUpdate(form),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setSaved(true);
+      setEditing(false);
+      setTimeout(() => setSaved(false), 2000);
+    },
+  });
+
+  function patch<K extends keyof typeof form>(key: K, value: string) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  // Highlight the card when email is missing — draws attention to the required step
+  const needsEmail = !me.email;
+
+  return (
+    <PortfolioCard
+      title="CONTATO & LINKS"
+      icon={Mail}
+      action={
+        !editing ? (
+          <button
+            type="button"
+            onClick={() => {
+              setForm({
+                email: me.email ?? "",
+                contactEmail: me.contactEmail ?? "",
+                linkedinUrl: me.linkedinUrl ?? "",
+                lattesUrl: me.lattesUrl ?? "",
+                githubUrl: me.githubUrl ?? "",
+              });
+              setEditing(true);
+            }}
+            className="inline-flex items-center gap-1 rounded-md border border-laps-navy/15 px-2 py-1 text-[10px] font-semibold text-laps-navy/60 hover:border-laps-blue/30 hover:text-laps-blue"
+          >
+            <Edit2 className="h-3 w-3" /> Editar
+          </button>
+        ) : null
+      }
+    >
+      {needsEmail && !editing && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+          <p className="text-[11px] font-medium text-amber-800">
+            Cadastre seu email para habilitar a verificação.
+          </p>
+        </div>
+      )}
+
+      {editing ? (
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Email (login e recuperação) *
+            </label>
+            <Input
+              type="email"
+              value={form.email}
+              onChange={(e) => patch("email", e.target.value)}
+              placeholder="seu@email.com"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Email de contato (público)
+            </label>
+            <Input
+              type="email"
+              value={form.contactEmail}
+              onChange={(e) => patch("contactEmail", e.target.value)}
+              placeholder="contato@email.com"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              LinkedIn
+            </label>
+            <Input
+              value={form.linkedinUrl}
+              onChange={(e) => patch("linkedinUrl", e.target.value)}
+              placeholder="https://linkedin.com/in/…"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Lattes
+            </label>
+            <Input
+              value={form.lattesUrl}
+              onChange={(e) => patch("lattesUrl", e.target.value)}
+              placeholder="http://lattes.cnpq.br/…"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              GitHub
+            </label>
+            <Input
+              value={form.githubUrl}
+              onChange={(e) => patch("githubUrl", e.target.value)}
+              placeholder="https://github.com/…"
+              className="h-9 text-sm"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => mutation.mutate()}
+              disabled={mutation.isPending}
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {mutation.isPending ? "Salvando…" : "Salvar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="rounded-md border border-laps-navy/15 px-3 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-1.5 text-xs text-laps-navy/70">
+          <InfoRow label="Email" value={me.email} placeholder="Não cadastrado" highlight={needsEmail} />
+          <InfoRow label="Contato" value={me.contactEmail} />
+          <InfoRow label="LinkedIn" value={me.linkedinUrl} link />
+          <InfoRow label="Lattes" value={me.lattesUrl} link />
+          <InfoRow label="GitHub" value={me.githubUrl} link />
+        </div>
+      )}
+
+      {saved && (
+        <p className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-700">
+          <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
+        </p>
+      )}
+    </PortfolioCard>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+  placeholder,
+  link,
+  highlight,
+}: {
+  label: string;
+  value: string | null | undefined;
+  placeholder?: string;
+  link?: boolean;
+  highlight?: boolean;
+}) {
+  if (!value && !placeholder) return null;
+  return (
+    <div className="flex items-start gap-2">
+      <span className="w-16 shrink-0 text-[10px] font-bold uppercase tracking-wider text-laps-navy/40">
+        {label}
+      </span>
+      {value ? (
+        link ? (
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="truncate text-laps-blue hover:underline"
+          >
+            {value}
+          </a>
+        ) : (
+          <span className={highlight ? "font-semibold text-laps-navy" : ""}>{value}</span>
+        )
+      ) : (
+        <span className={`italic ${highlight ? "text-amber-600" : "text-laps-navy/35"}`}>
+          {placeholder}
+        </span>
+      )}
     </div>
   );
 }

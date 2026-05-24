@@ -161,6 +161,9 @@ public class AdminController {
             m.setRoadmap(req.roadmap());
         if (req.status() != null)
             m.setStatus(req.status());
+        // Empty string clears the tag; null means no-op (field not sent by SPA).
+        if (req.exchangeCountry() != null)
+            m.setExchangeCountry(req.exchangeCountry().isBlank() ? null : req.exchangeCountry());
         Member saved = memberRepository.save(m);
         auditService.record(AuthenticatedMember.id(), "UPDATE_MEMBER", "Member", id.toString(), req);
         return saved;
@@ -353,7 +356,8 @@ public class AdminController {
             String bioPt, String bioEn, String bioFr,
             String photoUrl, String linkedinUrl, String lattesUrl, String githubUrl,
             String contactEmail, String roadmap,
-            MemberStatus status) {
+            MemberStatus status,
+            String exchangeCountry) {
     }
 
     public record PromoteRequest(

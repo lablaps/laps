@@ -111,6 +111,7 @@ export interface ApiMember {
   interests: string | null;
   bannerColor: string | null;
   bannerImageUrl: string | null;
+  exchangeCountry: string | null;
   deletedAt: string | null;
 }
 
@@ -311,7 +312,7 @@ export const api = {
         { method: "POST", body }
       ),
 
-    updateMember: (id: string, body: Partial<Omit<ApiMember, "id" | "slug" | "currentRole">>) =>
+    updateMember: (id: string, body: Partial<Omit<ApiMember, "id" | "slug" | "currentRole">> & { exchangeCountry?: string | null }) =>
       request<ApiMember>(`/api/v1/admin/members/${id}`, { method: "PUT", body }),
 
     deleteMember: (id: string) =>

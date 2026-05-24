@@ -40,6 +40,8 @@ import {
   type MemberRole,
   type MemberStatusEnum,
 } from "@/lib/api";
+import { COUNTRIES, COUNTRY_ORDER, type CountryCode } from "@/lib/exchange-data";
+import { FLAGS } from "@/lib/flags";
 import { searchMembers } from "@/lib/member-search";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -617,9 +619,21 @@ function MemberCard({
             /{member.slug}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-laps-navy/55">
-          <span className={`inline-block h-1.5 w-1.5 rounded-full ${status.dot}`} />
-          {status.label}
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-laps-navy/55">
+            <span className={`inline-block h-1.5 w-1.5 rounded-full ${status.dot}`} />
+            {status.label}
+          </div>
+          {member.exchangeCountry && (
+            <div className="flex items-center gap-1 rounded-full border border-laps-blue/20 bg-laps-ghost/60 px-2 py-0.5">
+              <span className="inline-block h-3 w-5 overflow-hidden rounded-sm">
+                {FLAGS[member.exchangeCountry as CountryCode]}
+              </span>
+              <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-laps-blue">
+                Intercambista
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -955,6 +969,7 @@ function EditPanel({
   });
 
   const [toRole, setToRole] = useState<MemberRole>(member.currentRole);
+  const [exchangeCountry, setExchangeCountry] = useState<string>(member.exchangeCountry ?? "");
 
   const projectsQuery = useQuery({ queryKey: ["projects"], queryFn: () => api.projects() });
   const allProjects = projectsQuery.data ?? [];
@@ -989,6 +1004,7 @@ function EditPanel({
         // accidentally overwrite a freshly-translated value.
         bioPt: bioPt || null,
         status,
+        exchangeCountry: exchangeCountry || null,
       });
       if (linkedInited) {
         await api.admin.updateMemberProjects(member.id, linkedProjects);
@@ -1125,6 +1141,46 @@ function EditPanel({
                     )}
                   </FieldCard>
                 </div>
+              </Section>
+
+              <Section title="Intercâmbio Internacional">
+                <p className="mb-3 text-[11px] text-laps-navy/55">
+                  Somente gestores podem atribuir este marcador. O membro verá o badge "Intercambista" no seu portfólio público.
+                </p>
+                <FieldCard label="País de destino">
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="exchange-country"
+                        value=""
+                        checked={exchangeCountry === ""}
+                        onChange={() => setExchangeCountry("")}
+                        className="h-4 w-4 border-laps-navy/30 text-laps-blue focus:ring-laps-blue"
+                      />
+                      <span className="text-sm text-laps-navy/70">Nenhum (sem intercâmbio)</span>
+                    </label>
+                    {COUNTRY_ORDER.map((code) => {
+                      const country = COUNTRIES[code as CountryCode];
+                      return (
+                        <label key={code} className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="exchange-country"
+                            value={code}
+                            checked={exchangeCountry === code}
+                            onChange={() => setExchangeCountry(code)}
+                            className="h-4 w-4 border-laps-navy/30 text-laps-blue focus:ring-laps-blue"
+                          />
+                          <span className="inline-block h-4 w-6 overflow-hidden rounded-sm shadow-sm shrink-0">
+                            {FLAGS[code as CountryCode]}
+                          </span>
+                          <span className="text-sm text-laps-navy">{country.name.pt}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </FieldCard>
               </Section>
 
               <Section title="Bio (Português)">
