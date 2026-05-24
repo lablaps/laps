@@ -1,0 +1,100 @@
+# LAPS stack — monolith form (one app container + Postgres) for local dev and
+# the UEMA on-prem deploy. The same Dockerfile that Render builds is used here
+# so dev/prod parity is automatic.
+#
+# Quick start:
+#   1. cp .env.example .env  (fill in DB_PASSWORD, LAPS_JWT_SECRET, etc.)
+#   2. docker compose up --build -d
+#   3. visit http://<host>:8080 — Spring Boot serves both the SPA shell and /api/v1/*
+#
+# Security posture (LGPD-aware):
+#   - Postgres is on an internal network only; 5432 is NOT published.
+#   - The app container reads every secret via env (no committed defaults).
+#   - TLS is the reverse-proxy/host's job. Put Caddy/nginx in front of :8080.
+
+name: laps
+
+networks:
+  laps-internal:
+    driver: bridge
+
+volumes:
+  laps-db-data:
+    name: laps-db-data
+  laps-uploads:
+    name: laps-uploads
+
+services:
+  laps-db:
+    image: postgres:16-alpine
+    container_name: laps-db
+    restart: unless-stopped
+    networks: [laps-internal]
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    # Do NOT expose 5432 to the host. The app container reaches Postgres over
+    # the internal network only.
+    volumes:
+      - laps-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+
+  laps-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: laps-app:local
+    container_name: laps-app
+    restart: unless-stopped
+    networks: [laps-internal]
+    depends_on:
+      laps-db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # DB — same JDBC URL shape the Render blueprint produces.
+      DATABASE_URL: jdbc:postgresql://laps-db:5432/${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      # JWT — required.
+      LAPS_JWT_SECRET: ${LAPS_JWT_SECRET:?LAPS_JWT_SECRET is required}
+      LAPS_JWT_TTL: ${LAPS_JWT_TTL:-PT8H}
+      # Manager allowlist — comma-separated. Empty means no managers can log in.
+      LAPS_MANAGER_EMAILS: ${LAPS_MANAGER_EMAILS:-}
+      # Bootstrap admin (first boot only). Leave blank to skip.
+      LAPS_BOOTSTRAP_EMAIL: ${LAPS_BOOTSTRAP_EMAIL:-}
+      LAPS_BOOTSTRAP_FULL_NAME: ${LAPS_BOOTSTRAP_FULL_NAME:-}
+      LAPS_BOOTSTRAP_SLUG: ${LAPS_BOOTSTRAP_SLUG:-}
+      LAPS_BOOTSTRAP_PASSWORD: ${LAPS_BOOTSTRAP_PASSWORD:-}
+      # CORS — same-origin in the monolith. Override only if you split hosts.
+      LAPS_CORS_ALLOWED_ORIGINS: ${LAPS_CORS_ALLOWED_ORIGINS:-http://localhost:*}
+      # Translation provider.
+      LAPS_TRANSLATE_PROVIDER: ${LAPS_TRANSLATE_PROVIDER:-mymemory}
+      LAPS_TRANSLATE_BASE_URL: ${LAPS_TRANSLATE_BASE_URL:-}
+      LAPS_TRANSLATE_KEY: ${LAPS_TRANSLATE_KEY:-}
+      # Rate limit knobs.
+      LAPS_RATE_AUTH_PER_MIN: ${LAPS_RATE_AUTH_PER_MIN:-10}
+      LAPS_RATE_AUTH_BLOCK_SECONDS: ${LAPS_RATE_AUTH_BLOCK_SECONDS:-60}
+      # Media — persisted in the named volume so uploads survive restarts.
+      LAPS_MEDIA_DIR: /app/uploads
+    volumes:
+      - laps-uploads:/app/uploads
+    ports:
+      - "${APP_HOST_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://127.0.0.1:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true

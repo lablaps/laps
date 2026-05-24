@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+**/target
+**/.tanstack
+**/.wrangler
+**/.lovable
+**/.git
+**/.gitignore
+**/.env
+**/.env.*
+**/.idea
+**/.vscode
+**/*.log
+**/.DS_Store
+laps-api/uploads

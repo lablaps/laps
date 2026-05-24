@@ -1,0 +1,85 @@
+# Render Blueprint — LAPS monolith (Spring Boot jar serving SPA + REST API).
+#
+# Two resources land in your Render account when this blueprint is applied:
+#   1. laps-app    — Docker web service (Dockerfile at repo root)
+#   2. laps-db     — managed Postgres
+#
+# The Postgres credentials are wired into the app via `fromDatabase`, so the
+# only secrets you still need to set in the Render dashboard are the ones
+# marked `sync: false` below (JWT secret, bootstrap admin, CORS origins).
+
+databases:
+  - name: laps-db
+    plan: free
+    databaseName: lapsnew
+    user: laps
+    # Render Postgres free tier is 1GB / 30-day retention — good enough for the
+    # research-lab roster. Promote to `starter` when you need a backup window.
+
+services:
+  - type: web
+    name: laps-app
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    pullRequestPreviewsEnabled: false
+    healthCheckPath: /actuator/health
+    # Disk for upload persistence. Render free tier doesn't include disks, so
+    # uploaded photos vanish on every redeploy — promote to a paid plan and add
+    # a `disk:` block here when uploads become load-bearing.
+    envVars:
+      # --- Database ---
+      - key: DATABASE_URL
+        fromDatabase:
+          name: laps-db
+          property: connectionString
+      - key: DB_SSLMODE
+        value: require
+
+      # --- Spring profile ---
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+      # --- JWT (set in dashboard, never committed) ---
+      - key: LAPS_JWT_SECRET
+        sync: false
+      - key: LAPS_JWT_TTL
+        value: PT8H
+
+      # --- CORS — same-origin in the monolith, but the admin SPA running on
+      # localhost during dev sometimes calls prod. Override in the dashboard if
+      # you split this across hosts. ---
+      - key: LAPS_CORS_ALLOWED_ORIGINS
+        sync: false
+
+      # --- Manager allow-list — comma-separated emails. Without at least one
+      # entry, the manager role can never log in. ---
+      - key: LAPS_MANAGER_EMAILS
+        sync: false
+
+      # --- Bootstrap admin (first boot only). Leave blank to skip; fill in to
+      # provision a first manager you can log in as. Rotate the password after
+      # first login. ---
+      - key: LAPS_BOOTSTRAP_EMAIL
+        sync: false
+      - key: LAPS_BOOTSTRAP_FULL_NAME
+        sync: false
+      - key: LAPS_BOOTSTRAP_SLUG
+        sync: false
+      - key: LAPS_BOOTSTRAP_PASSWORD
+        sync: false
+
+      # --- Translation provider ---
+      - key: LAPS_TRANSLATE_PROVIDER
+        value: mymemory
+
+      # --- Rate limiter ---
+      - key: LAPS_RATE_AUTH_PER_MIN
+        value: "10"
+      - key: LAPS_RATE_AUTH_BLOCK_SECONDS
+        value: "60"
+
+      # --- Media — uploads aren't persistent on free tier; treat as ephemeral. ---
+      - key: LAPS_MEDIA_DIR
+        value: /app/uploads

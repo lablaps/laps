@@ -1,0 +1,55 @@
+# ─── Logs ───────────────────────────────────────────────────────────────────
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── Dependencies ───────────────────────────────────────────────────────────
+node_modules
+.pnp
+.pnp.*
+.yarn/cache
+.yarn/install-state.gz
+
+# ─── Build output ───────────────────────────────────────────────────────────
+dist
+dist-ssr
+build
+.output
+.vinxi
+.tanstack/**
+.nitro
+*.local
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ─── Wrangler / Cloudflare ──────────────────────────────────────────────────
+.wrangler/
+.dev.vars
+
+# ─── Lovable scaffold artifacts ─────────────────────────────────────────────
+.lovable/
+
+# ─── Test / coverage ────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ─── Secrets (per-app — root .gitignore also covers this) ───────────────────
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# ─── Editor directories and files ───────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

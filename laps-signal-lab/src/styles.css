@@ -1,0 +1,113 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-laps-navy: var(--laps-navy);
+  --color-laps-blue: var(--laps-blue);
+  --color-laps-light: var(--laps-light);
+  --color-laps-ghost: var(--laps-ghost);
+  --color-laps-white: var(--laps-white);
+  --font-sans: 'Montserrat', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Montserrat', system-ui, sans-serif;
+}
+
+.font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+
+:root {
+  --radius: 0.625rem;
+
+  --laps-navy: #193A59;
+  --laps-blue: #0B4E8D;
+  --laps-light: #74B5F2;
+  --laps-ghost: #E0F0FF;
+  --laps-white: #FFFFFF;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.25 0.05 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.05 250);
+  --primary: oklch(0.36 0.10 250);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0.02 240);
+  --secondary-foreground: oklch(0.25 0.05 250);
+  --muted: oklch(0.96 0.02 240);
+  --muted-foreground: oklch(0.5 0.04 250);
+  --accent: oklch(0.85 0.08 240);
+  --accent-foreground: oklch(0.25 0.05 250);
+  --border: oklch(0.9 0.02 240);
+  --input: oklch(0.9 0.02 240);
+  --ring: oklch(0.5 0.1 250);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html, body {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
+
+@keyframes wave-flow {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.wave-strip {
+  animation: wave-flow 18s linear infinite;
+}
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Smoother, slower nudge for the hero scroll hint — ease-in-out feels more
+   "invitational" than animate-bounce's snappy cubic-bezier. */
+@keyframes scroll-nudge {
+  0%, 100% { transform: translateY(0); opacity: 0.45; }
+  50% { transform: translateY(10px); opacity: 1; }
+}
+.animate-scroll-nudge {
+  animation: scroll-nudge 2.4s ease-in-out infinite;
+}
+
+@keyframes scroll-dot {
+  0% { transform: translateY(0); opacity: 0; }
+  25% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { transform: translateY(14px); opacity: 0; }
+}
+.animate-scroll-dot {
+  animation: scroll-dot 2.4s ease-in-out infinite;
+}

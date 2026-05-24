@@ -1,66 +1,33 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ─── Claude Code / agent state ──────────────────────────────────────────────
+.claude/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+# ─── OS junk ────────────────────────────────────────────────────────────────
 .DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# backup files
-*.backup
-*-backup/
-
-# GitHub Pages specific
-.nojekyll
-
-# IDE
-.vscode/
-.idea/
+Thumbs.db
+desktop.ini
 *.swp
 *.swo
 *~
 
-# OS
-.DS_Store
-Thumbs.db
+# ─── Editors / IDEs ─────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
 
-# Database (local development only)
-src/data/team-db.json
-
-# Logs
-logs/
+# ─── Logs (anywhere in the tree) ────────────────────────────────────────────
 *.log
+logs/
+
+# ─── Secrets (defense-in-depth — submodules also gitignore .env locally) ────
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# ─── Local notes / scratch ──────────────────────────────────────────────────
+SCRATCH.md
+NOTES.local.md
+/tmp/

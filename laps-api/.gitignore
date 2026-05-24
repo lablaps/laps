@@ -1,0 +1,46 @@
+# ─── Maven / build output ───────────────────────────────────────────────────
+target/
+build/
+!**/src/main/**/target/
+!**/src/test/**/target/
+.flattened-pom.xml
+
+# ─── JVM / compiled artifacts ───────────────────────────────────────────────
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# ─── Spring Boot runtime artifacts ──────────────────────────────────────────
+.boot.log
+spring.log
+*.log
+out/
+bin/
+
+
+uploads/
+
+# ─── Secrets ────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── IDEs ───────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+.factorypath
+
+# ─── OS junk ────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Spring tooling defaults that Spring Initializr ships ───────────────────
+HELP.md

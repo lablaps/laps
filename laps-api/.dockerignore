@@ -1,0 +1,34 @@
+# Build output — generated inside the image, never copy from host.
+target/
+build/
+*.jar
+
+# Local secrets / env — these must never enter the image. The runtime reads
+# env vars supplied by docker compose; bundling a .env into a layer would
+# permanently bake it into the registry.
+.env
+.env.*
+!.env.example
+
+# IDE noise
+.idea/
+.vscode/
+*.iml
+
+# Logs + tmp
+logs/
+*.log
+.boot.log
+spring.log
+
+# Git metadata — pointless inside the image and leaks branch/SHA info.
+.git/
+.gitignore
+.gitattributes
+
+# OS detritus
+.DS_Store
+Thumbs.db
+
+# Uploads written by the running app on the host — ship the dir empty.
+uploads/

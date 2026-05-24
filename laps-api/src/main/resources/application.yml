@@ -1,0 +1,102 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: laps-api
+  profiles:
+    # Active profile is set via SPRING_PROFILES_ACTIVE. Local dev defaults to
+    # the (empty) base profile + this file; production sets it to "prod" so
+    # application-prod.yml overrides logging, CORS, and JDBC TLS.
+    active: ${SPRING_PROFILES_ACTIVE:default}
+
+  datasource:
+    # DATABASE_URL is what Render injects on a managed Postgres binding — accept
+    # it directly when present; otherwise compose the URL from DB_HOST/PORT/NAME
+    # so local dev (docker-compose Postgres) keeps working.
+    url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:lapsnew}?sslmode=${DB_SSLMODE:disable}}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  servlet:
+    multipart:
+      # Photo-upload cap. Matches laps.media.max-bytes (5 MiB) with a small
+      # headroom for the multipart envelope.
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  address: 0.0.0.0
+  # Drop the Server header and version info so banners aren't an info-leak.
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-exception: false
+
+# Actuator — only /health is exposed (used by docker compose's healthcheck).
+# Everything else stays disabled to keep the management surface minimal.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+laps:
+  jwt:
+    issuer: laps.uema.br
+    # Required env. The app refuses to start without a secret, by design.
+    secret: ${LAPS_JWT_SECRET}
+    ttl: ${LAPS_JWT_TTL:PT8H}
+  managers:
+    # Comma-separated. Required env in production; left blank in committed
+    # config so the file is safe to share. No PII leaks into git.
+    allowed-emails: ${LAPS_MANAGER_EMAILS:}
+  media:
+    upload-dir: ${LAPS_MEDIA_DIR:./uploads}
+    public-base-url: "/uploads"
+    max-bytes: 5242880   # 5 MiB
+  translate:
+    provider: ${LAPS_TRANSLATE_PROVIDER:mymemory}
+    base-url: ${LAPS_TRANSLATE_BASE_URL:}
+    api-key: ${LAPS_TRANSLATE_KEY:}
+  cors:
+    allowed-origins: ${LAPS_CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+  bootstrap:
+    email: ${LAPS_BOOTSTRAP_EMAIL:}
+    full-name: ${LAPS_BOOTSTRAP_FULL_NAME:}
+    slug: ${LAPS_BOOTSTRAP_SLUG:}
+    password: ${LAPS_BOOTSTRAP_PASSWORD:}
+  ratelimit:
+    # Per-IP token bucket on /auth endpoints. Defaults: 10 attempts/min, then
+    # 429s for 60s. Tunable so legitimate clinic-bench shared-IP setups can
+    # raise the ceiling without recompiling.
+    auth-attempts-per-minute: ${LAPS_RATE_AUTH_PER_MIN:10}
+    auth-block-seconds: ${LAPS_RATE_AUTH_BLOCK_SECONDS:60}
+
+logging:
+  level:
+    br.uema.laps: ${LOG_LEVEL_APP:INFO}
+    org.flywaydb: INFO
+    org.hibernate: WARN
+    org.springframework.jdbc: ${LOG_LEVEL_JDBC:WARN}
