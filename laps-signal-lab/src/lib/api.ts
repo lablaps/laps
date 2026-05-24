@@ -149,6 +149,7 @@ export interface LoginResponse {
 
 export interface MyProfile extends ApiMember {
   username: string;
+  role?: "MEMBER" | "MANAGER";
   mustChangePassword: boolean;
   emailVerified: boolean;
 }

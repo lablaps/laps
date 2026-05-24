@@ -78,6 +78,9 @@ public class MyPortalController {
         out.put("roadmap", me.getRoadmap());
         out.put("mustChangePassword", me.isMustChangePassword());
         out.put("emailVerified", me.isEmailVerified());
+        // Expose the resolved security role (MANAGER / MEMBER) so the SPA can
+        // gate admin access without duplicating the manager-email allowlist.
+        out.put("role", AuthenticatedMember.role());
         return out;
     }
 
