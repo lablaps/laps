@@ -40,9 +40,9 @@ WORKDIR /app
 # Non-root user. Render lets us pick our own UID and matches it on the
 # managed disk if one is mounted.
 RUN groupadd --system --gid 1001 laps \
-    && useradd --system --uid 1001 --gid laps --home /app --shell /usr/sbin/nologin laps \
-    && mkdir -p /app/uploads \
-    && chown -R laps:laps /app
+ && useradd --system --uid 1001 --gid laps --home /app --shell /usr/sbin/nologin laps \
+ && mkdir -p /app/uploads \
+ && chown -R laps:laps /app
 
 COPY --from=api-build --chown=laps:laps /app.jar /app/app.jar
 
