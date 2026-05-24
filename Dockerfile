@@ -29,7 +29,7 @@ RUN mvn -B -ntp -q dependency:go-offline
 COPY laps-api/src ./src
 COPY --from=spa-build /spa/dist/client/ ./src/main/resources/static/
 
-RUN mvn -B -ntp -q -DskipTests package
+RUN mvn -B -ntp -q -DskipTests -Dskip.frontend=true package
 # Spring Boot fat jar lands at /build/target/laps-api-*.jar; rename for clarity.
 RUN cp target/laps-api-*.jar /app.jar
 
@@ -40,9 +40,9 @@ WORKDIR /app
 # Non-root user. Render lets us pick our own UID and matches it on the
 # managed disk if one is mounted.
 RUN groupadd --system --gid 1001 laps \
- && useradd --system --uid 1001 --gid laps --home /app --shell /usr/sbin/nologin laps \
- && mkdir -p /app/uploads \
- && chown -R laps:laps /app
+    && useradd --system --uid 1001 --gid laps --home /app --shell /usr/sbin/nologin laps \
+    && mkdir -p /app/uploads \
+    && chown -R laps:laps /app
 
 COPY --from=api-build --chown=laps:laps /app.jar /app/app.jar
 
