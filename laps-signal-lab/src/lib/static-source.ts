@@ -9,6 +9,7 @@
 // admin UI lives at /uploads/* and the API photoUrl wins over this overlay.
 
 import type { ApiMember } from "./api";
+import { resolveMediaUrl } from "./api";
 import { team as seedTeam } from "./team-data";
 
 const overlay = new Map(
@@ -25,7 +26,7 @@ const overlay = new Map(
 
 /** Photo from team-data.ts, if the API photoUrl is empty. */
 export function decoratePhotoUrl(m: ApiMember): string | null {
-  if (m.photoUrl && m.photoUrl.length > 0) return m.photoUrl;
+  if (m.photoUrl && m.photoUrl.length > 0) return resolveMediaUrl(m.photoUrl) ?? null;
   return overlay.get(m.slug)?.photoUrl ?? null;
 }
 

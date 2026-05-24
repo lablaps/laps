@@ -28,6 +28,7 @@ import {
   fetchMember,
   fetchMembers,
   fetchProjects,
+  resolveMediaUrl,
   type ApiMember,
 } from "@/lib/api";
 import { applyOverlay, decoratePhotoUrl } from "@/lib/static-source";
@@ -255,7 +256,7 @@ function TeamMemberPage() {
             <div
               className={`relative h-40 md:h-48 ${!member.bannerImageUrl ? `bg-gradient-to-r ${cfg.band}` : ""}`}
               style={member.bannerImageUrl
-                ? { backgroundImage: `url(${member.bannerImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                ? { backgroundImage: `url(${resolveMediaUrl(member.bannerImageUrl)})`, backgroundSize: "cover", backgroundPosition: "center" }
                 : member.bannerColor
                   ? { background: `linear-gradient(to right, ${member.bannerColor}, ${member.bannerColor}99)` }
                   : undefined}

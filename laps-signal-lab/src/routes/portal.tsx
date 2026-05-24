@@ -29,7 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { api, ApiError, type ApiMember, type ApiProject, type ApiResearchArea, type MyProfile } from "@/lib/api";
+import { api, ApiError, resolveMediaUrl, type ApiMember, type ApiProject, type ApiResearchArea, type MyProfile } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { initials } from "@/lib/team-data";
 import { areas as staticAreas, type AreaSlug } from "@/lib/areas-data";
@@ -386,7 +386,7 @@ function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
   }
 
   const bannerStyle = me.bannerImageUrl
-    ? { backgroundImage: `url(${me.bannerImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+    ? { backgroundImage: `url(${resolveMediaUrl(me.bannerImageUrl)})`, backgroundSize: "cover", backgroundPosition: "center" }
     : me.bannerColor
       ? { background: `linear-gradient(to right, ${me.bannerColor}, ${me.bannerColor}99)` }
       : undefined;
@@ -774,7 +774,7 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
     <div className="-mt-20 flex justify-start">
       <div className={`group relative h-36 w-36 shrink-0 rounded-full bg-white p-1.5 shadow-xl ring-4 ${cfg.ring}`}>
         {me.photoUrl ? (
-          <img src={me.photoUrl} alt={me.fullName} className="h-full w-full rounded-full object-cover" />
+          <img src={resolveMediaUrl(me.photoUrl)} alt={me.fullName} className="h-full w-full rounded-full object-cover" />
         ) : (
           <div className={`flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br ${cfg.gradient} text-4xl font-bold text-white`}>
             {initials(me.fullName)}

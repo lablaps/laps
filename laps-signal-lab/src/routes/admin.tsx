@@ -40,6 +40,7 @@ import {
   type MemberRole,
   type MemberStatusEnum,
 } from "@/lib/api";
+import { resolveMediaUrl } from "@/lib/api";
 import { COUNTRIES, COUNTRY_ORDER, type CountryCode } from "@/lib/exchange-data";
 import { FLAGS } from "@/lib/flags";
 import { searchMembers } from "@/lib/member-search";
@@ -1066,7 +1067,7 @@ function EditPanel({
             <div className="-mt-14 md:-mt-16 flex flex-col items-center px-6 pb-8 text-center md:px-8">
               <div className={`relative h-28 w-28 md:h-32 md:w-32 shrink-0 rounded-full bg-white p-1.5 shadow-xl ring-4 ${cfg.ring}`}>
                 {photoUrl ? (
-                  <img src={photoUrl} alt={fullName} className="h-full w-full rounded-full object-cover" />
+                  <img src={resolveMediaUrl(photoUrl)} alt={fullName} className="h-full w-full rounded-full object-cover" />
                 ) : (
                   <div className={`flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br ${cfg.gradient} text-3xl font-bold text-white`}>
                     {initials(fullName)}
@@ -1379,7 +1380,7 @@ function PhotoUploader({
       <div className="flex items-center gap-3 rounded-md border border-dashed border-laps-navy/20 bg-white p-2">
         {photoUrl ? (
           <img
-            src={photoUrl}
+            src={resolveMediaUrl(photoUrl)}
             alt=""
             className="h-12 w-12 rounded-md object-cover ring-1 ring-laps-blue/15"
           />
@@ -1795,7 +1796,7 @@ function ResearcherPicker({
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-laps-ghost text-[10px] font-bold text-laps-blue">
                   {member.photoUrl ? (
-                    <img src={member.photoUrl} alt="" className="h-full w-full object-cover" />
+                    <img src={resolveMediaUrl(member.photoUrl)} alt="" className="h-full w-full object-cover" />
                   ) : (
                     initials(member.fullName)
                   )}
@@ -1825,7 +1826,7 @@ function ResearcherPicker({
               <div key={l.memberId} className="flex items-center gap-3 rounded-lg border border-laps-light/30 bg-white p-2.5">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-laps-ghost text-[10px] font-bold text-laps-blue">
                   {m?.photoUrl ? (
-                    <img src={m.photoUrl} alt="" className="h-full w-full object-cover" />
+                    <img src={resolveMediaUrl(m.photoUrl)} alt="" className="h-full w-full object-cover" />
                   ) : (
                     m ? initials(m.fullName) : "?"
                   )}

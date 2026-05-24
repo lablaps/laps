@@ -29,6 +29,18 @@ function resolveApiBase(): string {
 
 export const API_BASE = resolveApiBase();
 
+/**
+ * Convert a server-returned URL to one the browser can load.
+ * The backend stores relative paths like "/uploads/uuid.jpg" — prepend
+ * API_BASE so the request always hits the right host (avoids localhost:8080
+ * hardcoded in the DB). Absolute URLs (external avatars, old data) pass through.
+ */
+export function resolveMediaUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `${API_BASE}${url}`;
+}
+
 export class ApiError extends Error {
   constructor(public readonly status: number, message: string, public readonly body?: unknown) {
     super(message);
@@ -261,9 +273,10 @@ export const api = {
           : res.statusText || `Upload failed: ${res.status}`;
       throw new ApiError(res.status, message, parsed);
     }
-    const rel = (parsed as { url: string }).url;
-    const url = rel.startsWith("http") ? rel : `${API_BASE}${rel}`;
-    return { url };
+    // Store the relative path (/uploads/uuid.jpg) in the DB — display code uses
+    // resolveMediaUrl() to prepend API_BASE at render time, so the URL stays
+    // correct even if the backend host changes.
+    return { url: (parsed as { url: string }).url };
   },
 
   /** Banner image upload — multipart to /me/media/banner. */
@@ -284,9 +297,7 @@ export const api = {
           : res.statusText || `Upload failed: ${res.status}`;
       throw new ApiError(res.status, message, parsed);
     }
-    const rel = (parsed as { url: string }).url;
-    const url = rel.startsWith("http") ? rel : `${API_BASE}${rel}`;
-    return { url };
+    return { url: (parsed as { url: string }).url };
   },
 
   // Public reads
@@ -374,9 +385,7 @@ export const api = {
             : res.statusText || `Upload failed: ${res.status}`;
         throw new ApiError(res.status, message, parsed);
       }
-      const rel = (parsed as { url: string }).url;
-      const url = rel.startsWith("http") ? rel : `${API_BASE}${rel}`;
-      return { url };
+      return { url: (parsed as { url: string }).url };
     },
   },
 };
