@@ -10,6 +10,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +33,8 @@ import java.util.UUID;
  */
 @Service
 public class PhotoUploadService {
+
+    private static final Logger log = LoggerFactory.getLogger(PhotoUploadService.class);
 
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
             MediaType.IMAGE_JPEG_VALUE,
@@ -75,8 +79,10 @@ public class PhotoUploadService {
                     "api_secret", apiSecret,
                     "secure", true
             ));
+            log.info("PhotoUploadService: Cloudinary mode active (cloud={})", cloudName);
         } else {
             Files.createDirectories(uploadRoot);
+            log.warn("PhotoUploadService: local disk mode (uploads lost on redeploy) — set CLOUDINARY_* env vars for persistent storage");
         }
     }
 
@@ -105,7 +111,12 @@ public class PhotoUploadService {
                             "unique_filename", true
                     )
             );
-            return (String) result.get("secure_url");
+            String secureUrl = (String) result.get("secure_url");
+            if (secureUrl == null || secureUrl.isBlank()) {
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "Cloudinary did not return a URL");
+            }
+            return secureUrl;
         }
 
         return storeLocally(file);

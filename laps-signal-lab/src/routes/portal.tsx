@@ -760,18 +760,33 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const { Icon } = cfg;
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  const saveMutation = useMutation({
+    mutationFn: (url: string) => api.meUpdate({ photoUrl: url }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setPhotoError(null);
+    },
+    onError: () => {
+      setPhotoError("Falha ao salvar foto. Tente novamente.");
+    },
+  });
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => api.meUploadPhoto(file),
     onSuccess: (res) => {
-      api.meUpdate({ photoUrl: res.url }).then(() => {
-        qc.invalidateQueries({ queryKey: ["me"] });
-      });
+      saveMutation.mutate(res.url);
+    },
+    onError: () => {
+      setPhotoError("Falha ao enviar foto. Verifique o formato e tente novamente.");
     },
   });
 
+  const busy = uploadMutation.isPending || saveMutation.isPending;
+
   return (
-    <div className="-mt-20 flex justify-start">
+    <div className="-mt-20 flex flex-col items-start gap-1">
       <div className={`group relative h-36 w-36 shrink-0 rounded-full bg-white p-1.5 shadow-xl ring-4 ${cfg.ring}`}>
         {me.photoUrl ? (
           <img src={resolveMediaUrl(me.photoUrl)} alt={me.fullName} className="h-full w-full rounded-full object-cover" />
@@ -783,15 +798,22 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
         <div className="absolute -right-1 -top-1 flex h-10 w-10 items-center justify-center rounded-full bg-white text-laps-blue shadow ring-2 ring-white">
           <Icon className="h-5 w-5" />
         </div>
-        {/* Upload overlay */}
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          disabled={uploadMutation.isPending}
-          className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100"
-        >
-          <Upload className="h-6 w-6 text-white" />
-        </button>
+        {/* Upload / saving overlay */}
+        {busy ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/50">
+            <p className="text-[10px] font-semibold text-white">
+              {uploadMutation.isPending ? "Enviando…" : "Salvando…"}
+            </p>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setPhotoError(null); fileRef.current?.click(); }}
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100"
+          >
+            <Upload className="h-6 w-6 text-white" />
+          </button>
+        )}
         <input
           ref={fileRef}
           type="file"
@@ -804,6 +826,11 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
           }}
         />
       </div>
+      {photoError && (
+        <p className="flex items-center gap-1 text-[10px] text-red-600">
+          <AlertCircle className="h-3 w-3 shrink-0" /> {photoError}
+        </p>
+      )}
     </div>
   );
 }
