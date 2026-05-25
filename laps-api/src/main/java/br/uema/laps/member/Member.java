@@ -100,6 +100,10 @@ public class Member {
     @Column(name = "exchange_country", length = 10)
     private String exchangeCountry;
 
+    // JSON array of {code, level} objects — see languages-data.ts for schema.
+    @Column(name = "languages", columnDefinition = "text")
+    private String languages;
+
     @Column(name = "deleted_at")
     private Instant deletedAt;
 

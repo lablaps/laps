@@ -124,6 +124,7 @@ export interface ApiMember {
   bannerColor: string | null;
   bannerImageUrl: string | null;
   exchangeCountry: string | null;
+  languages: string | null;
   deletedAt: string | null;
 }
 
@@ -228,7 +229,7 @@ export const api = {
 
   // Me — extended payload with auth-flow flags (mustChangePassword, emailVerified).
   me: () => request<MyProfile | null>("/api/v1/me", { swallow401: true }),
-  meUpdate: (body: Partial<MyProfile> & { email?: string; areas?: string; interests?: string; bannerColor?: string; bannerImageUrl?: string }) =>
+  meUpdate: (body: Partial<MyProfile> & { email?: string; areas?: string; interests?: string; bannerColor?: string; bannerImageUrl?: string; languages?: string }) =>
     request<ApiMember>("/api/v1/me", { method: "PUT", body }),
   meChangePassword: (currentPassword: string, newPassword: string) =>
     request<{ message: string }>("/api/v1/me/password", {

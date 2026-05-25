@@ -91,6 +91,7 @@ public class MyPortalController {
         out.put("mustChangePassword", me.isMustChangePassword());
         out.put("emailVerified", me.isEmailVerified());
         out.put("exchangeCountry", me.getExchangeCountry());
+        out.put("languages", me.getLanguages());
         // Expose the resolved security role (MANAGER / MEMBER) so the SPA can
         // gate admin access without duplicating the manager-email allowlist.
         out.put("role", AuthenticatedMember.role());
@@ -278,6 +279,8 @@ public class MyPortalController {
             me.setBannerColor(u.bannerColor().isBlank() ? null : u.bannerColor());
         if (u.bannerImageUrl() != null)
             me.setBannerImageUrl(u.bannerImageUrl().isBlank() ? null : u.bannerImageUrl());
+        if (u.languages() != null)
+            me.setLanguages(u.languages().isBlank() ? null : u.languages());
         // Email change invalidates verification — the SPA's snackbar will
         // re-fire prompting the member to verify the new address.
         if (u.email() != null && !u.email().equals(me.getEmail())) {
@@ -373,7 +376,8 @@ public class MyPortalController {
             @Size(max = 4000) String areas,
             @Size(max = 4000) String interests,
             @Size(max = 50) String bannerColor,
-            @Size(max = 500) String bannerImageUrl) {
+            @Size(max = 500) String bannerImageUrl,
+            @Size(max = 4000) String languages) {
     }
 
     public record ChangePasswordRequest(

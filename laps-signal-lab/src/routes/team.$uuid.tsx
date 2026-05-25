@@ -13,6 +13,7 @@ import {
   BookOpen,
   Calendar,
   Globe,
+  Languages,
   Sparkles,
   FileText,
   Compass,
@@ -35,6 +36,9 @@ import { applyOverlay, decoratePhotoUrl } from "@/lib/static-source";
 import { PublicLayout } from "@/components/PublicLayout";
 import { COUNTRIES, type CountryCode } from "@/lib/exchange-data";
 import { FLAGS } from "@/lib/flags";
+import {
+  parseLanguages, LANGUAGE_BY_CODE, levelShortLabel, levelBadgeClass,
+} from "@/lib/languages-data";
 
 type Lang = "pt" | "en" | "fr";
 
@@ -186,6 +190,7 @@ function TeamMemberPage() {
   // UUID, so we use slug here. Resolves to an empty list cleanly when nothing
   // has been seeded for this member yet.
   const pubs = publicationsByMember(member.slug);
+  const languages = parseLanguages(member.languages);
 
   const memberProjects = apiProjects
     .filter((p) =>
@@ -423,6 +428,35 @@ function TeamMemberPage() {
                           />
                           {area?.name[L] ?? slug}
                         </span>
+                      );
+                    })}
+                  </div>
+                </PortfolioCard>
+              )}
+
+              {/* Languages */}
+              {languages.length > 0 && (
+                <PortfolioCard title={tx.sections.languages} icon={Languages}>
+                  <div className="space-y-1.5">
+                    {languages.map((entry) => {
+                      const lang = LANGUAGE_BY_CODE[entry.code];
+                      return (
+                        <div
+                          key={entry.code}
+                          className="flex items-center justify-between gap-2"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-base leading-none">{lang?.flag ?? "🌐"}</span>
+                            <span className="text-xs font-medium text-laps-navy/85 truncate">
+                              {lang?.name[L] ?? entry.code}
+                            </span>
+                          </div>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide ${levelBadgeClass(entry.level)}`}
+                          >
+                            {levelShortLabel(entry.level, L)}
+                          </span>
+                        </div>
                       );
                     })}
                   </div>
@@ -752,6 +786,7 @@ const TX: Record<Lang, {
   sections: {
     about: string;
     areas: string;
+    languages: string;
     interests: string;
     peers: string;
     roadmap: string;
@@ -777,6 +812,7 @@ const TX: Record<Lang, {
     sections: {
       about: "Sobre",
       areas: "Áreas de pesquisa",
+      languages: "Idiomas",
       interests: "Interesses",
       peers: "Outros do mesmo grupo",
       roadmap: "Roteiro de pesquisa",
@@ -802,6 +838,7 @@ const TX: Record<Lang, {
     sections: {
       about: "About",
       areas: "Research areas",
+      languages: "Languages",
       interests: "Interests",
       peers: "Others in this group",
       roadmap: "Research roadmap",
@@ -827,6 +864,7 @@ const TX: Record<Lang, {
     sections: {
       about: "À propos",
       areas: "Domaines de recherche",
+      languages: "Langues",
       interests: "Intérêts",
       peers: "Autres du même groupe",
       roadmap: "Feuille de route",

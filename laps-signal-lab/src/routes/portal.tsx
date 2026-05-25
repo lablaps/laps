@@ -11,6 +11,7 @@ import {
   Compass,
   Crown,
   Edit2,
+  Globe,
   GraduationCap,
   ImageIcon,
   KeyRound,
@@ -30,6 +31,11 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { api, ApiError, resolveMediaUrl, type ApiMember, type ApiProject, type ApiResearchArea, type MyProfile } from "@/lib/api";
+import {
+  LANGUAGE_CATALOG, LANGUAGE_BY_CODE, LEVELS_BY_SYSTEM, NATIVE_LEVEL,
+  parseLanguages, serializeLanguages, levelBadgeClass, levelFullLabel, levelShortLabel,
+  type LanguageEntry,
+} from "@/lib/languages-data";
 import { Input } from "@/components/ui/input";
 import { initials } from "@/lib/team-data";
 import { areas as staticAreas, type AreaSlug } from "@/lib/areas-data";
@@ -256,6 +262,7 @@ function PortalPage() {
               currentAreas={memberAreas}
             />
             <InterestsEditor me={me} currentInterests={memberInterests} />
+            <LanguagesEditor me={me} />
           </aside>
 
           {/* MAIN */}
@@ -1371,6 +1378,201 @@ function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInter
             <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
+        {saved && (
+          <p className="inline-flex items-center gap-1 text-xs text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
+          </p>
+        )}
+      </div>
+    </PortfolioCard>
+  );
+}
+
+// ───── Languages editor ─────
+
+function LanguagesEditor({ me }: { me: MyProfile }) {
+  const qc = useQueryClient();
+  const [entries, setEntries] = useState<LanguageEntry[]>(() => parseLanguages(me.languages));
+  const [addCode, setAddCode] = useState("");
+  const [addLevel, setAddLevel] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: (next: LanguageEntry[]) =>
+      api.meUpdate({ languages: serializeLanguages(next) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setDirty(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    },
+  });
+
+  const langDef = addCode ? LANGUAGE_BY_CODE[addCode] : undefined;
+
+  function handleCodeChange(code: string) {
+    setAddCode(code);
+    setAddLevel("");
+  }
+
+  function addEntry() {
+    if (!addCode || !addLevel) return;
+    if (entries.some((e) => e.code === addCode)) return;
+    const next = [...entries, { code: addCode, level: addLevel }];
+    setEntries(next);
+    setDirty(true);
+    setAddCode("");
+    setAddLevel("");
+    setShowAdd(false);
+  }
+
+  function removeEntry(code: string) {
+    const next = entries.filter((e) => e.code !== code);
+    setEntries(next);
+    setDirty(true);
+  }
+
+  const usedCodes = new Set(entries.map((e) => e.code));
+  const availableLangs = LANGUAGE_CATALOG.filter((l) => !usedCodes.has(l.code));
+
+  return (
+    <PortfolioCard
+      title="IDIOMAS"
+      icon={Globe}
+      action={
+        dirty ? (
+          <button
+            type="button"
+            onClick={() => mutation.mutate(entries)}
+            disabled={mutation.isPending}
+            className="inline-flex items-center gap-1 rounded-md bg-laps-blue px-2 py-1 text-[10px] font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+          >
+            <Save className="h-3 w-3" /> {mutation.isPending ? "…" : "Salvar"}
+          </button>
+        ) : null
+      }
+    >
+      <div className="space-y-3">
+        {/* Existing entries */}
+        <div className="space-y-1.5">
+          {entries.map((entry) => {
+            const lang = LANGUAGE_BY_CODE[entry.code];
+            return (
+              <div
+                key={entry.code}
+                className="flex items-center justify-between gap-2 rounded-lg border border-laps-blue/10 bg-laps-ghost/20 px-3 py-2"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-base leading-none">{lang?.flag ?? "🌐"}</span>
+                  <span className="text-xs font-medium text-laps-navy/85 truncate">
+                    {lang?.name.pt ?? entry.code}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide ${levelBadgeClass(entry.level)}`}
+                  >
+                    {levelShortLabel(entry.level, "pt")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeEntry(entry.code)}
+                    className="rounded-full text-laps-navy/35 hover:text-red-600 transition"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Add form */}
+        {showAdd ? (
+          <div className="rounded-xl border border-laps-navy/10 bg-laps-ghost/20 p-3 space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-laps-navy/50">
+              Adicionar idioma
+            </p>
+
+            {/* Language selector */}
+            <select
+              value={addCode}
+              onChange={(e) => handleCodeChange(e.target.value)}
+              className="w-full rounded-md border border-laps-navy/15 bg-white px-2 py-2 text-xs text-laps-navy focus:outline-none focus:border-laps-blue/40"
+            >
+              <option value="">— Selecione o idioma —</option>
+              {availableLangs.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.flag} {l.name.pt}
+                </option>
+              ))}
+            </select>
+
+            {/* Level selector — appears once a language is chosen */}
+            {langDef && (
+              <div>
+                <p className="mb-1 text-[10px] text-laps-navy/50">
+                  Sistema:{" "}
+                  <span className="font-bold">
+                    {langDef.system === "CEFR"
+                      ? "CEFR (A1–C2)"
+                      : langDef.system === "HSK"
+                      ? "HSK (1–6)"
+                      : langDef.system === "JLPT"
+                      ? "JLPT (N5–N1)"
+                      : "TOPIK (1–6)"}
+                  </span>
+                </p>
+                <select
+                  value={addLevel}
+                  onChange={(e) => setAddLevel(e.target.value)}
+                  className="w-full rounded-md border border-laps-navy/15 bg-white px-2 py-2 text-xs text-laps-navy focus:outline-none focus:border-laps-blue/40"
+                >
+                  <option value="">— Selecione o nível —</option>
+                  <option value="NATIVE">{NATIVE_LEVEL.label.pt}</option>
+                  {LEVELS_BY_SYSTEM[langDef.system].map((lv) => (
+                    <option key={lv.value} value={lv.value}>
+                      {lv.label.pt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={addEntry}
+                disabled={!addCode || !addLevel}
+                className="flex-1 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-50 transition"
+              >
+                Adicionar
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowAdd(false); setAddCode(""); setAddLevel(""); }}
+                className="rounded-md border border-laps-navy/15 px-3 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost transition"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : availableLangs.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setShowAdd(true)}
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-laps-blue/40 px-2.5 py-1 text-[11px] font-medium text-laps-blue/70 transition hover:border-laps-blue hover:text-laps-blue"
+          >
+            <Plus className="h-3 w-3" /> Adicionar idioma
+          </button>
+        ) : null}
+
+        {entries.length === 0 && !showAdd && (
+          <p className="text-xs italic text-laps-navy/40">Nenhum idioma adicionado ainda.</p>
+        )}
+
         {saved && (
           <p className="inline-flex items-center gap-1 text-xs text-emerald-700">
             <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
