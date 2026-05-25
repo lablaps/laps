@@ -14,9 +14,10 @@ import {
   SlidersHorizontal,
   RotateCcw,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { initials, type Tier } from "@/lib/team-data";
 import { useTeamRoster, type RosterMember } from "@/hooks/use-team-roster";
-import { coAuthorshipPairs } from "@/lib/publications-data";
+import { fetchProjects, type ApiProject } from "@/lib/api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -148,7 +149,10 @@ function normStr(s: string): string {
 
 // ─── Graph data hook ──────────────────────────────────────────────────────────
 
-function useGraphData(members: RosterMember[]): {
+function useGraphData(
+  members: RosterMember[],
+  projects: ApiProject[],
+): {
   nodes: GraphNode[];
   edges: GraphEdge[];
   neighborMap: Map<string, Set<string>>;
@@ -156,16 +160,37 @@ function useGraphData(members: RosterMember[]): {
 } {
   return useMemo(() => {
     const bySlug = new Map<string, RosterMember>(members.map((m) => [m.slug, m]));
+    // Leaders use member UUIDs; map back to slug for the rest of the graph.
+    const uuidToSlug = new Map<string, string>(members.map((m) => [m.id, m.slug]));
 
-    // Co-authorship pairs (publications-data)
-    const pairs = coAuthorshipPairs();
-    const edges: GraphEdge[] = pairs
-      .filter((p) => bySlug.has(p.a) && bySlug.has(p.b))
-      .map((p) => ({ from: p.a, to: p.b, weight: p.count }));
+    // Build edges from shared project membership.
+    // For every project, every pair of member-leaders gets +1 weight.
+    // API3: we only read the memberId field — no raw model binding.
+    const edgeCounter = new Map<string, number>();
+
+    for (const proj of projects) {
+      const slugsInProject = (proj.leaders ?? [])
+        .map((l) => uuidToSlug.get(l.memberId))
+        .filter((s): s is string => s !== undefined && bySlug.has(s));
+
+      for (let i = 0; i < slugsInProject.length; i++) {
+        for (let j = i + 1; j < slugsInProject.length; j++) {
+          const a = slugsInProject[i]!;
+          const b = slugsInProject[j]!;
+          const key = a < b ? `${a}__${b}` : `${b}__${a}`;
+          edgeCounter.set(key, (edgeCounter.get(key) ?? 0) + 1);
+        }
+      }
+    }
+
+    const edges: GraphEdge[] = Array.from(edgeCounter.entries()).map(([key, weight]) => {
+      const sep = key.indexOf("__");
+      return { from: key.slice(0, sep), to: key.slice(sep + 2), weight };
+    });
 
     const maxWeight = edges.reduce((acc, e) => Math.max(acc, e.weight), 1);
 
-    // Degree + collaborator weights per member
+    // Degree + top-collaborator weights per member.
     const degrees = new Map<string, number>();
     const collabWeights = new Map<string, Map<string, number>>();
 
@@ -205,7 +230,7 @@ function useGraphData(members: RosterMember[]): {
     }
 
     return { nodes, edges, neighborMap, maxWeight };
-  }, [members]);
+  }, [members, projects]);
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -224,7 +249,15 @@ interface Props {
 export function TeamGraph({ labels }: Props) {
   const navigate = useNavigate();
   const { members } = useTeamRoster();
-  const { nodes, edges, neighborMap, maxWeight } = useGraphData(members);
+
+  // API4: size is bounded server-side; client reads the full list (typically <100 projects).
+  const { data: projects = [] } = useQuery<ApiProject[]>({
+    queryKey: ["projects"],
+    queryFn: fetchProjects,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { nodes, edges, neighborMap, maxWeight } = useGraphData(members, projects);
 
   // UI state
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -970,7 +1003,7 @@ function HoverCard({
       <div className="flex items-center gap-3 border-t border-laps-light/20 pt-2.5 text-[11px] text-laps-navy/60">
         <span>
           <strong className="text-laps-navy">{node.degree}</strong>{" "}
-          colabs.
+          projeto{node.degree !== 1 ? "s" : ""} compartilhado{node.degree !== 1 ? "s" : ""}
         </span>
       </div>
 
