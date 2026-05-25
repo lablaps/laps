@@ -1,71 +1,103 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { motion, useAnimationControls } from "framer-motion";
-import { initials, type TeamMember, type Tier } from "@/lib/team-data";
-import { areasBySlug, type AreaSlug } from "@/lib/areas-data";
-import { useTeamRoster } from "@/hooks/use-team-roster";
+import { motion, useAnimationControls, AnimatePresence } from "framer-motion";
+import {
+  Search,
+  X,
+  SlidersHorizontal,
+  Download,
+  RotateCcw,
+} from "lucide-react";
+import { initials, type Tier } from "@/lib/team-data";
+import { useTeamRoster, type RosterMember } from "@/hooks/use-team-roster";
+import { coAuthorshipPairs } from "@/lib/publications-data";
 
-// Scattered "constellation" graph.
-//
-// - Anchor positions are deterministic per member.id (seeded random) so the
-//   layout stays stable across renders / admin edits.
-// - Each node is draggable; releasing eases it back to its anchor.
-// - Mouse-wheel zooms; dragging empty space pans.
-// - Hover cascades through tier neighbors:
-//     head     ↔ doctorate
-//     doctorate ↔ master
-//     master    ↔ undergrad
-//   (Undergrads connect only to masters, as the user requested.)
-// - Photos render inside the node; absent photos fall back to first-initial +
-//   surname-initial via team-data.initials().
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const VIEW_W = 1200;
 const VIEW_H = 780;
 const CX = VIEW_W / 2;
 const CY = VIEW_H / 2;
 
-// Radial preference per tier — head at center, others scattered in an annulus.
-// The randomness inside each annulus keeps the layout organic (no concentric-
-// ring feel) while still making roles visually distinguishable.
-const TIER_ANNULUS: Record<Tier, [number, number]> = {
-  head:        [0, 0],
-  coordinator: [80, 150],
-  manager:     [170, 240],
-  doctorate:   [260, 360],
-  master:      [380, 480],
-  undergrad:   [500, 600],
-};
+const TIER_ORDER: Tier[] = [
+  "head",
+  "coordinator",
+  "manager",
+  "doctorate",
+  "master",
+  "undergrad",
+];
 
-const NODE_R: Record<Tier, number> = {
-  head: 32,
-  coordinator: 28,
-  manager: 26,
-  doctorate: 24,
-  master: 20,
-  undergrad: 17,
+const TIER_COLOR: Record<Tier, string> = {
+  head: "#193A59",
+  coordinator: "#5B21B6",
+  manager: "#7C3AED",
+  doctorate: "#0B4E8D",
+  master: "#059669",
+  undergrad: "#D97706",
 };
-
-const NAVY = "#193A59";
-const BLUE = "#0B4E8D";
 
 const TIER_GRADIENT: Record<Tier, [string, string]> = {
-  head:        ["#193A59", "#0B4E8D"],
+  head: ["#193A59", "#0B4E8D"],
   coordinator: ["#5B21B6", "#A78BFA"],
-  manager:     ["#7C3AED", "#C4B5FD"],
-  doctorate:   ["#0B4E8D", "#74B5F2"],
-  master:      ["#10B981", "#6EE7B7"],
-  undergrad:   ["#F59E0B", "#FCD34D"],
+  manager: ["#7C3AED", "#C4B5FD"],
+  doctorate: ["#0B4E8D", "#74B5F2"],
+  master: ["#10B981", "#6EE7B7"],
+  undergrad: ["#F59E0B", "#FCD34D"],
 };
 
-const STATUS_COLOR: Record<NonNullable<TeamMember["status"]>, string> = {
-  ACTIVE: "#10B981",
-  COMPLETED: "#94A3B8",
-  INACTIVE: "#CBD5E1",
+// Radial annulus [rMin, rMax] per tier — head at center.
+const TIER_ANNULUS: Record<Tier, [number, number]> = {
+  head: [0, 0],
+  coordinator: [80, 150],
+  manager: [170, 240],
+  doctorate: [260, 360],
+  master: [380, 480],
+  undergrad: [500, 600],
 };
 
-interface Pos { x: number; y: number }
+// Base node radius per tier (degree will scale up to MAX_R).
+const BASE_R: Record<Tier, number> = {
+  head: 32,
+  coordinator: 26,
+  manager: 24,
+  doctorate: 22,
+  master: 18,
+  undergrad: 14,
+};
+const MIN_R = 14;
+const MAX_R = 36;
 
-// Deterministic seeded RNG so anchor positions are stable per member.id.
+const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Pos {
+  x: number;
+  y: number;
+}
+
+interface GraphEdge {
+  from: string; // slug
+  to: string; // slug
+  weight: number;
+}
+
+interface GraphNode extends RosterMember {
+  degree: number;
+  r: number;
+  top3: string[]; // full names of top-3 collaborators
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
 function hashSeed(s: string): number {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < s.length; i++) {
@@ -74,10 +106,11 @@ function hashSeed(s: string): number {
   }
   return h >>> 0;
 }
+
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
-    a = (a + 0x6D2B79F5) >>> 0;
+    a = (a + 0x6d2b79f5) >>> 0;
     let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
@@ -85,17 +118,98 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-function anchorFor(member: TeamMember): Pos {
-  const [rMin, rMax] = TIER_ANNULUS[member.tier];
+function anchorFor(m: RosterMember): Pos {
+  const [rMin, rMax] = TIER_ANNULUS[m.tier];
   if (rMax === 0) return { x: CX, y: CY };
-  const rnd = mulberry32(hashSeed(member.id));
+  const rnd = mulberry32(hashSeed(m.slug));
   const angle = rnd() * Math.PI * 2;
-  const radius = rMin + rnd() * (rMax - rMin);
-  return {
-    x: CX + Math.cos(angle) * radius,
-    y: CY + Math.sin(angle) * radius,
-  };
+  const r = rMin + rnd() * (rMax - rMin);
+  return { x: CX + Math.cos(angle) * r, y: CY + Math.sin(angle) * r };
 }
+
+// Quadratic bezier curved path — perpendicular offset keeps parallel edges apart.
+function bezierD(a: Pos, b: Pos, curvature = 0.15): string {
+  const mx = (a.x + b.x) / 2;
+  const my = (a.y + b.y) / 2;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const bend = len * curvature;
+  const cx = mx + (-dy / len) * bend;
+  const cy = my + (dx / len) * bend;
+  return `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
+}
+
+function normStr(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
+// ─── Graph data hook ──────────────────────────────────────────────────────────
+
+function useGraphData(members: RosterMember[]): {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  neighborMap: Map<string, Set<string>>;
+  maxWeight: number;
+} {
+  return useMemo(() => {
+    const bySlug = new Map<string, RosterMember>(members.map((m) => [m.slug, m]));
+
+    // Co-authorship pairs (publications-data)
+    const pairs = coAuthorshipPairs();
+    const edges: GraphEdge[] = pairs
+      .filter((p) => bySlug.has(p.a) && bySlug.has(p.b))
+      .map((p) => ({ from: p.a, to: p.b, weight: p.count }));
+
+    const maxWeight = edges.reduce((acc, e) => Math.max(acc, e.weight), 1);
+
+    // Degree + collaborator weights per member
+    const degrees = new Map<string, number>();
+    const collabWeights = new Map<string, Map<string, number>>();
+
+    for (const e of edges) {
+      degrees.set(e.from, (degrees.get(e.from) ?? 0) + e.weight);
+      degrees.set(e.to, (degrees.get(e.to) ?? 0) + e.weight);
+      if (!collabWeights.has(e.from)) collabWeights.set(e.from, new Map());
+      if (!collabWeights.has(e.to)) collabWeights.set(e.to, new Map());
+      collabWeights.get(e.from)!.set(e.to, e.weight);
+      collabWeights.get(e.to)!.set(e.from, e.weight);
+    }
+
+    const maxDeg = Math.max(1, ...degrees.values());
+
+    const nodes: GraphNode[] = members.map((m) => {
+      const deg = degrees.get(m.slug) ?? 0;
+      const base = BASE_R[m.tier];
+      const r = Math.min(MAX_R, Math.max(MIN_R, base + (deg / maxDeg) * (MAX_R - base)));
+
+      const cMap = collabWeights.get(m.slug);
+      const top3 = cMap
+        ? Array.from(cMap.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([slug]) => bySlug.get(slug)?.fullName ?? slug)
+        : [];
+
+      return { ...m, degree: deg, r, top3 };
+    });
+
+    const neighborMap = new Map<string, Set<string>>();
+    for (const e of edges) {
+      if (!neighborMap.has(e.from)) neighborMap.set(e.from, new Set());
+      if (!neighborMap.has(e.to)) neighborMap.set(e.to, new Set());
+      neighborMap.get(e.from)!.add(e.to);
+      neighborMap.get(e.to)!.add(e.from);
+    }
+
+    return { nodes, edges, neighborMap, maxWeight };
+  }, [members]);
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
   labels: {
@@ -106,31 +220,37 @@ interface Props {
   lang?: "pt" | "en" | "fr";
 }
 
-export function TeamGraph({ labels, lang = "en" }: Props) {
+// ─── TeamGraph ────────────────────────────────────────────────────────────────
+
+export function TeamGraph({ labels }: Props) {
   const navigate = useNavigate();
-  const { members: team } = useTeamRoster();
+  const { members } = useTeamRoster();
+  const { nodes, edges, neighborMap, maxWeight } = useGraphData(members);
 
+  // UI state
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [activeRoles, setActiveRoles] = useState<Set<Tier>>(new Set(TIER_ORDER));
+  const [edgeThreshold, setEdgeThreshold] = useState(1);
+  const [railOpen, setRailOpen] = useState(false);
 
-  // Pan + zoom.
-  //
-  // The transform on the wrapped <g> used to be driven by React state. Every
-  // wheel tick / pointermove called setView, which re-reconciled every node,
-  // every edge and every framer-motion node in the tree. On large rosters this
-  // overran a single frame, the work piled up, framer-motion's drag setup
-  // threw mid-render, and the route's error boundary swapped in the
-  // "this page didn't load" screen.
-  //
-  // We now keep the view in a ref and write `transform` directly to the SVG
-  // group via setAttribute — React never sees the pan/zoom motion. The zoom
-  // indicator label is the only thing kept in state, and only updates once
-  // per animation frame.
+  // Cursor screen coords (for hover card position)
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+
+  // Pan/zoom — kept in refs, written directly to SVG via setAttribute.
   const viewRef = useRef({ x: 0, y: 0, scale: 1 });
   const transformGroupRef = useRef<SVGGElement | null>(null);
-  const panRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+  const panRef = useRef<{
+    startX: number;
+    startY: number;
+    baseX: number;
+    baseY: number;
+    moved: boolean;
+  } | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [zoomLabel, setZoomLabel] = useState(100);
-  const zoomLabelRaf = useRef<number | null>(null);
+  const zoomRaf = useRef<number | null>(null);
 
   const applyTransform = useCallback(() => {
     const g = transformGroupRef.current;
@@ -140,61 +260,64 @@ export function TeamGraph({ labels, lang = "en" }: Props) {
   }, []);
 
   const scheduleZoomLabel = useCallback(() => {
-    if (zoomLabelRaf.current != null) return;
-    zoomLabelRaf.current = requestAnimationFrame(() => {
-      zoomLabelRaf.current = null;
+    if (zoomRaf.current != null) return;
+    zoomRaf.current = requestAnimationFrame(() => {
+      zoomRaf.current = null;
       setZoomLabel(Math.round(viewRef.current.scale * 100));
     });
   }, []);
 
-  // Per-member anchor (stable across re-renders + roster invalidations).
+  // Stable anchor positions per slug.
   const positions = useMemo(() => {
     const out: Record<string, Pos> = {};
-    for (const m of team) out[m.id] = anchorFor(m);
+    for (const m of nodes) out[m.slug] = anchorFor(m);
     return out;
-  }, [team]);
+  }, [nodes]);
 
-  // Tier-cascade adjacency. Each tier links to the one immediately below in
-  // the official hierarchy:
-  //   head ↔ coordinator ↔ manager ↔ doctorate ↔ master ↔ undergrad
-  // Going through every adjacent pair keeps the visual cascade crisp without
-  // exploding into a complete bipartite graph on every level.
-  const { edges, neighborMap } = useMemo(() => {
-    const byTier: Record<Tier, typeof team> = {
-      head:        team.filter((m) => m.tier === "head"),
-      coordinator: team.filter((m) => m.tier === "coordinator"),
-      manager:     team.filter((m) => m.tier === "manager"),
-      doctorate:   team.filter((m) => m.tier === "doctorate"),
-      master:      team.filter((m) => m.tier === "master"),
-      undergrad:   team.filter((m) => m.tier === "undergrad"),
-    };
-    const order: Tier[] = ["head", "coordinator", "manager", "doctorate", "master", "undergrad"];
+  // Filtered nodes & edges.
+  const filteredNodes = useMemo(() => {
+    const q = normStr(search.trim());
+    return nodes.filter((m) => {
+      if (!activeRoles.has(m.tier)) return false;
+      if (q && !normStr(m.fullName).includes(q)) return false;
+      return true;
+    });
+  }, [nodes, activeRoles, search]);
 
-    const edges: { from: string; to: string }[] = [];
-    for (let i = 0; i < order.length - 1; i++) {
-      const upper = byTier[order[i]];
-      const lower = byTier[order[i + 1]];
-      if (upper.length === 0 || lower.length === 0) continue;
-      for (const u of upper) for (const l of lower) edges.push({ from: u.id, to: l.id });
-    }
+  const filteredSlugs = useMemo(
+    () => new Set(filteredNodes.map((m) => m.slug)),
+    [filteredNodes]
+  );
 
-    const map: Record<string, Set<string>> = {};
-    for (const e of edges) {
-      (map[e.from] ??= new Set()).add(e.to);
-      (map[e.to] ??= new Set()).add(e.from);
-    }
-    return { edges, neighborMap: map };
-  }, [team]);
+  const filteredEdges = useMemo(
+    () =>
+      edges.filter(
+        (e) =>
+          e.weight >= edgeThreshold &&
+          filteredSlugs.has(e.from) &&
+          filteredSlugs.has(e.to)
+      ),
+    [edges, edgeThreshold, filteredSlugs]
+  );
 
-  const activeAreas = useMemo(() => {
-    const s = new Set<AreaSlug>();
-    for (const m of team) if (m.primaryArea) s.add(m.primaryArea);
-    return Array.from(s).sort();
-  }, [team]);
+  // Active focus: selected takes priority over hovered.
+  const activeId = selectedId ?? hoveredId;
 
-  // Wheel-zoom anchored to the cursor. Attached as a non-passive native
-  // listener so e.preventDefault() works — React 17+ registers wheel as
-  // passive by default which would otherwise scroll the page through us.
+  const egoSet = useMemo(() => {
+    if (!activeId) return null;
+    const nb = neighborMap.get(activeId) ?? new Set<string>();
+    return new Set([activeId, ...nb]);
+  }, [activeId, neighborMap]);
+
+  // Role counts for filter chips.
+  const roleCounts = useMemo(() => {
+    const c = {} as Record<Tier, number>;
+    for (const t of TIER_ORDER) c[t] = nodes.filter((m) => m.tier === t).length;
+    return c;
+  }, [nodes]);
+
+  // ── Pan / zoom ──────────────────────────────────────────────────────────────
+
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
@@ -205,13 +328,9 @@ export function TeamGraph({ labels, lang = "en" }: Props) {
       const cy = ((e.clientY - rect.top) / rect.height) * VIEW_H;
       const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
       const v = viewRef.current;
-      const nextScale = Math.min(2.6, Math.max(0.45, v.scale * factor));
-      const k = nextScale / v.scale;
-      viewRef.current = {
-        x: cx - k * (cx - v.x),
-        y: cy - k * (cy - v.y),
-        scale: nextScale,
-      };
+      const next = Math.min(3, Math.max(0.3, v.scale * factor));
+      const k = next / v.scale;
+      viewRef.current = { x: cx - k * (cx - v.x), y: cy - k * (cy - v.y), scale: next };
       applyTransform();
       scheduleZoomLabel();
     };
@@ -222,322 +341,821 @@ export function TeamGraph({ labels, lang = "en" }: Props) {
   const onPanStart = (e: ReactPointerEvent<SVGRectElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
     const v = viewRef.current;
-    panRef.current = { startX: e.clientX, startY: e.clientY, baseX: v.x, baseY: v.y };
+    panRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      baseX: v.x,
+      baseY: v.y,
+      moved: false,
+    };
   };
+
   const onPanMove = (e: ReactPointerEvent<SVGRectElement>) => {
+    setCursor({ x: e.clientX, y: e.clientY });
     if (!panRef.current || !svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
-    const kx = VIEW_W / rect.width;
-    const ky = VIEW_H / rect.height;
+    const dx = e.clientX - panRef.current.startX;
+    const dy = e.clientY - panRef.current.startY;
+    if (dx * dx + dy * dy > 9) panRef.current.moved = true;
     viewRef.current = {
       ...viewRef.current,
-      x: panRef.current.baseX + (e.clientX - panRef.current.startX) * kx,
-      y: panRef.current.baseY + (e.clientY - panRef.current.startY) * ky,
+      x: panRef.current.baseX + dx * (VIEW_W / rect.width),
+      y: panRef.current.baseY + dy * (VIEW_H / rect.height),
     };
     applyTransform();
   };
+
   const onPanEnd = (e: ReactPointerEvent<SVGRectElement>) => {
+    const p = panRef.current;
     panRef.current = null;
-    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* noop */ }
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // noop
+    }
+    // Click on empty canvas → deselect
+    if (p && !p.moved) setSelectedId(null);
+    (e.currentTarget as SVGRectElement).style.cursor = "grab";
   };
-  const resetView = () => {
+
+  const resetView = useCallback(() => {
     viewRef.current = { x: 0, y: 0, scale: 1 };
     applyTransform();
     setZoomLabel(100);
-  };
-  const zoomBy = (factor: number) => {
+  }, [applyTransform]);
+
+  const zoomBy = (f: number) => {
     const v = viewRef.current;
-    viewRef.current = { ...v, scale: Math.min(2.6, Math.max(0.45, v.scale * factor)) };
+    viewRef.current = { ...v, scale: Math.min(3, Math.max(0.3, v.scale * f)) };
     applyTransform();
     setZoomLabel(Math.round(viewRef.current.scale * 100));
   };
 
-  // Re-apply the transform once after mount (and after team data changes the
-  // SVG node graph) so a fresh render restores the last viewRef state.
+  // ── Focus a node: pan viewport so the node is at center ─────────────────────
+
+  const focusNode = useCallback(
+    (slug: string) => {
+      const a = positions[slug];
+      if (!a) return;
+      setSelectedId(slug);
+      const v = viewRef.current;
+      viewRef.current = {
+        x: CX - a.x * v.scale,
+        y: CY - a.y * v.scale,
+        scale: v.scale,
+      };
+      applyTransform();
+    },
+    [positions, applyTransform]
+  );
+
+  // ── Keyboard shortcuts ───────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedId(null);
+        setHoveredId(null);
+      }
+      if ((e.key === "f" || e.key === "F") && !e.ctrlKey && !e.metaKey) {
+        resetView();
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [resetView]);
+
+  // Re-apply transform after mount / members change.
   useEffect(() => {
     applyTransform();
-  }, [applyTransform, team]);
+  }, [applyTransform, members]);
+
+  // ── Export as SVG ────────────────────────────────────────────────────────────
+
+  const exportSvg = useCallback(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const xml = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([xml], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "laps-network.svg";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  // ── Hover card: follow cursor for hover, anchored to node for selected ───────
+
+  const activeNode = nodes.find(
+    (m) => m.slug === (selectedId ?? hoveredId)
+  ) as GraphNode | undefined;
+
+  const cardPos = useMemo(() => {
+    if (!activeNode) return null;
+    if (selectedId && svgRef.current) {
+      // Pin to node position
+      const a = positions[activeNode.slug];
+      if (!a) return null;
+      const rect = svgRef.current.getBoundingClientRect();
+      const v = viewRef.current;
+      const vbX = a.x * v.scale + v.x;
+      const vbY = a.y * v.scale + v.y;
+      return {
+        x: rect.left + (vbX / VIEW_W) * rect.width,
+        y: rect.top + (vbY / VIEW_H) * rect.height,
+      };
+    }
+    return cursor;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeNode, selectedId, cursor, positions]);
+
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <div className="relative">
-      <div className="relative mx-auto aspect-[12/7.8] w-full max-w-6xl overflow-hidden rounded-2xl border border-laps-light/20 bg-gradient-to-b from-laps-ghost/30 via-white to-white">
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          className="absolute inset-0 h-full w-full touch-none select-none"
-          role="img"
-          aria-label="LAPS researcher network"
-        >
-          <defs>
-            {team.map((m) => {
-              const [g1, g2] = TIER_GRADIENT[m.tier];
-              return (
-                <radialGradient key={`grad-${m.id}`} id={`grad-${m.id}`} cx="35%" cy="30%" r="75%">
-                  <stop offset="0%" stopColor={g2} />
-                  <stop offset="100%" stopColor={g1} />
-                </radialGradient>
-              );
-            })}
-            {team.map((m) => (
-              <clipPath key={`clip-${m.id}`} id={`clip-${m.id}`}>
-                <circle r={NODE_R[m.tier]} />
-              </clipPath>
-            ))}
-          </defs>
+      <div className="flex items-start gap-3">
+        {/* Left rail */}
+        <AnimatePresence>
+          {railOpen && (
+            <LeftRail
+              search={search}
+              onSearch={setSearch}
+              activeRoles={activeRoles}
+              onToggleRole={(tier) =>
+                setActiveRoles((prev) => {
+                  const next = new Set(prev);
+                  next.has(tier) ? next.delete(tier) : next.add(tier);
+                  return next;
+                })
+              }
+              roleCounts={roleCounts}
+              edgeThreshold={edgeThreshold}
+              onEdgeThreshold={setEdgeThreshold}
+              onReset={resetView}
+              onExport={exportSvg}
+              labels={labels}
+            />
+          )}
+        </AnimatePresence>
 
-          {/* Pan target — invisible rect that catches drags on empty space. */}
-          <rect
-            x={0}
-            y={0}
-            width={VIEW_W}
-            height={VIEW_H}
-            fill="transparent"
-            style={{ cursor: "grab" }}
-            onPointerDown={(e) => {
-              (e.currentTarget as SVGRectElement).style.cursor = "grabbing";
-              onPanStart(e);
-            }}
-            onPointerMove={onPanMove}
-            onPointerUp={(e) => {
-              (e.currentTarget as SVGRectElement).style.cursor = "grab";
-              onPanEnd(e);
-            }}
-            onPointerCancel={(e) => {
-              (e.currentTarget as SVGRectElement).style.cursor = "grab";
-              onPanEnd(e);
-            }}
-          />
+        {/* Main graph */}
+        <div className="relative flex-1 min-w-0">
+          <div className="relative mx-auto aspect-[12/7.8] w-full max-w-6xl overflow-hidden rounded-2xl border border-laps-light/20 shadow-[0_4px_32px_rgba(25,58,89,0.06)]"
+            style={{ background: "radial-gradient(ellipse at 50% 40%, #f8fafc 35%, #eef2f7 100%)" }}
+          >
+            {/* Faint dotted grid */}
+            <svg
+              className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04]"
+              aria-hidden
+            >
+              <defs>
+                <pattern id="grid-dots" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+                  <circle cx="1" cy="1" r="1" fill="#193A59" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid-dots)" />
+            </svg>
 
-          <g ref={transformGroupRef}>
-            {/* Edges — drawn first so they sit under the nodes. */}
-            <g>
-              {edges.map((e, i) => {
-                const a = positions[e.from];
-                const b = positions[e.to];
-                if (!a || !b) return null;
-                const touched =
-                  !!hoveredId &&
-                  (e.from === hoveredId ||
-                    e.to === hoveredId ||
-                    neighborMap[hoveredId]?.has(e.from) ||
-                    neighborMap[hoveredId]?.has(e.to));
-                const active = !!hoveredId && (e.from === hoveredId || e.to === hoveredId);
-                const dim = !!hoveredId && !touched;
-                return (
-                  <line
-                    key={`edge-${i}`}
-                    x1={a.x}
-                    y1={a.y}
-                    x2={b.x}
-                    y2={b.y}
-                    stroke={active ? NAVY : BLUE}
-                    strokeOpacity={dim ? 0.04 : active ? 0.55 : 0.12}
-                    strokeWidth={active ? 1.3 : 0.6}
-                    style={{ transition: "stroke-opacity 180ms, stroke-width 180ms" }}
-                  />
-                );
-              })}
-            </g>
+            <svg
+              ref={svgRef}
+              viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+              className="absolute inset-0 h-full w-full touch-none select-none"
+              role="img"
+              aria-label="Rede de pesquisadores do LAPS"
+            >
+              <defs>
+                {nodes.map((m) => {
+                  const [g1, g2] = TIER_GRADIENT[m.tier];
+                  return (
+                    <radialGradient
+                      key={`grad-${m.slug}`}
+                      id={`grad-${m.slug}`}
+                      cx="35%"
+                      cy="30%"
+                      r="75%"
+                    >
+                      <stop offset="0%" stopColor={g2} />
+                      <stop offset="100%" stopColor={g1} />
+                    </radialGradient>
+                  );
+                })}
+                {nodes.map((m) => (
+                  <clipPath key={`clip-${m.slug}`} id={`clip-${m.slug}`}>
+                    <circle r={(m as GraphNode).r ?? BASE_R[m.tier]} />
+                  </clipPath>
+                ))}
+                <filter id="shadow-base" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity="0.10" />
+                </filter>
+                <filter id="shadow-active" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="0" dy="6" stdDeviation="10" floodOpacity="0.22" />
+                </filter>
+              </defs>
 
-            {/* Nodes */}
-            <g>
-              {team.map((member) => {
-                const anchor = positions[member.id];
-                if (!anchor) return null;
-                const isHovered = hoveredId === member.id;
-                const isNeighbor =
-                  !!hoveredId && (hoveredId === member.id || neighborMap[hoveredId]?.has(member.id));
-                const dim = !!hoveredId && !isNeighbor;
-                return (
-                  <DraggableNode
-                    key={member.id}
-                    member={member}
-                    anchor={anchor}
-                    isHovered={isHovered}
-                    dim={dim}
-                    label={labels.tier[member.tier]}
-                    onHoverStart={() => setHoveredId(member.id)}
-                    onHoverEnd={() =>
-                      setHoveredId((cur) => (cur === member.id ? null : cur))
-                    }
-                    onActivate={() =>
-                      navigate({
-                        to: "/team/$uuid",
-                        params: { uuid: member.uuid ?? member.id },
-                      })
-                    }
-                  />
-                );
-              })}
-            </g>
-          </g>
-        </svg>
-
-        {/* Floating controls */}
-        <div className="pointer-events-auto absolute right-3 top-3 flex flex-col items-end gap-1.5">
-          <div className="flex items-center gap-1 rounded-full border border-laps-light/40 bg-white/90 px-1 py-0.5 text-[10px] font-semibold text-laps-navy/70 shadow-sm backdrop-blur">
-            <button
-              type="button"
-              onClick={() => zoomBy(1 / 1.2)}
-              className="rounded-full px-2 py-1 hover:bg-laps-ghost"
-              aria-label="Zoom out"
-            >−</button>
-            <span className="tabular-nums text-laps-navy/55">{zoomLabel}%</span>
-            <button
-              type="button"
-              onClick={() => zoomBy(1.2)}
-              className="rounded-full px-2 py-1 hover:bg-laps-ghost"
-              aria-label="Zoom in"
-            >+</button>
-            <button
-              type="button"
-              onClick={resetView}
-              className="rounded-full px-2 py-1 text-laps-navy/55 hover:bg-laps-ghost"
-              aria-label="Reset view"
-            >⟲</button>
-          </div>
-          <span className="rounded-full bg-white/85 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-laps-navy/50 shadow-sm backdrop-blur">
-            arraste · zoom · clique
-          </span>
-        </div>
-      </div>
-
-      {/* Footer: helper + tier legend + area legend */}
-      <div className="mt-6 space-y-4">
-        <p className="text-center text-xs text-laps-navy/55">{labels.helper}</p>
-
-        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px]">
-          <span className="font-mono uppercase tracking-[0.2em] text-laps-navy/45">
-            {labels.legendTitle}
-          </span>
-          {(["head", "coordinator", "manager", "doctorate", "master", "undergrad"] as const).map((tier) => (
-            <span key={tier} className="flex items-center gap-1.5 text-laps-navy/75">
-              <span
-                className="inline-block rounded-full"
-                style={{
-                  width: NODE_R[tier] * 0.7,
-                  height: NODE_R[tier] * 0.7,
-                  background: `linear-gradient(135deg, ${TIER_GRADIENT[tier][1]}, ${TIER_GRADIENT[tier][0]})`,
+              {/* Pan capture layer */}
+              <rect
+                x={0}
+                y={0}
+                width={VIEW_W}
+                height={VIEW_H}
+                fill="transparent"
+                style={{ cursor: "grab" }}
+                onPointerDown={(e) => {
+                  (e.currentTarget as SVGRectElement).style.cursor = "grabbing";
+                  onPanStart(e);
+                }}
+                onPointerMove={(e) => {
+                  (e.currentTarget as SVGRectElement).style.cursor =
+                    panRef.current ? "grabbing" : "grab";
+                  onPanMove(e);
+                }}
+                onPointerUp={(e) => {
+                  onPanEnd(e);
+                }}
+                onPointerCancel={(e) => {
+                  panRef.current = null;
+                  try {
+                    e.currentTarget.releasePointerCapture(e.pointerId);
+                  } catch {
+                    // noop
+                  }
+                  (e.currentTarget as SVGRectElement).style.cursor = "grab";
                 }}
               />
-              {labels.tier[tier]}
-            </span>
-          ))}
-        </div>
 
-        {activeAreas.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px]">
-            <span className="font-mono uppercase tracking-[0.2em] text-laps-navy/45">
-              {lang === "pt" ? "Áreas" : lang === "fr" ? "Domaines" : "Areas"}
-            </span>
-            {activeAreas.map((slug) => {
-              const area = areasBySlug[slug];
-              return (
-                <span key={slug} className="flex items-center gap-1.5 text-laps-navy/75">
-                  <span
-                    className="inline-block h-2.5 w-2.5 rounded-full"
-                    style={{ background: area.color }}
-                  />
-                  {area.name[lang]}
-                </span>
-              );
-            })}
+              <g ref={transformGroupRef}>
+                {/* Edges — drawn before nodes */}
+                <g aria-hidden>
+                  {filteredEdges.map((e, i) => {
+                    const a = positions[e.from];
+                    const b = positions[e.to];
+                    if (!a || !b) return null;
+                    const isIncident =
+                      activeId !== null &&
+                      (e.from === activeId || e.to === activeId);
+                    const dim = activeId !== null && !isIncident;
+                    const wNorm = e.weight / maxWeight;
+                    const sw = 0.5 + wNorm * 2.5;
+                    const opacity = dim ? 0.04 : isIncident ? 0.8 : 0.08 + wNorm * 0.18;
+                    const otherSlug = e.from === activeId ? e.to : e.from;
+                    const otherNode = isIncident
+                      ? (filteredNodes.find((m) => m.slug === otherSlug) as GraphNode | undefined)
+                      : undefined;
+                    const stroke =
+                      isIncident && otherNode
+                        ? TIER_COLOR[otherNode.tier]
+                        : "#0B4E8D";
+                    return (
+                      <path
+                        key={`e-${i}`}
+                        d={bezierD(a, b)}
+                        stroke={stroke}
+                        strokeOpacity={opacity}
+                        strokeWidth={sw}
+                        fill="none"
+                        style={{ transition: "stroke-opacity 180ms, stroke-width 180ms" }}
+                      />
+                    );
+                  })}
+                </g>
+
+                {/* Nodes */}
+                <g>
+                  {filteredNodes.map((member) => {
+                    const node = member as GraphNode;
+                    const anchor = positions[node.slug];
+                    if (!anchor) return null;
+                    const isHov = hoveredId === node.slug;
+                    const isSel = selectedId === node.slug;
+                    const inEgo = egoSet ? egoSet.has(node.slug) : true;
+                    const dim = activeId !== null && !inEgo;
+                    const tierIdx = TIER_ORDER.indexOf(node.tier);
+                    return (
+                      <DraggableNode
+                        key={node.slug}
+                        member={node}
+                        anchor={anchor}
+                        isHovered={isHov}
+                        isSelected={isSel}
+                        dim={dim}
+                        label={labels.tier[node.tier]}
+                        tierIndex={tierIdx}
+                        onHoverStart={() => setHoveredId(node.slug)}
+                        onHoverEnd={() =>
+                          setHoveredId((cur) =>
+                            cur === node.slug ? null : cur
+                          )
+                        }
+                        onSelect={() => {
+                          if (selectedId === node.slug) setSelectedId(null);
+                          else focusNode(node.slug);
+                        }}
+                        onActivate={() =>
+                          navigate({
+                            to: "/team/$uuid",
+                            params: { uuid: node.id },
+                          })
+                        }
+                      />
+                    );
+                  })}
+                </g>
+              </g>
+            </svg>
+
+            {/* Hover/selected card */}
+            <AnimatePresence>
+              {activeNode && cardPos && (
+                <HoverCard
+                  key={activeNode.slug}
+                  node={activeNode as GraphNode}
+                  cursorPos={cardPos}
+                  isSelected={!!selectedId}
+                  labels={labels}
+                  onClose={() => setSelectedId(null)}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Zoom controls */}
+            <div className="pointer-events-auto absolute right-3 top-3 flex flex-col items-end gap-1.5">
+              <div className="flex items-center gap-1 rounded-full border border-laps-light/40 bg-white/90 px-1 py-0.5 text-[10px] font-semibold text-laps-navy/70 shadow-sm backdrop-blur">
+                <button
+                  type="button"
+                  onClick={() => zoomBy(1 / 1.2)}
+                  className="rounded-full px-2 py-1 hover:bg-laps-ghost"
+                  aria-label="Diminuir zoom"
+                >
+                  −
+                </button>
+                <span className="tabular-nums text-laps-navy/55">{zoomLabel}%</span>
+                <button
+                  type="button"
+                  onClick={() => zoomBy(1.2)}
+                  className="rounded-full px-2 py-1 hover:bg-laps-ghost"
+                  aria-label="Aumentar zoom"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  onClick={resetView}
+                  className="rounded-full px-2 py-1 text-laps-navy/55 hover:bg-laps-ghost"
+                  aria-label="Resetar visualização"
+                >
+                  ⟲
+                </button>
+              </div>
+              <span className="rounded-full bg-white/85 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-laps-navy/50 shadow-sm backdrop-blur">
+                arraste · zoom · F para ajustar · ESC para sair
+              </span>
+            </div>
+
+            {/* Rail toggle button */}
+            <button
+              type="button"
+              onClick={() => setRailOpen((v) => !v)}
+              className="pointer-events-auto absolute left-3 top-3 flex items-center gap-1.5 rounded-full border border-laps-light/40 bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-laps-navy/70 shadow-sm backdrop-blur transition hover:bg-laps-ghost"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              {railOpen ? "Ocultar" : "Filtros"}
+            </button>
           </div>
-        )}
+
+          {/* Footer: helper + legend */}
+          <div className="mt-6 space-y-4">
+            <p className="text-center text-xs text-laps-navy/55">{labels.helper}</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px]">
+              <span className="font-mono uppercase tracking-[0.2em] text-laps-navy/45">
+                {labels.legendTitle}
+              </span>
+              {TIER_ORDER.map((tier) => {
+                const active = activeRoles.has(tier);
+                return (
+                  <button
+                    key={tier}
+                    type="button"
+                    onClick={() =>
+                      setActiveRoles((prev) => {
+                        const next = new Set(prev);
+                        next.has(tier) ? next.delete(tier) : next.add(tier);
+                        return next;
+                      })
+                    }
+                    className={`flex items-center gap-1.5 text-laps-navy/75 transition-opacity ${!active ? "opacity-35" : ""}`}
+                  >
+                    <span
+                      className="inline-block rounded-full"
+                      style={{
+                        width: BASE_R[tier] * 0.65,
+                        height: BASE_R[tier] * 0.65,
+                        background: `linear-gradient(135deg, ${TIER_GRADIENT[tier][1]}, ${TIER_GRADIENT[tier][0]})`,
+                        boxShadow: `0 1px 4px ${TIER_COLOR[tier]}33`,
+                      }}
+                    />
+                    {labels.tier[tier]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ───── DraggableNode ─────
-// One node = static <g> placed at the anchor (so framer-motion never touches
-// the absolute position) + an inner <motion.g> that owns the drag-offset.
-// Earlier version put the anchor inside motion.g's SVG `transform` attribute,
-// but framer-motion v12 manages its own transform via x/y motion values and
-// silently overwrites the static SVG attribute — every node ended up stacked
-// at (0,0).
+// ─── LeftRail ─────────────────────────────────────────────────────────────────
+
+function LeftRail({
+  search,
+  onSearch,
+  activeRoles,
+  onToggleRole,
+  roleCounts,
+  edgeThreshold,
+  onEdgeThreshold,
+  onReset,
+  onExport,
+  labels,
+}: {
+  search: string;
+  onSearch: (s: string) => void;
+  activeRoles: Set<Tier>;
+  onToggleRole: (t: Tier) => void;
+  roleCounts: Record<Tier, number>;
+  edgeThreshold: number;
+  onEdgeThreshold: (n: number) => void;
+  onReset: () => void;
+  onExport: () => void;
+  labels: { tier: Record<Tier, string> };
+}) {
+  return (
+    <motion.aside
+      initial={{ opacity: 0, x: -16 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -16 }}
+      transition={{ duration: 0.22, ease: EASE_OUT }}
+      className="w-52 shrink-0 self-start rounded-2xl border border-laps-light/20 bg-white/95 p-4 shadow-lg backdrop-blur flex flex-col gap-4"
+    >
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-laps-navy/40 pointer-events-none" />
+        <input
+          value={search}
+          onChange={(e) => onSearch(e.target.value)}
+          placeholder="Buscar pesquisador…"
+          className="w-full rounded-full border border-laps-navy/10 bg-white py-2 pl-9 pr-8 text-xs text-laps-navy placeholder:text-laps-navy/40 focus:border-laps-blue/40 focus:outline-none focus:ring-2 focus:ring-laps-blue/15"
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => onSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-laps-navy/40 hover:text-laps-navy"
+            aria-label="Limpar busca"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+
+      {/* Role filters */}
+      <div>
+        <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.15em] text-laps-navy/45">
+          Nível
+        </p>
+        <div className="flex flex-col gap-0.5">
+          {TIER_ORDER.map((tier) => {
+            const active = activeRoles.has(tier);
+            return (
+              <button
+                key={tier}
+                type="button"
+                onClick={() => onToggleRole(tier)}
+                className={`flex items-center justify-between gap-2 rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition-all ${
+                  active
+                    ? "bg-laps-ghost/60 text-laps-navy"
+                    : "text-laps-navy/35 hover:text-laps-navy/55"
+                }`}
+              >
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className="h-2 w-2 rounded-full shrink-0"
+                    style={{ background: TIER_COLOR[tier], opacity: active ? 1 : 0.4 }}
+                  />
+                  <span className="truncate">{labels.tier[tier]}</span>
+                </span>
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold shrink-0 ${
+                    active ? "bg-white text-laps-navy/55" : "text-laps-navy/25"
+                  }`}
+                >
+                  {roleCounts[tier]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Edge threshold */}
+      <div>
+        <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.15em] text-laps-navy/45">
+          Conexões mín. ·{" "}
+          <span className="text-laps-blue">{edgeThreshold}</span>
+        </p>
+        <input
+          type="range"
+          min={1}
+          max={5}
+          step={1}
+          value={edgeThreshold}
+          onChange={(e) => onEdgeThreshold(Number(e.target.value))}
+          className="w-full accent-laps-blue"
+          aria-label="Número mínimo de colaborações para mostrar aresta"
+        />
+        <div className="mt-1 flex justify-between text-[8px] text-laps-navy/30 font-mono">
+          <span>1</span>
+          <span>5</span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col gap-1.5 border-t border-laps-light/20 pt-3">
+        <button
+          type="button"
+          onClick={onReset}
+          className="flex items-center gap-2 rounded-full border border-laps-navy/10 bg-white px-3 py-1.5 text-[11px] font-semibold text-laps-navy/65 transition hover:bg-laps-ghost hover:text-laps-navy"
+        >
+          <RotateCcw className="h-3 w-3" />
+          Resetar vista
+        </button>
+        <button
+          type="button"
+          onClick={onExport}
+          className="flex items-center gap-2 rounded-full border border-laps-navy/10 bg-white px-3 py-1.5 text-[11px] font-semibold text-laps-navy/65 transition hover:bg-laps-ghost hover:text-laps-navy"
+        >
+          <Download className="h-3 w-3" />
+          Exportar SVG
+        </button>
+      </div>
+    </motion.aside>
+  );
+}
+
+// ─── HoverCard ────────────────────────────────────────────────────────────────
+
+const CARD_W = 228;
+const CARD_OFFSET = 18;
+
+function HoverCard({
+  node,
+  cursorPos,
+  isSelected,
+  labels,
+  onClose,
+}: {
+  node: GraphNode;
+  cursorPos: { x: number; y: number };
+  isSelected: boolean;
+  labels: { tier: Record<Tier, string> };
+  onClose: () => void;
+}) {
+  const winW = typeof window !== "undefined" ? window.innerWidth : 1400;
+  const left =
+    cursorPos.x + CARD_OFFSET + CARD_W > winW - 8
+      ? cursorPos.x - CARD_OFFSET - CARD_W
+      : cursorPos.x + CARD_OFFSET;
+  const top = Math.max(8, cursorPos.y - 64);
+  const color = TIER_COLOR[node.tier];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96, y: 4 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.96, y: 4 }}
+      transition={{ duration: 0.12, ease: EASE_OUT }}
+      style={{
+        position: "fixed",
+        left,
+        top,
+        width: CARD_W,
+        zIndex: 60,
+        pointerEvents: isSelected ? "auto" : "none",
+      }}
+      className="rounded-2xl border border-laps-light/30 bg-white/97 p-4 shadow-xl backdrop-blur"
+    >
+      {isSelected && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 text-laps-navy/35 hover:text-laps-navy transition-colors"
+          aria-label="Fechar cartão"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+
+      {/* Avatar + name */}
+      <div className="flex items-center gap-3 mb-3">
+        <div
+          className="h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 ring-offset-1"
+          style={{ "--tw-ring-color": color } as React.CSSProperties}
+        >
+          {node.photo ? (
+            <img
+              src={node.photo}
+              alt={node.fullName}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div
+              className="flex h-full w-full items-center justify-center text-sm font-bold text-white"
+              style={{
+                background: `linear-gradient(135deg, ${TIER_GRADIENT[node.tier][1]}, ${TIER_GRADIENT[node.tier][0]})`,
+              }}
+            >
+              {initials(node.fullName)}
+            </div>
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-[13px] font-bold leading-tight text-laps-navy">
+            {node.fullName}
+          </p>
+          <span
+            className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            style={{ background: `${color}18`, color }}
+          >
+            {labels.tier[node.tier]}
+          </span>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="flex items-center gap-3 border-t border-laps-light/20 pt-2.5 text-[11px] text-laps-navy/60">
+        <span>
+          <strong className="text-laps-navy">{node.degree}</strong>{" "}
+          colabs.
+        </span>
+      </div>
+
+      {/* Top collaborators */}
+      {node.top3.length > 0 && (
+        <div className="mt-2.5">
+          <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-laps-navy/40">
+            Principais colaboradores
+          </p>
+          <ul className="space-y-0.5">
+            {node.top3.map((name) => (
+              <li
+                key={name}
+                className="truncate text-[11px] text-laps-navy/65 before:mr-1.5 before:content-['·']"
+              >
+                {name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── DraggableNode ────────────────────────────────────────────────────────────
 
 function DraggableNode({
   member,
   anchor,
   isHovered,
+  isSelected,
   dim,
   label,
+  tierIndex,
   onHoverStart,
   onHoverEnd,
+  onSelect,
   onActivate,
 }: {
-  member: TeamMember;
+  member: GraphNode;
   anchor: Pos;
   isHovered: boolean;
+  isSelected: boolean;
   dim: boolean;
   label: string;
+  tierIndex: number;
   onHoverStart: () => void;
   onHoverEnd: () => void;
+  onSelect: () => void;
   onActivate: () => void;
 }) {
-  const r = NODE_R[member.tier];
+  const r = member.r;
   const controls = useAnimationControls();
-  const dragging = useRef(false);
-  // Distinguish click from drag: only fire activate if the pointer barely moved.
   const downAt = useRef<{ x: number; y: number } | null>(null);
+  const wasDragged = useRef(false);
 
-  // Mount gate. TanStack Start SSRs /team and useTeamRoster() returns the
-  // static seed during SSR, so DraggableNode would render on the server too.
-  // framer-motion's <motion.g drag> isn't SSR-safe — its drag setup pokes at
-  // browser APIs that don't exist in Node, which crashes the whole route into
-  // the global error boundary. We render a plain inert <g> on the server +
-  // first client paint (so HTML/hydration match), then flip to the
-  // interactive <motion.g> after the first effect runs.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // When the anchor changes (admin edit reflows positions) snap any current
-  // drag-offset back to zero so the node sits at its new anchor immediately.
+  const prefersReduced =
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false;
+
+  // Entrance animation on first mount
+  const entered = useRef(false);
+  useEffect(() => {
+    if (!mounted || entered.current) return;
+    entered.current = true;
+    if (prefersReduced) return;
+    controls.set({ scale: 0.9 });
+    void controls.start({
+      scale: 1,
+      transition: {
+        delay: tierIndex * 0.055,
+        duration: 0.3,
+        ease: EASE_OUT,
+      },
+    });
+  }, [mounted, controls, tierIndex, prefersReduced]);
+
+  // Reset drag offset when anchor changes (admin edits)
   useEffect(() => {
     if (mounted) controls.set({ x: 0, y: 0 });
   }, [anchor.x, anchor.y, controls, mounted]);
 
-  const showLabel = member.tier === "head" || isHovered;
-  const photo = member.photo;
+  const isActive = isHovered || isSelected;
+  const color = TIER_COLOR[member.tier];
 
   const visuals = (
     <>
-      {/* Halo on hover, more pronounced for the head */}
-      {isHovered && (
+      {/* Selection dashed ring */}
+      {isSelected && (
         <circle
-          r={r + (member.tier === "head" ? 10 : 6)}
+          r={r + 9}
           fill="none"
-          stroke={TIER_GRADIENT[member.tier][0]}
-          strokeOpacity={0.45}
-          strokeWidth={2}
+          stroke={color}
+          strokeOpacity={0.55}
+          strokeWidth={1.5}
+          strokeDasharray="5 3"
         />
       )}
 
-      {/* Main node */}
-      <circle r={r} fill={`url(#grad-${member.id})`} stroke="white" strokeWidth={2} />
+      {/* Hover halo */}
+      {isHovered && !isSelected && (
+        <circle
+          r={r + 7}
+          fill="none"
+          stroke={color}
+          strokeOpacity={0.35}
+          strokeWidth={1.5}
+        />
+      )}
 
-      {/* Photo (if any) clipped to a circle, on top of the gradient. */}
-      {photo && (
+      {/* Role color ring */}
+      <circle
+        r={r + 2}
+        fill="none"
+        stroke={color}
+        strokeOpacity={isActive ? 0.75 : 0.25}
+        strokeWidth={2}
+        style={{ transition: "stroke-opacity 180ms" }}
+      />
+
+      {/* Main fill */}
+      <circle
+        r={r}
+        fill={`url(#grad-${member.slug})`}
+        filter={isActive ? "url(#shadow-active)" : "url(#shadow-base)"}
+      />
+
+      {/* Photo */}
+      {member.photo && (
         <image
-          href={photo}
+          href={member.photo}
           x={-r}
           y={-r}
           width={r * 2}
           height={r * 2}
           preserveAspectRatio="xMidYMid slice"
-          clipPath={`url(#clip-${member.id})`}
+          clipPath={`url(#clip-${member.slug})`}
+          style={{
+            filter: isActive ? "none" : "grayscale(55%) brightness(0.97)",
+            transition: "filter 220ms ease",
+          }}
         />
       )}
 
-      {/* Initials fallback — first name initial + surname initial, white over the gradient. */}
-      {!photo && (
+      {/* Initials */}
+      {!member.photo && (
         <text
           textAnchor="middle"
           dominantBaseline="central"
           fontSize={Math.max(10, r * 0.62)}
-          fontWeight={700}
+          fontWeight={600}
           fill="white"
+          letterSpacing="-0.5"
           pointerEvents="none"
           style={{ fontFamily: "Space Grotesk, sans-serif" }}
         >
@@ -545,50 +1163,51 @@ function DraggableNode({
         </text>
       )}
 
-      {/* Status dot — only when non-active */}
+      {/* Status dot */}
       {member.status && member.status !== "ACTIVE" && (
         <circle
           cx={r * 0.78}
           cy={-r * 0.78}
           r={3.5}
-          fill={STATUS_COLOR[member.status]}
+          fill={member.status === "COMPLETED" ? "#94A3B8" : "#CBD5E1"}
           stroke="white"
           strokeWidth={1.2}
         />
       )}
 
       {/* Label */}
-      {showLabel && (
+      {(member.tier === "head" || isActive) && (
         <text
-          y={r + 16}
+          y={r + 15}
           textAnchor="middle"
-          fontSize={member.tier === "head" ? 12 : 11}
-          fontWeight={member.tier === "head" || isHovered ? 600 : 500}
-          fill={NAVY}
-          opacity={isHovered ? 1 : 0.82}
+          fontSize={member.tier === "head" ? 13 : 11}
+          fontWeight={member.tier === "head" || isActive ? 600 : 500}
+          fill="#193A59"
+          opacity={isActive ? 1 : 0.82}
           pointerEvents="none"
-          style={{ fontFamily: "Space Grotesk, sans-serif" }}
+          style={{
+            fontFamily: "Space Grotesk, sans-serif",
+            fontVariantNumeric: "tabular-nums",
+          }}
         >
-          {member.fullName.length > 24 && !isHovered
-            ? member.fullName.slice(0, 23) + "…"
+          {member.fullName.length > 22 && !isActive
+            ? member.fullName.slice(0, 21) + "…"
             : member.fullName}
         </text>
       )}
     </>
   );
 
-  // Pre-mount: static, non-interactive. Renders identical SVG markup on the
-  // server and on the first client paint so React doesn't see a hydration
-  // mismatch when we upgrade to motion below.
+  // SSR / pre-hydration: static, non-interactive, no motion APIs.
   if (!mounted) {
     return (
       <g
         transform={`translate(${anchor.x} ${anchor.y})`}
-        style={{ opacity: dim ? 0.22 : 1, transition: "opacity 180ms" }}
+        style={{ opacity: dim ? 0.12 : 1, transition: "opacity 200ms" }}
         role="button"
         tabIndex={0}
-        aria-label={`${label}: ${member.fullName}`}
-        onClick={onActivate}
+        aria-label={`${label}: ${member.fullName}, ${member.degree} colaborações`}
+        onClick={onSelect}
       >
         {visuals}
       </g>
@@ -600,18 +1219,18 @@ function DraggableNode({
       <motion.g
         drag
         dragMomentum={false}
-        dragElastic={0.4}
+        dragElastic={0.35}
         animate={controls}
         initial={{ x: 0, y: 0 }}
         onPointerDown={(e) => {
           downAt.current = { x: e.clientX, y: e.clientY };
-          dragging.current = false;
+          wasDragged.current = false;
         }}
-        onDragStart={() => {
-          dragging.current = true;
+        onDrag={() => {
+          wasDragged.current = true;
         }}
         onDragEnd={() => {
-          controls.start({
+          void controls.start({
             x: 0,
             y: 0,
             transition: { type: "spring", stiffness: 90, damping: 16, mass: 0.8 },
@@ -620,18 +1239,23 @@ function DraggableNode({
         onPointerUp={(e) => {
           const start = downAt.current;
           downAt.current = null;
-          if (dragging.current) {
-            dragging.current = false;
+          if (wasDragged.current) {
+            wasDragged.current = false;
             return;
           }
           if (start) {
             const dx = e.clientX - start.x;
             const dy = e.clientY - start.y;
-            if (dx * dx + dy * dy < 25) onActivate();
+            if (dx * dx + dy * dy < 36) onSelect();
           }
         }}
+        onDoubleClick={onActivate}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onSelect();
+          }
+          if (e.key === " ") {
             e.preventDefault();
             onActivate();
           }
@@ -640,14 +1264,14 @@ function DraggableNode({
         onHoverEnd={onHoverEnd}
         role="button"
         tabIndex={0}
-        aria-label={`${label}: ${member.fullName}`}
+        aria-label={`${label}: ${member.fullName}, ${member.degree} colaborações`}
         style={{
-          cursor: "grab",
-          opacity: dim ? 0.22 : 1,
-          transition: "opacity 180ms",
+          cursor: "pointer",
+          opacity: dim ? 0.12 : 1,
+          transition: "opacity 200ms",
         }}
-        whileHover={{ scale: 1.08 }}
-        whileDrag={{ scale: 1.15, cursor: "grabbing" }}
+        whileHover={{ scale: 1.1 }}
+        whileDrag={{ scale: 1.14 }}
       >
         {visuals}
       </motion.g>
