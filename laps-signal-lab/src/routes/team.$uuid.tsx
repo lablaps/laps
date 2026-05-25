@@ -412,7 +412,6 @@ function TeamMemberPage() {
                   <div className="flex flex-wrap gap-1.5">
                     {memberAreas.map((slug) => {
                       const area = researchAreas.find((a) => a.slug === slug);
-                      if (!area) return null;
                       return (
                         <span
                           key={slug}
@@ -420,9 +419,9 @@ function TeamMemberPage() {
                         >
                           <span
                             className="inline-block h-2 w-2 rounded-full"
-                            style={{ background: area.color }}
+                            style={{ background: area?.color ?? "#94a3b8" }}
                           />
-                          {area.name[L]}
+                          {area?.name[L] ?? slug}
                         </span>
                       );
                     })}
