@@ -100,7 +100,7 @@ export const translations = {
         "Pesquisadores e estudantes do LAPS construindo pontes científicas com universidades parceiras na Europa e nas Américas. Cada perfil resume a destinação, o nível acadêmico e os idiomas de trabalho em campo.",
       summary: {
         label: "Visão geral",
-        countWithCount: (n: number) => `${n} integrantes do LAPS em mobilidade internacional`,
+        countWithCount: (n: number) => `${n} integrantes do LAPS que tiveram mobilidade internacional`,
         countries: "4 países: França, Canadá, Portugal e Itália",
         languages: "Português + idiomas dos países anfitriões em uso ativo",
       },
