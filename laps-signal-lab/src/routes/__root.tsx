@@ -1,12 +1,16 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useIsFetching } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 import appCss from "../styles.css?url";
 import faviconUrl from "../assets/laps-logo.png?url";
@@ -122,7 +126,65 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <TransitionLoader />
       <Outlet />
     </QueryClientProvider>
+  );
+}
+
+// Shows the loading screen when navigating between routes and queries are in-flight.
+// Strategy:
+//   1. Detect pathname change → show immediately.
+//   2. Keep showing until both conditions are true:
+//      a. At least MIN_MS have elapsed (prevents flash on fast navigations).
+//      b. No active React Query fetches (isFetching === 0).
+//   3. Then fade out via AnimatePresence.
+const MIN_MS = 500;
+
+function TransitionLoader() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isFetching = useIsFetching();
+
+  const [visible, setVisible] = useState(false);
+  const [minElapsed, setMinElapsed] = useState(false);
+  const prevPathname = useRef(pathname);
+  const minTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirst = useRef(true);
+
+  // Show on every pathname change except the very first render.
+  useEffect(() => {
+    if (isFirst.current) {
+      isFirst.current = false;
+      prevPathname.current = pathname;
+      return;
+    }
+    if (pathname === prevPathname.current) return;
+    prevPathname.current = pathname;
+
+    setVisible(true);
+    setMinElapsed(false);
+
+    if (minTimer.current) clearTimeout(minTimer.current);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+
+    minTimer.current = setTimeout(() => setMinElapsed(true), MIN_MS);
+  }, [pathname]);
+
+  // Hide once both the minimum time and the fetch quiet-down are satisfied.
+  useEffect(() => {
+    if (!visible) return;
+    if (!minElapsed || isFetching > 0) return;
+
+    hideTimer.current = setTimeout(() => setVisible(false), 120);
+    return () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
+  }, [visible, minElapsed, isFetching]);
+
+  return (
+    <AnimatePresence>
+      {visible && <LoadingScreen />}
+    </AnimatePresence>
   );
 }

@@ -52,9 +52,26 @@ const PATHS: LetterPath[] = [
   },
 ];
 
-export default function LapsLogoAnimation() {
+// Full animation takes ~4.8 s (body path: delay 1.0 + draw 3.2 + fill 0.6).
+const ANIMATION_DURATION_MS = 4800;
+const LOOP_PAUSE_MS = 600;
+
+interface LapsLogoAnimationProps {
+  loop?: boolean;
+}
+
+export default function LapsLogoAnimation({ loop = false }: LapsLogoAnimationProps) {
   const pathRefs = useRef<(SVGPathElement | null)[]>([]);
-  const [runKey] = useState(0);
+  const [runKey, setRunKey] = useState(0);
+
+  useEffect(() => {
+    if (!loop) return;
+    const id = setTimeout(
+      () => setRunKey((k) => k + 1),
+      ANIMATION_DURATION_MS + LOOP_PAUSE_MS,
+    );
+    return () => clearTimeout(id);
+  }, [loop, runKey]);
 
   useEffect(() => {
     PATHS.forEach((p, i) => {

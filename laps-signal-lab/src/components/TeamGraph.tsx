@@ -12,7 +12,6 @@ import {
   Search,
   X,
   SlidersHorizontal,
-  Download,
   RotateCcw,
 } from "lucide-react";
 import { initials, type Tier } from "@/lib/team-data";
@@ -430,21 +429,6 @@ export function TeamGraph({ labels }: Props) {
     applyTransform();
   }, [applyTransform, members]);
 
-  // ── Export as SVG ────────────────────────────────────────────────────────────
-
-  const exportSvg = useCallback(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
-    const xml = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([xml], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "laps-network.svg";
-    a.click();
-    URL.revokeObjectURL(url);
-  }, []);
-
   // ── Hover card: follow cursor for hover, anchored to node for selected ───────
 
   const activeNode = nodes.find(
@@ -493,7 +477,6 @@ export function TeamGraph({ labels }: Props) {
               edgeThreshold={edgeThreshold}
               onEdgeThreshold={setEdgeThreshold}
               onReset={resetView}
-              onExport={exportSvg}
               labels={labels}
             />
           )}
@@ -777,7 +760,6 @@ function LeftRail({
   edgeThreshold,
   onEdgeThreshold,
   onReset,
-  onExport,
   labels,
 }: {
   search: string;
@@ -788,7 +770,6 @@ function LeftRail({
   edgeThreshold: number;
   onEdgeThreshold: (n: number) => void;
   onReset: () => void;
-  onExport: () => void;
   labels: { tier: Record<Tier, string> };
 }) {
   return (
@@ -890,14 +871,6 @@ function LeftRail({
         >
           <RotateCcw className="h-3 w-3" />
           Resetar vista
-        </button>
-        <button
-          type="button"
-          onClick={onExport}
-          className="flex items-center gap-2 rounded-full border border-laps-navy/10 bg-white px-3 py-1.5 text-[11px] font-semibold text-laps-navy/65 transition hover:bg-laps-ghost hover:text-laps-navy"
-        >
-          <Download className="h-3 w-3" />
-          Exportar SVG
         </button>
       </div>
     </motion.aside>
