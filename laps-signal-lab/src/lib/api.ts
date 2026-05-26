@@ -309,6 +309,29 @@ export const api = {
   project: (slugOrId: string) => request<ApiProject>(`/api/v1/projects/${slugOrId}`),
   graph: () => request<ApiGraph>("/api/v1/graph"),
 
+  // Invites (public + admin)
+  inviteInfo: (token: string) =>
+    request<{ role: MemberRole; expiresAt: string }>(`/api/v1/invites/${token}`),
+
+  inviteRegister: (
+    token: string,
+    body: {
+      fullName: string;
+      email: string;
+      password: string;
+      photoUrl?: string | null;
+      bio?: string;
+      bioLang?: string;
+      linkedinUrl?: string;
+      lattesUrl?: string;
+      githubUrl?: string;
+    }
+  ) =>
+    request<LoginResponse>(`/api/v1/invites/${token}/register`, {
+      method: "POST",
+      body,
+    }),
+
   // Admin (MANAGER)
   admin: {
     createMember: (body: {
@@ -363,6 +386,12 @@ export const api = {
     tempPassword: (id: string) =>
       request<{ username: string; tempPassword: string }>(
         `/api/v1/admin/members/${id}/temp-password`
+      ),
+
+    createInvite: (body: { role: MemberRole; validityDays: number }) =>
+      request<{ id: string; token: string; role: MemberRole; expiresAt: string }>(
+        "/api/v1/admin/invites",
+        { method: "POST", body }
       ),
 
     /**

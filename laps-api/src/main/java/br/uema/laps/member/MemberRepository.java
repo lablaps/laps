@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface MemberRepository extends JpaRepository<Member, UUID>, JpaSpecificationExecutor<Member> {
     Optional<Member> findBySlug(String slug);
     Optional<Member> findByEmailIgnoreCase(String email);
+    boolean existsByEmailIgnoreCase(String email);
 }

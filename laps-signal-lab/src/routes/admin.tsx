@@ -30,6 +30,9 @@ import {
   Mail,
   ShieldAlert,
   ShieldCheck,
+  Link2,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 import {
   api,
@@ -45,6 +48,7 @@ import { COUNTRIES, COUNTRY_ORDER, type CountryCode } from "@/lib/exchange-data"
 import { FLAGS } from "@/lib/flags";
 import { searchMembers } from "@/lib/member-search";
 import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { initials } from "@/lib/team-data";
 import lapsLogo from "@/assets/laps-logo2.png";
@@ -123,6 +127,7 @@ function AdminPage() {
   const [query, setQuery] = useState("");
   const [tierFilter, setTierFilter] = useState<MemberRole | "ALL">("ALL");
   const [creating, setCreating] = useState(false);
+  const [inviting, setInviting] = useState(false);
 
   const members = membersQuery.data?.content ?? [];
 
@@ -280,6 +285,13 @@ function AdminPage() {
               </div>
               <button
                 type="button"
+                onClick={() => setInviting(true)}
+                className="inline-flex items-center gap-2 rounded-md border border-laps-blue/30 bg-laps-ghost px-4 py-2.5 text-xs font-bold text-laps-blue transition hover:bg-laps-blue/10"
+              >
+                <Link2 className="h-4 w-4" /> Gerar convite
+              </button>
+              <button
+                type="button"
                 onClick={() => setCreating(true)}
                 className="inline-flex items-center gap-2 rounded-md bg-laps-blue px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-laps-navy"
               >
@@ -326,6 +338,7 @@ function AdminPage() {
           }}
         />
       )}
+      {inviting && <InviteDialog onClose={() => setInviting(false)} />}
     </div>
   );
 }
@@ -568,6 +581,158 @@ function CredRow({
         >
           {copied ? <ShieldCheck className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ───── InviteDialog ─────
+
+const INVITE_ROLES: { value: MemberRole; label: string }[] = [
+  { value: "UNDERGRAD", label: "Graduação" },
+  { value: "MASTER", label: "Mestrado" },
+  { value: "DOCTORATE", label: "Doutorado" },
+  { value: "COORDINATOR", label: "Coordenador" },
+];
+
+function InviteDialog({ onClose }: { onClose: () => void }) {
+  const [role, setRole] = useState<MemberRole>("UNDERGRAD");
+  const [validityDays, setValidityDays] = useState(14);
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: () => api.admin.createInvite({ role, validityDays }),
+    onSuccess: (data) => {
+      const link = `${window.location.origin}/join/${data.token}`;
+      setGeneratedLink(link);
+    },
+    onError: () => toast.error("Não foi possível gerar o convite."),
+  });
+
+  function copyLink() {
+    if (!generatedLink) return;
+    navigator.clipboard.writeText(generatedLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl border border-laps-navy/10 bg-white p-6 shadow-[0_8px_40px_rgba(25,58,89,0.15)]">
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold text-laps-navy">Gerar link de convite</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-1 text-laps-navy/40 transition hover:bg-laps-ghost hover:text-laps-navy"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {!generatedLink ? (
+          <div className="space-y-5">
+            <div>
+              <label className="block mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-laps-navy/65">
+                Função
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {INVITE_ROLES.map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setRole(r.value)}
+                    className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                      role === r.value
+                        ? "border-laps-blue bg-laps-blue text-white"
+                        : "border-laps-navy/15 text-laps-navy/65 hover:border-laps-blue/40 hover:text-laps-blue"
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-laps-navy/65">
+                Validade
+              </label>
+              <div className="flex gap-2">
+                {[7, 14, 30].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setValidityDays(d)}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                      validityDays === d
+                        ? "border-laps-blue bg-laps-blue text-white"
+                        : "border-laps-navy/15 text-laps-navy/65 hover:border-laps-blue/40 hover:text-laps-blue"
+                    }`}
+                  >
+                    {d} dias
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => mutation.mutate()}
+              disabled={mutation.isPending}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-laps-blue px-4 py-2.5 text-sm font-bold text-white transition hover:bg-laps-navy disabled:opacity-60"
+            >
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="h-4 w-4" />
+              )}
+              Gerar link
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              Link gerado com sucesso! Validade: {validityDays} dias.
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-laps-navy/15 bg-laps-ghost/40 px-3 py-2">
+              <Link2 className="h-4 w-4 shrink-0 text-laps-blue/60" />
+              <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-laps-navy/70">
+                {generatedLink}
+              </span>
+              <button
+                type="button"
+                onClick={copyLink}
+                className="shrink-0 rounded p-1 text-laps-navy/55 transition hover:bg-white hover:text-laps-blue"
+                aria-label="Copiar link"
+              >
+                {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-[11px] text-laps-navy/50">
+              Compartilhe este link com o novo membro. Ele pode ser usado apenas uma vez.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setGeneratedLink(null); mutation.reset(); }}
+                className="flex-1 rounded-lg border border-laps-navy/15 px-3 py-2 text-xs font-semibold text-laps-navy/65 transition hover:border-laps-blue hover:text-laps-blue"
+              >
+                Gerar outro
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 rounded-lg bg-laps-blue px-3 py-2 text-xs font-bold text-white transition hover:bg-laps-navy"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

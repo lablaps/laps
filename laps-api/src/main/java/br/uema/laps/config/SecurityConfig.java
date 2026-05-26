@@ -57,6 +57,7 @@ public class SecurityConfig {
                         "/team", "/team/**", "/projects", "/projects/**",
                         "/contact", "/aboutus", "/exchange",
                         "/login",
+                        "/join", "/join/**",
                         "/admin", "/admin/**",
                         "/portal", "/portal/**").permitAll()
                 .requestMatchers(HttpMethod.GET,
@@ -66,6 +67,8 @@ public class SecurityConfig {
                         "/api/v1/graph", "/api/v1/export",
                         "/uploads/**").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/invites/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/invites/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasAuthority("MANAGER")
                 .requestMatchers("/api/v1/me/**").hasAnyAuthority("MEMBER", "MANAGER")
                 .anyRequest().authenticated()

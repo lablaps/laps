@@ -19,6 +19,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutusRouteImport } from './routes/aboutus'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TeamUuidRouteImport } from './routes/team.$uuid'
+import { Route as JoinTokenRouteImport } from './routes/join.$token'
 
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
@@ -70,6 +71,11 @@ const TeamUuidRoute = TeamUuidRouteImport.update({
   path: '/$uuid',
   getParentRoute: () => TeamRoute,
 } as any)
+const JoinTokenRoute = JoinTokenRouteImport.update({
+  id: '/join/$token',
+  path: '/join/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/portal': typeof PortalRoute
   '/projects': typeof ProjectsRoute
   '/team': typeof TeamRouteWithChildren
+  '/join/$token': typeof JoinTokenRoute
   '/team/$uuid': typeof TeamUuidRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/portal': typeof PortalRoute
   '/projects': typeof ProjectsRoute
   '/team': typeof TeamRouteWithChildren
+  '/join/$token': typeof JoinTokenRoute
   '/team/$uuid': typeof TeamUuidRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/portal': typeof PortalRoute
   '/projects': typeof ProjectsRoute
   '/team': typeof TeamRouteWithChildren
+  '/join/$token': typeof JoinTokenRoute
   '/team/$uuid': typeof TeamUuidRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/projects'
     | '/team'
+    | '/join/$token'
     | '/team/$uuid'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/projects'
     | '/team'
+    | '/join/$token'
     | '/team/$uuid'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/portal'
     | '/projects'
     | '/team'
+    | '/join/$token'
     | '/team/$uuid'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   PortalRoute: typeof PortalRoute
   ProjectsRoute: typeof ProjectsRoute
   TeamRoute: typeof TeamRouteWithChildren
+  JoinTokenRoute: typeof JoinTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -231,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeamUuidRouteImport
       parentRoute: typeof TeamRoute
     }
+    '/join/$token': {
+      id: '/join/$token'
+      path: '/join/$token'
+      fullPath: '/join/$token'
+      preLoaderRoute: typeof JoinTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -254,6 +274,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalRoute: PortalRoute,
   ProjectsRoute: ProjectsRoute,
   TeamRoute: TeamRouteWithChildren,
+  JoinTokenRoute: JoinTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
