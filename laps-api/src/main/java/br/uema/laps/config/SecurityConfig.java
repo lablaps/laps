@@ -4,6 +4,7 @@ import br.uema.laps.security.JwtAuthFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -35,30 +37,43 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
+    /**
+     * Public chain — scoped only to the truly public API surface: /api/v1/auth/** (login,
+     * logout, set-password) and /api/v1/invites/** (validate invite, register from invite).
+     *
+     * This chain runs ahead of {@link #mainFilterChain} and is *completely independent* of it.
+     * Anything matched here never reaches the main chain's matcher logic, so Spring Security's
+     * MvcRequestMatcher / PathPatternRequestMatcher choice can't accidentally "consume" these
+     * paths into the authenticated bucket. No JwtAuthFilter either — these endpoints don't
+     * need a SecurityContext and one of them (login) is responsible for *issuing* the JWT.
+     */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Order(1)
+    public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher(new OrRequestMatcher(
+                antMatcher("/api/v1/auth/**"),
+                antMatcher("/api/v1/invites/**")
+            ))
+            .cors(c -> c.configurationSource(corsConfigurationSource()))
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
+    public SecurityFilterChain mainFilterChain(HttpSecurity http) throws Exception {
         http
             .cors(c -> c.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // All matchers are forced to AntPathRequestMatcher (via antMatcher(...)) instead
-                // of letting Spring Security 6.x pick MvcRequestMatcher by default. MvcRequestMatcher
-                // only matches paths that resolve to a Spring MVC handler, so any pattern that
-                // covers anonymous endpoints (invites, auth/login) silently fails to match when the
-                // request hasn't been routed yet — falling through to anyRequest().authenticated()
-                // and returning 401 on public endpoints. AntPathRequestMatcher matches purely on
-                // the URL pattern, which is what we want for an auth chain.
                 .requestMatchers(antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
-                // Only the health probe is public; every other actuator endpoint
-                // stays disabled in application.yml so this allow-list can never
-                // surface info-leaks like /env or /heapdump.
                 .requestMatchers(
                         antMatcher(HttpMethod.GET, "/actuator/health"),
                         antMatcher(HttpMethod.GET, "/actuator/health/**")).permitAll()
-                // SPA shell + bundled assets. Monolith deploy: dist/client/* is
-                // copied into src/main/resources/static/ at build time, then served
-                // here. Any non-API GET path is fair game.
                 .requestMatchers(
                         antMatcher(HttpMethod.GET, "/"),
                         antMatcher(HttpMethod.GET, "/index.html"),
@@ -88,19 +103,17 @@ public class SecurityConfig {
                         antMatcher(HttpMethod.GET, "/api/v1/graph"),
                         antMatcher(HttpMethod.GET, "/api/v1/export"),
                         antMatcher(HttpMethod.GET, "/uploads/**")).permitAll()
-                .requestMatchers(antMatcher("/api/v1/auth/**")).permitAll()
-                .requestMatchers(antMatcher(HttpMethod.GET, "/api/v1/invites/**")).permitAll()
-                .requestMatchers(antMatcher(HttpMethod.POST, "/api/v1/invites/**")).permitAll()
                 .requestMatchers(antMatcher("/api/v1/admin/**")).hasAuthority("MANAGER")
                 .requestMatchers(antMatcher("/api/v1/me/**")).hasAnyAuthority("MEMBER", "MANAGER")
                 .anyRequest().authenticated()
             )
-            // Unauthenticated requests to protected endpoints get 401 (not the default
-            // 403), so the SPA can distinguish "log back in" from "you lack the role".
+            // Custom 401 body — also doubles as a deploy verification marker. If after pushing
+            // this commit you still see `"unauthenticated"` (no v3 suffix), Render is serving
+            // a stale image and the deploy did not actually pick up your code.
             .exceptionHandling(e -> e.authenticationEntryPoint((req, res, ex) -> {
                 res.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                 res.setContentType("application/json");
-                res.getWriter().write("{\"code\":\"unauthenticated\",\"message\":\"" + ex.getMessage() + "\"}");
+                res.getWriter().write("{\"code\":\"unauthenticated_v3\",\"message\":\"" + ex.getMessage() + "\"}");
             }))
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
