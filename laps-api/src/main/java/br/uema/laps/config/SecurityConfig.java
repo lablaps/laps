@@ -21,6 +21,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
+
 @Configuration
 public class SecurityConfig {
 
@@ -40,37 +42,57 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // CORS preflight must succeed before the actual request — leaving it
-                // to the authorization chain caused 403s on PUT /admin/** because the
-                // OPTIONS probe has no Authorization header / JWT cookie attached.
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // All matchers are forced to AntPathRequestMatcher (via antMatcher(...)) instead
+                // of letting Spring Security 6.x pick MvcRequestMatcher by default. MvcRequestMatcher
+                // only matches paths that resolve to a Spring MVC handler, so any pattern that
+                // covers anonymous endpoints (invites, auth/login) silently fails to match when the
+                // request hasn't been routed yet — falling through to anyRequest().authenticated()
+                // and returning 401 on public endpoints. AntPathRequestMatcher matches purely on
+                // the URL pattern, which is what we want for an auth chain.
+                .requestMatchers(antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
                 // Only the health probe is public; every other actuator endpoint
                 // stays disabled in application.yml so this allow-list can never
                 // surface info-leaks like /env or /heapdump.
-                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
+                .requestMatchers(
+                        antMatcher(HttpMethod.GET, "/actuator/health"),
+                        antMatcher(HttpMethod.GET, "/actuator/health/**")).permitAll()
                 // SPA shell + bundled assets. Monolith deploy: dist/client/* is
                 // copied into src/main/resources/static/ at build time, then served
                 // here. Any non-API GET path is fair game.
-                .requestMatchers(HttpMethod.GET,
-                        "/", "/index.html", "/favicon.ico",
-                        "/assets/**", "/static/**",
-                        "/team", "/team/**", "/projects", "/projects/**",
-                        "/contact", "/aboutus", "/exchange",
-                        "/login",
-                        "/join", "/join/**",
-                        "/admin", "/admin/**",
-                        "/portal", "/portal/**").permitAll()
-                .requestMatchers(HttpMethod.GET,
-                        "/api/v1/professor", "/api/v1/members/**",
-                        "/api/v1/projects/**",
-                        "/api/v1/publications/**", "/api/v1/areas",
-                        "/api/v1/graph", "/api/v1/export",
-                        "/uploads/**").permitAll()
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/invites/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/invites/**").permitAll()
-                .requestMatchers("/api/v1/admin/**").hasAuthority("MANAGER")
-                .requestMatchers("/api/v1/me/**").hasAnyAuthority("MEMBER", "MANAGER")
+                .requestMatchers(
+                        antMatcher(HttpMethod.GET, "/"),
+                        antMatcher(HttpMethod.GET, "/index.html"),
+                        antMatcher(HttpMethod.GET, "/favicon.ico"),
+                        antMatcher(HttpMethod.GET, "/assets/**"),
+                        antMatcher(HttpMethod.GET, "/static/**"),
+                        antMatcher(HttpMethod.GET, "/team"),
+                        antMatcher(HttpMethod.GET, "/team/**"),
+                        antMatcher(HttpMethod.GET, "/projects"),
+                        antMatcher(HttpMethod.GET, "/projects/**"),
+                        antMatcher(HttpMethod.GET, "/contact"),
+                        antMatcher(HttpMethod.GET, "/aboutus"),
+                        antMatcher(HttpMethod.GET, "/exchange"),
+                        antMatcher(HttpMethod.GET, "/login"),
+                        antMatcher(HttpMethod.GET, "/join"),
+                        antMatcher(HttpMethod.GET, "/join/**"),
+                        antMatcher(HttpMethod.GET, "/admin"),
+                        antMatcher(HttpMethod.GET, "/admin/**"),
+                        antMatcher(HttpMethod.GET, "/portal"),
+                        antMatcher(HttpMethod.GET, "/portal/**")).permitAll()
+                .requestMatchers(
+                        antMatcher(HttpMethod.GET, "/api/v1/professor"),
+                        antMatcher(HttpMethod.GET, "/api/v1/members/**"),
+                        antMatcher(HttpMethod.GET, "/api/v1/projects/**"),
+                        antMatcher(HttpMethod.GET, "/api/v1/publications/**"),
+                        antMatcher(HttpMethod.GET, "/api/v1/areas"),
+                        antMatcher(HttpMethod.GET, "/api/v1/graph"),
+                        antMatcher(HttpMethod.GET, "/api/v1/export"),
+                        antMatcher(HttpMethod.GET, "/uploads/**")).permitAll()
+                .requestMatchers(antMatcher("/api/v1/auth/**")).permitAll()
+                .requestMatchers(antMatcher(HttpMethod.GET, "/api/v1/invites/**")).permitAll()
+                .requestMatchers(antMatcher(HttpMethod.POST, "/api/v1/invites/**")).permitAll()
+                .requestMatchers(antMatcher("/api/v1/admin/**")).hasAuthority("MANAGER")
+                .requestMatchers(antMatcher("/api/v1/me/**")).hasAnyAuthority("MEMBER", "MANAGER")
                 .anyRequest().authenticated()
             )
             // Unauthenticated requests to protected endpoints get 401 (not the default
