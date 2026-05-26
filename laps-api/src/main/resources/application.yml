@@ -67,7 +67,7 @@ laps:
     issuer: laps.uema.br
     # Required env. The app refuses to start without a secret, by design.
     secret: ${LAPS_JWT_SECRET}
-    ttl: ${LAPS_JWT_TTL:PT8H}
+    ttl: ${LAPS_JWT_TTL:PT1H}
   managers:
     # Comma-separated. Required env in production; left blank in committed
     # config so the file is safe to share. No PII leaks into git.

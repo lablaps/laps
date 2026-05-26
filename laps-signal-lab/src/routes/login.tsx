@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { ShieldCheck, Lock, User, ArrowRight, AlertCircle } from "lucide-react";
+import { ShieldCheck, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
 import LapsLogoMono from "@/components/LapsLogoMono";
 import { Input } from "@/components/ui/input";
 import { api, ApiError } from "@/lib/api";
 import { useInvalidateAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 
 // Unlinked, unindexed authentication entry. No public site link points here —
 // managers reach it directly via /login. The backend gates everything underneath;
@@ -26,27 +27,27 @@ function LoginPage() {
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
-    setError(null);
     setSubmitting(true);
     try {
       const res = await api.login(identifier.trim(), password);
       await invalidateAuth();
       await router.invalidate();
+      toast.success("Login realizado com sucesso!");
       // Managers go straight to /admin; everyone else lands in /portal where
       // the must-change-password gate (if any) is enforced inline.
       const dest: "/admin" | "/portal" = res.role === "MANAGER" ? "/admin" : "/portal";
       navigate({ to: dest });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        setError("Email ou senha inválidos.");
+        toast.error("Email ou senha inválidos.");
       } else {
-        setError("Não foi possível entrar. Tente novamente.");
+        toast.error("Não foi possível entrar. Tente novamente.");
       }
     } finally {
       setSubmitting(false);
@@ -89,7 +90,7 @@ function LoginPage() {
 
         <div className="relative flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-white/45">
           <ShieldCheck className="h-3.5 w-3.5" />
-          Seguro · JWT HttpOnly · Sessão de 15 min
+          Seguro · JWT HttpOnly · Sessão de 1 hora
         </div>
       </aside>
 
@@ -131,26 +132,29 @@ function LoginPage() {
               label="Senha"
               icon={<Lock className="h-4 w-4" />}
               htmlFor="password"
+              trailing={
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="pointer-events-auto absolute inset-y-0 right-3 flex items-center text-laps-navy/40 hover:text-laps-navy/70"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              }
             >
               <Input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="h-11 border-laps-navy/15 bg-white pl-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+                className="h-11 border-laps-navy/15 bg-white pl-10 pr-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
               />
             </Field>
-
-            {error && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
 
             <button
               type="submit"
@@ -161,9 +165,6 @@ function LoginPage() {
               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </button>
 
-            <p className="pt-4 text-center text-[11px] uppercase tracking-[0.24em] text-laps-navy/40">
-              LAPS · UEMA
-            </p>
           </form>
         </div>
       </section>
@@ -175,11 +176,13 @@ function Field({
   label,
   icon,
   htmlFor,
+  trailing,
   children,
 }: {
   label: string;
   icon: React.ReactNode;
   htmlFor: string;
+  trailing?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -195,6 +198,7 @@ function Field({
           {icon}
         </span>
         {children}
+        {trailing}
       </div>
     </div>
   );

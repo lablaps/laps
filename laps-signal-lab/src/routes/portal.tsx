@@ -11,12 +11,15 @@ import {
   Compass,
   Crown,
   Edit2,
+  Eye,
+  EyeOff,
   Globe,
   GraduationCap,
   ImageIcon,
   KeyRound,
   Lock,
   Mail,
+  MapPin,
   Microscope,
   Palette,
   Plus,
@@ -29,17 +32,90 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { useLang } from "@/hooks/use-lang";
+import { type Lang } from "@/lib/i18n";
 import { api, ApiError, resolveMediaUrl, type ApiMember, type ApiProject, type ApiResearchArea, type MyProfile } from "@/lib/api";
 import {
   LANGUAGE_CATALOG, LANGUAGE_BY_CODE, LEVELS_BY_SYSTEM, NATIVE_LEVEL,
-  parseLanguages, serializeLanguages, levelBadgeClass, levelFullLabel, levelShortLabel,
+  parseLanguages, serializeLanguages, levelBadgeClass, levelShortLabel,
   type LanguageEntry,
 } from "@/lib/languages-data";
 import { Input } from "@/components/ui/input";
 import { initials } from "@/lib/team-data";
-import { areas as staticAreas, type AreaSlug } from "@/lib/areas-data";
 import type { Tier } from "@/lib/team-data";
+
+// ───── Language flags (pt / en / fr) ─────
+
+const PORTAL_FLAGS: Record<Lang, React.ReactNode> = {
+  pt: (
+    <svg viewBox="0 0 24 16" className="h-3.5 w-5 shrink-0 rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.15)]">
+      <rect width="24" height="16" fill="#009C3B" />
+      <polygon points="12,2 22,8 12,14 2,8" fill="#FFDF00" />
+      <circle cx="12" cy="8" r="3" fill="#002776" />
+    </svg>
+  ),
+  en: (
+    <svg viewBox="0 0 60 40" className="h-3.5 w-5 shrink-0 rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.15)]">
+      <rect width="60" height="40" fill="#FFFFFF" />
+      <rect y="0" width="60" height="3.08" fill="#B22234" />
+      <rect y="6.15" width="60" height="3.08" fill="#B22234" />
+      <rect y="12.31" width="60" height="3.08" fill="#B22234" />
+      <rect y="18.46" width="60" height="3.08" fill="#B22234" />
+      <rect y="24.62" width="60" height="3.08" fill="#B22234" />
+      <rect y="30.77" width="60" height="3.08" fill="#B22234" />
+      <rect y="36.92" width="60" height="3.08" fill="#B22234" />
+      <rect width="24" height="21.54" fill="#3C3B6E" />
+    </svg>
+  ),
+  fr: (
+    <svg viewBox="0 0 24 16" className="h-3.5 w-5 shrink-0 rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.15)]">
+      <rect width="8" height="16" fill="#002776" />
+      <rect x="8" width="8" height="16" fill="#FFFFFF" />
+      <rect x="16" width="8" height="16" fill="#ED2939" />
+    </svg>
+  ),
+};
+
+function PortalLangSwitcher() {
+  const { lang, setLang } = useLang();
+  const codes: Lang[] = ["pt", "en", "fr"];
+  return (
+    <div className="relative inline-flex w-fit items-center p-0.5 rounded-full bg-laps-navy/5 border border-laps-navy/5">
+      {codes.map((c) => {
+        const active = lang === c;
+        return (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setLang(c)}
+            className="relative flex items-center justify-center h-7 w-9 rounded-full transition-all z-10"
+            aria-label={`Switch to ${c.toUpperCase()}`}
+          >
+            {active && (
+              <motion.div
+                layoutId="portal-active-lang-bg"
+                className="absolute inset-0 rounded-full bg-white shadow-sm"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+              />
+            )}
+            <span
+              className="relative transition-all duration-500"
+              style={{
+                filter: active ? "saturate(1) brightness(1)" : "saturate(0) opacity(0.3)",
+                transform: active ? "scale(1.05)" : "scale(0.85)",
+              }}
+            >
+              {PORTAL_FLAGS[c]}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/portal")({
   component: PortalPage,
@@ -132,6 +208,7 @@ function PortalPage() {
   const navigate = useNavigate();
   const auth = useAuth();
   const me = auth.member;
+  const { t } = useLang();
 
   useEffect(() => {
     if (!auth.isLoading && !auth.isAuthenticated) {
@@ -212,27 +289,28 @@ function PortalPage() {
     <div className="min-h-screen bg-gradient-to-b from-laps-ghost/30 via-white to-white">
       {/* Top bar */}
       <div className="mx-auto max-w-6xl px-6 pt-8">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <Link
             to="/team"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-laps-navy/70 transition hover:text-laps-blue"
           >
-            <ArrowLeft className="h-4 w-4" /> LAPS Researcher Network
+            <ArrowLeft className="h-4 w-4" /> {t.portal.network}
           </Link>
           <div className="flex items-center gap-2">
+            <PortalLangSwitcher />
             <Link
               to="/team/$uuid"
               params={{ uuid: me.id }}
               className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/25 bg-white px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-ghost"
             >
-              Ver perfil público
+              {t.portal.viewProfile}
             </Link>
             <button
               type="button"
               onClick={() => api.logout().then(() => navigate({ to: "/login" }))}
               className="inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-white px-4 py-2 text-xs font-semibold text-laps-navy/75 transition hover:border-laps-blue/30 hover:text-laps-blue"
             >
-              Sair
+              {t.portal.logout}
             </button>
           </div>
         </div>
@@ -251,6 +329,7 @@ function PortalPage() {
         <div className="mt-8 grid gap-6 md:grid-cols-[1fr_2fr]">
           {/* SIDEBAR */}
           <aside className="flex flex-col gap-6">
+            <FullNameEditor me={me} />
             <ContactEditor me={me} />
             {auth.mustChangePassword && <FirstLoginBanner emailVerified={auth.emailVerified} />}
             {!auth.emailVerified && <EmailVerificationBanner me={me} />}
@@ -263,6 +342,7 @@ function PortalPage() {
             />
             <InterestsEditor me={me} currentInterests={memberInterests} />
             <LanguagesEditor me={me} />
+            <ExchangeCountryEditor me={me} />
           </aside>
 
           {/* MAIN */}
@@ -347,13 +427,83 @@ function HeroCard({
         </div>
 
         {/* Quick stats */}
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          <StatCard icon={Compass} label="RESEARCH AREAS" value={memberAreas.length} />
-          <StatCard icon={Sparkles} label="PROJECTS" value={portfolioProjects.length} />
-          <StatCard icon={BookOpen} label="PUBLICATIONS" value={0} />
-        </div>
+        <QuickStats memberAreas={memberAreas} portfolioProjects={portfolioProjects} />
       </div>
     </div>
+  );
+}
+
+// ───── Quick stats (i18n) ─────
+
+function QuickStats({ memberAreas, portfolioProjects }: { memberAreas: string[]; portfolioProjects: ApiProject[] }) {
+  const { t } = useLang();
+  return (
+    <div className="mt-8 grid gap-3 sm:grid-cols-3">
+      <StatCard icon={Compass} label={t.portal.statAreas} value={memberAreas.length} />
+      <StatCard icon={Sparkles} label={t.portal.statProjects} value={portfolioProjects.length} />
+      <StatCard icon={BookOpen} label={t.portal.statPubs} value={0} />
+    </div>
+  );
+}
+
+// ───── Full name editor ─────
+
+function FullNameEditor({ me }: { me: MyProfile }) {
+  const qc = useQueryClient();
+  const { t } = useLang();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(me.fullName);
+
+  const mutation = useMutation({
+    mutationFn: (name: string) => api.meUpdate({ fullName: name }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setEditing(false);
+      toast.success(t.portal.saved);
+    },
+    onError: () => toast.error(t.portal.errorSave),
+  });
+
+  return (
+    <PortfolioCard title={t.portal.fullName} icon={UserCheck}>
+      {editing ? (
+        <div className="flex gap-2">
+          <Input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="h-9 flex-1 text-sm"
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={() => mutation.mutate(value)}
+            disabled={mutation.isPending || !value.trim()}
+            className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+          >
+            <Save className="h-3.5 w-3.5" />
+            {mutation.isPending ? "…" : "Salvar"}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setValue(me.fullName); setEditing(false); }}
+            className="rounded-md border border-laps-navy/15 px-3 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+          >
+            Cancelar
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium text-laps-navy">{me.fullName}</span>
+          <button
+            type="button"
+            onClick={() => { setValue(me.fullName); setEditing(true); }}
+            className="inline-flex items-center gap-1 rounded-md border border-laps-navy/15 px-2 py-1 text-[10px] font-semibold text-laps-navy/60 hover:border-laps-blue/30 hover:text-laps-blue"
+          >
+            <Edit2 className="h-3 w-3" /> Editar
+          </button>
+        </div>
+      )}
+    </PortfolioCard>
   );
 }
 
@@ -377,13 +527,13 @@ function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
       qc.invalidateQueries({ queryKey: ["me"] });
       setOpen(false);
     },
+    onError: () => toast.error("Falha ao salvar capa. Tente novamente."),
   });
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => api.meUploadBanner(file),
-    onSuccess: (res) => {
-      saveMutation.mutate({ bannerImageUrl: res.url });
-    },
+    onSuccess: (res) => { saveMutation.mutate({ bannerImageUrl: res.url }); },
+    onError: () => toast.error("Falha ao enviar imagem. Tente novamente."),
   });
 
   function handleEditorConfirm(blob: Blob) {
@@ -767,27 +917,17 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const { Icon } = cfg;
-  const [photoError, setPhotoError] = useState<string | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: (url: string) => api.meUpdate({ photoUrl: url }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["me"] });
-      setPhotoError(null);
-    },
-    onError: () => {
-      setPhotoError("Falha ao salvar foto. Tente novamente.");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["me"] }); },
+    onError: () => toast.error("Falha ao salvar foto. Tente novamente."),
   });
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => api.meUploadPhoto(file),
-    onSuccess: (res) => {
-      saveMutation.mutate(res.url);
-    },
-    onError: () => {
-      setPhotoError("Falha ao enviar foto. Verifique o formato e tente novamente.");
-    },
+    onSuccess: (res) => { saveMutation.mutate(res.url); },
+    onError: () => toast.error("Falha ao enviar foto. Verifique o formato e tente novamente."),
   });
 
   const busy = uploadMutation.isPending || saveMutation.isPending;
@@ -815,7 +955,7 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
         ) : (
           <button
             type="button"
-            onClick={() => { setPhotoError(null); fileRef.current?.click(); }}
+            onClick={() => fileRef.current?.click()}
             className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100"
           >
             <Upload className="h-6 w-6 text-white" />
@@ -833,11 +973,6 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
           }}
         />
       </div>
-      {photoError && (
-        <p className="flex items-center gap-1 text-[10px] text-red-600">
-          <AlertCircle className="h-3 w-3 shrink-0" /> {photoError}
-        </p>
-      )}
     </div>
   );
 }
@@ -846,6 +981,7 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
 
 function ContactEditor({ me }: { me: MyProfile }) {
   const qc = useQueryClient();
+  const { t } = useLang();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     email: me.email ?? "",
@@ -854,16 +990,15 @@ function ContactEditor({ me }: { me: MyProfile }) {
     lattesUrl: me.lattesUrl ?? "",
     githubUrl: me.githubUrl ?? "",
   });
-  const [saved, setSaved] = useState(false);
 
   const mutation = useMutation({
     mutationFn: () => api.meUpdate(form),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
-      setSaved(true);
       setEditing(false);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success(t.portal.saved);
     },
+    onError: () => toast.error(t.portal.errorSave),
   });
 
   function patch<K extends keyof typeof form>(key: K, value: string) {
@@ -995,11 +1130,6 @@ function ContactEditor({ me }: { me: MyProfile }) {
         </div>
       )}
 
-      {saved && (
-        <p className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-700">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
-        </p>
-      )}
     </PortfolioCard>
   );
 }
@@ -1045,23 +1175,34 @@ function InfoRow({
   );
 }
 
-// ───── About / Bio editor ─────
+// ───── About / Bio editor (trilingual) ─────
+
+const BIO_LANGS: { key: "bioPt" | "bioEn" | "bioFr"; tab: "pt" | "en" | "fr"; placeholder: string }[] = [
+  { key: "bioPt", tab: "pt", placeholder: "Escreva sua bio em português…" },
+  { key: "bioEn", tab: "en", placeholder: "Write your bio in English…" },
+  { key: "bioFr", tab: "fr", placeholder: "Écrivez votre bio en français…" },
+];
 
 function AboutEditor({ me }: { me: MyProfile }) {
   const qc = useQueryClient();
+  const { t } = useLang();
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(me.bioPt ?? "");
-  const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<"pt" | "en" | "fr">("pt");
+  const [values, setValues] = useState({ bioPt: me.bioPt ?? "", bioEn: me.bioEn ?? "", bioFr: me.bioFr ?? "" });
 
   const mutation = useMutation({
-    mutationFn: (text: string) => api.meUpdate({ bioPt: text }),
+    mutationFn: (patch: { bioPt?: string; bioEn?: string; bioFr?: string }) => api.meUpdate(patch),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
-      setSaved(true);
       setEditing(false);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success(t.portal.saved);
     },
+    onError: () => toast.error(t.portal.errorSave),
   });
+
+  const currentDef = BIO_LANGS.find((b) => b.tab === activeTab)!;
+  const currentValue = values[currentDef.key];
+  const currentStored = me[currentDef.key] ?? "";
 
   return (
     <PortfolioCard
@@ -1071,7 +1212,10 @@ function AboutEditor({ me }: { me: MyProfile }) {
         !editing ? (
           <button
             type="button"
-            onClick={() => { setValue(me.bioPt ?? ""); setEditing(true); }}
+            onClick={() => {
+              setValues({ bioPt: me.bioPt ?? "", bioEn: me.bioEn ?? "", bioFr: me.bioFr ?? "" });
+              setEditing(true);
+            }}
             className="inline-flex items-center gap-1 rounded-md border border-laps-navy/15 px-2 py-1 text-[10px] font-semibold text-laps-navy/60 hover:border-laps-blue/30 hover:text-laps-blue"
           >
             <Edit2 className="h-3 w-3" /> Editar
@@ -1079,19 +1223,37 @@ function AboutEditor({ me }: { me: MyProfile }) {
         ) : null
       }
     >
+      {/* Language tab switcher */}
+      <div className="mb-3 flex gap-1 rounded-lg border border-laps-navy/10 bg-laps-ghost/30 p-0.5">
+        {BIO_LANGS.map((b) => (
+          <button
+            key={b.tab}
+            type="button"
+            onClick={() => setActiveTab(b.tab)}
+            className={`flex-1 rounded-md py-1 text-[10px] font-bold uppercase tracking-wider transition ${
+              activeTab === b.tab
+                ? "bg-white text-laps-blue shadow-sm"
+                : "text-laps-navy/50 hover:text-laps-navy/70"
+            }`}
+          >
+            {t.portal.bioTab[b.tab]}
+          </button>
+        ))}
+      </div>
+
       {editing ? (
         <div className="space-y-2">
           <textarea
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
+            value={currentValue}
+            onChange={(e) => setValues((v) => ({ ...v, [currentDef.key]: e.target.value }))}
             rows={4}
             className="w-full rounded-md border border-laps-navy/15 bg-white px-3 py-2 text-sm text-laps-navy outline-none focus:border-laps-blue/40 focus:ring-2 focus:ring-laps-blue/15"
-            placeholder="Escreva sua bio em português…"
+            placeholder={currentDef.placeholder}
           />
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => mutation.mutate(value)}
+              onClick={() => mutation.mutate(values)}
               disabled={mutation.isPending}
               className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
             >
@@ -1108,16 +1270,13 @@ function AboutEditor({ me }: { me: MyProfile }) {
           </div>
         </div>
       ) : (
-        <div>
-          <p className="text-sm leading-relaxed text-laps-navy/80">
-            {me.bioPt || <span className="italic text-laps-navy/40">Sem bio ainda. Clique em Editar para adicionar.</span>}
-          </p>
-          {saved && (
-            <p className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-700">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
-            </p>
+        <p className="text-sm leading-relaxed text-laps-navy/80">
+          {currentStored || (
+            <span className="italic text-laps-navy/40">
+              Sem bio em {t.portal.bioTab[activeTab].toLowerCase()}. Clique em Editar para adicionar.
+            </span>
           )}
-        </div>
+        </p>
       )}
     </PortfolioCard>
   );
@@ -1135,20 +1294,20 @@ function ResearchAreasEditor({
   currentAreas: string[];
 }) {
   const qc = useQueryClient();
+  const { t } = useLang();
   const [areas, setAreas] = useState<string[]>(currentAreas);
   const [newArea, setNewArea] = useState("");
   const [showInput, setShowInput] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const mutation = useMutation({
     mutationFn: (next: string[]) => api.meUpdate({ areas: next.join(",") }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
       setDirty(false);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success(t.portal.saved);
     },
+    onError: () => toast.error(t.portal.errorSave),
   });
 
   function addArea(slug: string) {
@@ -1282,11 +1441,6 @@ function ResearchAreasEditor({
           </div>
         )}
 
-        {saved && (
-          <p className="inline-flex items-center gap-1 text-xs text-emerald-700">
-            <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
-          </p>
-        )}
       </div>
     </PortfolioCard>
   );
@@ -1296,19 +1450,19 @@ function ResearchAreasEditor({
 
 function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInterests: string[] }) {
   const qc = useQueryClient();
+  const { t } = useLang();
   const [interests, setInterests] = useState<string[]>(currentInterests);
   const [newTag, setNewTag] = useState("");
   const [dirty, setDirty] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const mutation = useMutation({
     mutationFn: (next: string[]) => api.meUpdate({ interests: next.join(",") }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
       setDirty(false);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success(t.portal.saved);
     },
+    onError: () => toast.error(t.portal.errorSave),
   });
 
   function addTag(tag: string) {
@@ -1321,7 +1475,7 @@ function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInter
   }
 
   function removeTag(tag: string) {
-    const next = interests.filter((t) => t !== tag);
+    const next = interests.filter((tg) => tg !== tag);
     setInterests(next);
     setDirty(true);
   }
@@ -1378,11 +1532,6 @@ function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInter
             <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
-        {saved && (
-          <p className="inline-flex items-center gap-1 text-xs text-emerald-700">
-            <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
-          </p>
-        )}
       </div>
     </PortfolioCard>
   );
@@ -1397,7 +1546,7 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
   const [addLevel, setAddLevel] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const { t } = useLang();
 
   const mutation = useMutation({
     mutationFn: (next: LanguageEntry[]) =>
@@ -1405,9 +1554,9 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
       setDirty(false);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success(t.portal.saved);
     },
+    onError: () => toast.error(t.portal.errorSave),
   });
 
   const langDef = addCode ? LANGUAGE_BY_CODE[addCode] : undefined;
@@ -1572,12 +1721,6 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
         {entries.length === 0 && !showAdd && (
           <p className="text-xs italic text-laps-navy/40">Nenhum idioma adicionado ainda.</p>
         )}
-
-        {saved && (
-          <p className="inline-flex items-center gap-1 text-xs text-emerald-700">
-            <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
-          </p>
-        )}
       </div>
     </PortfolioCard>
   );
@@ -1587,18 +1730,18 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
 
 function RoadmapEditor({ me }: { me: MyProfile }) {
   const qc = useQueryClient();
+  const { t } = useLang();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(me.roadmap ?? "");
-  const [saved, setSaved] = useState(false);
 
   const mutation = useMutation({
     mutationFn: (text: string) => api.meUpdate({ roadmap: text }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
-      setSaved(true);
       setEditing(false);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success(t.portal.saved);
     },
+    onError: () => toast.error(t.portal.errorSave),
   });
 
   if (!editing && !me.roadmap) return null;
@@ -1648,11 +1791,6 @@ function RoadmapEditor({ me }: { me: MyProfile }) {
         </div>
       ) : (
         <p className="whitespace-pre-line text-sm leading-relaxed text-laps-navy/80">{me.roadmap}</p>
-      )}
-      {saved && (
-        <p className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-700">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Salvo.
-        </p>
       )}
     </PortfolioCard>
   );
@@ -2141,16 +2279,20 @@ function FirstLoginBanner({ emailVerified }: { emailVerified: boolean }) {
 function EmailVerificationBanner({ me }: { me: MyProfile }) {
   const [tokenIssued, setTokenIssued] = useState<{ token: string; expiresAt: string } | null>(null);
   const [verifyToken, setVerifyToken] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const qc = useQueryClient();
 
   const requestMutation = useMutation({
     mutationFn: () => api.meRequestEmailVerification(),
     onSuccess: (res) => {
-      if (res.token && res.expiresAt) setTokenIssued({ token: res.token, expiresAt: res.expiresAt });
+      if (res.token && res.expiresAt) {
+        setTokenIssued({ token: res.token, expiresAt: res.expiresAt });
+        toast.info("Token de verificação gerado. Cole-o abaixo.");
+      } else {
+        toast.success("Email já verificado.");
+      }
     },
     onError: (err) =>
-      setError(err instanceof ApiError ? err.message : "Falha ao solicitar verificação."),
+      toast.error(err instanceof ApiError ? err.message : "Falha ao solicitar verificação."),
   });
 
   const verifyMutation = useMutation({
@@ -2159,8 +2301,10 @@ function EmailVerificationBanner({ me }: { me: MyProfile }) {
       qc.invalidateQueries({ queryKey: ["me"] });
       setTokenIssued(null);
       setVerifyToken("");
+      toast.success("Email verificado com sucesso!");
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : "Token inválido."),
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : "Token inválido ou expirado."),
   });
 
   return (
@@ -2218,11 +2362,6 @@ function EmailVerificationBanner({ me }: { me: MyProfile }) {
             </div>
           )}
 
-          {error && (
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-red-700">
-              <AlertCircle className="h-3.5 w-3.5" /> {error}
-            </p>
-          )}
         </div>
       </div>
     </section>
@@ -2234,27 +2373,26 @@ function PasswordChangeCard({ emailVerified }: { emailVerified: boolean }) {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: ({ a, b }: { a: string; b: string }) => api.meChangePassword(a, b),
     onSuccess: () => {
-      setOk(true);
       setCurrent("");
       setNext("");
       setConfirm("");
       qc.invalidateQueries({ queryKey: ["me"] });
+      toast.success("Senha atualizada com sucesso!");
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : "Erro ao trocar senha."),
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : "Erro ao trocar senha."),
   });
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setOk(false);
-    if (next.length < 8) { setError("A nova senha deve ter pelo menos 8 caracteres."); return; }
-    if (next !== confirm) { setError("As senhas não coincidem."); return; }
+    setFormError(null);
+    if (next.length < 8) { setFormError("A nova senha deve ter pelo menos 8 caracteres."); return; }
+    if (next !== confirm) { setFormError("As senhas não coincidem."); return; }
     mutation.mutate({ a: current, b: next });
   }
 
@@ -2285,14 +2423,9 @@ function PasswordChangeCard({ emailVerified }: { emailVerified: boolean }) {
         <PasswordField id="pwd-current" label="Senha atual" value={current} onChange={setCurrent} autoComplete="current-password" />
         <PasswordField id="pwd-next" label="Nova senha" value={next} onChange={setNext} autoComplete="new-password" />
         <PasswordField id="pwd-confirm" label="Confirmar" value={confirm} onChange={setConfirm} autoComplete="new-password" />
-        {error && (
+        {formError && (
           <p className="md:col-span-3 flex items-center gap-1.5 text-sm text-red-700">
-            <AlertCircle className="h-4 w-4" /> {error}
-          </p>
-        )}
-        {ok && (
-          <p className="md:col-span-3 flex items-center gap-1.5 text-sm text-emerald-700">
-            <CheckCircle2 className="h-4 w-4" /> Senha atualizada.
+            <AlertCircle className="h-4 w-4" /> {formError}
           </p>
         )}
         <div className="md:col-span-3">
@@ -2315,20 +2448,113 @@ function PasswordField({
 }: {
   id: string; label: string; value: string; onChange: (v: string) => void; autoComplete: string;
 }) {
+  const [show, setShow] = useState(false);
   return (
     <div>
       <label htmlFor={id} className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
         {label}
       </label>
-      <Input
-        id={id}
-        type="password"
-        autoComplete={autoComplete}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-10 border-laps-navy/15 bg-white text-sm"
-      />
+      <div className="relative">
+        <Input
+          id={id}
+          type={show ? "text" : "password"}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-10 border-laps-navy/15 bg-white pr-9 text-sm"
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setShow((v) => !v)}
+          className="absolute inset-y-0 right-2.5 flex items-center text-laps-navy/40 hover:text-laps-navy/70"
+        >
+          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
     </div>
+  );
+}
+
+// ───── Exchange country editor ─────
+
+const EXCHANGE_COUNTRY_OPTIONS: { code: string; label: string }[] = [
+  { code: "FR", label: "🇫🇷 França" },
+  { code: "CA", label: "🇨🇦 Canadá" },
+  { code: "PT", label: "🇵🇹 Portugal" },
+  { code: "IT", label: "🇮🇹 Itália" },
+  { code: "DE", label: "🇩🇪 Alemanha" },
+  { code: "US", label: "🇺🇸 Estados Unidos" },
+  { code: "UK", label: "🇬🇧 Reino Unido" },
+  { code: "ES", label: "🇪🇸 Espanha" },
+];
+
+function ExchangeCountryEditor({ me }: { me: MyProfile }) {
+  const qc = useQueryClient();
+  const { t } = useLang();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(me.exchangeCountry ?? "");
+
+  const mutation = useMutation({
+    mutationFn: (code: string) => api.meUpdate({ exchangeCountry: code || null }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setEditing(false);
+      toast.success(t.portal.saved);
+    },
+    onError: () => toast.error(t.portal.errorSave),
+  });
+
+  const current = EXCHANGE_COUNTRY_OPTIONS.find((c) => c.code === me.exchangeCountry);
+
+  return (
+    <PortfolioCard title={t.portal.exchangeCountry} icon={MapPin}>
+      {editing ? (
+        <div className="space-y-2">
+          <select
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="w-full rounded-md border border-laps-navy/15 bg-white px-2 py-2 text-sm text-laps-navy focus:outline-none focus:border-laps-blue/40"
+          >
+            <option value="">— {t.portal.noCountry} —</option>
+            {EXCHANGE_COUNTRY_OPTIONS.map((c) => (
+              <option key={c.code} value={c.code}>{c.label}</option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => mutation.mutate(value)}
+              disabled={mutation.isPending}
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {mutation.isPending ? "…" : "Salvar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setValue(me.exchangeCountry ?? ""); setEditing(false); }}
+              className="rounded-md border border-laps-navy/15 px-3 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm text-laps-navy/80">
+            {current ? current.label : <span className="italic text-laps-navy/40">{t.portal.noCountry}</span>}
+          </span>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="inline-flex items-center gap-1 rounded-md border border-laps-navy/15 px-2 py-1 text-[10px] font-semibold text-laps-navy/60 hover:border-laps-blue/30 hover:text-laps-blue"
+          >
+            <Edit2 className="h-3 w-3" /> Editar
+          </button>
+        </div>
+      )}
+    </PortfolioCard>
   );
 }
 

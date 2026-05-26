@@ -11,6 +11,7 @@ import {
 import { AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 import faviconUrl from "../assets/laps-logo.png?url";
@@ -128,6 +129,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <TransitionLoader />
       <Outlet />
+      <Toaster />
     </QueryClientProvider>
   );
 }

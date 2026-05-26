@@ -48,5 +48,8 @@ export function useAuth(): AuthState {
 
 export function useInvalidateAuth() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: ["me"] });
+  // refetchQueries (not invalidateQueries) so the caller can await fresh auth data
+  // before navigating — avoids portal briefly redirecting back to /login because
+  // the stale cache still shows unauthenticated.
+  return () => qc.refetchQueries({ queryKey: ["me"] });
 }
