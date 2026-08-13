@@ -2566,8 +2566,23 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(me.exchangeCountry ?? "");
 
+  // Security role, resolved server-side from the manager-email allowlist —
+  // deliberately NOT me.currentRole, which is the academic tier and happens to
+  // spell "MANAGER" too. SecurityConfig gates /api/v1/admin/** on this one, so
+  // keying off the tier would render an edit button that 403s on submit.
+  const isManager = me.role === "MANAGER";
+
   const mutation = useMutation({
-    mutationFn: (code: string) => api.meUpdate({ exchangeCountry: code || null }),
+    // Exchange country is manager-owned. It is intentionally absent from the
+    // /me update DTO (MyProfileUpdate), so the only way to write it is the
+    // admin endpoint — which SecurityConfig restricts to MANAGER and
+    // AuditService records. A member who forges this call gets 403 from Spring,
+    // not from this component.
+    //
+    // The empty string clears the country: AdminController treats null as
+    // "field not sent, leave alone", so `code || null` would make clearing a
+    // silent no-op.
+    mutationFn: (code: string) => api.admin.updateMember(me.id, { exchangeCountry: code }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
       setEditing(false);
@@ -2577,6 +2592,28 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
   });
 
   const current = EXCHANGE_COUNTRY_OPTIONS.find((c) => c.code === me.exchangeCountry);
+
+  // Members see the country their coordinator assigned, but cannot touch it.
+  if (!isManager) {
+    return (
+      <PortfolioCard title={t.portal.exchangeCountry} icon={MapPin}>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm text-laps-navy/80">
+            {current ? current.label : <span className="italic text-laps-navy/40">{t.portal.noCountry}</span>}
+          </span>
+          <span
+            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-laps-ghost/60 px-2 py-1 text-[10px] font-semibold text-laps-navy/45"
+            title="Somente gerentes podem alterar o país de intercâmbio."
+          >
+            <Lock className="h-3 w-3" /> Gerenciado
+          </span>
+        </div>
+        <p className="mt-2 text-[10px] text-laps-navy/40">
+          Definido pela coordenação. Fale com um gerente para corrigir.
+        </p>
+      </PortfolioCard>
+    );
+  }
 
   return (
     <PortfolioCard title={t.portal.exchangeCountry} icon={MapPin}>

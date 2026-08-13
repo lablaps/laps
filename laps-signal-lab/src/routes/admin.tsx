@@ -1170,7 +1170,10 @@ function EditPanel({
         // accidentally overwrite a freshly-translated value.
         bioPt: bioPt || null,
         status,
-        exchangeCountry: exchangeCountry || null,
+        // Empty string clears the country. AdminController reads null as
+        // "field not sent, leave it alone", so `|| null` made "Nenhum país"
+        // a silent no-op — the old value survived the save.
+        exchangeCountry,
       });
       if (linkedInited) {
         await api.admin.updateMemberProjects(member.id, linkedProjects);
