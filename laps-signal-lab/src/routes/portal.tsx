@@ -513,6 +513,11 @@ function FullNameEditor({ me }: { me: MyProfile }) {
 const BANNER_CANVAS_W = 1200;
 const BANNER_CANVAS_H = 300;
 
+// Square export for avatars. 512 covers the largest place the avatar renders
+// (the 144px portal hero at 3x DPR) without pushing the PNG near the API's
+// 5 MiB multipart cap.
+const AVATAR_CANVAS_SIZE = 512;
+
 function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tier] }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -552,8 +557,11 @@ function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
     <>
       {/* Image transform editor modal */}
       {editorFile && (
-        <BannerImageEditor
+        <ImageTransformEditor
           file={editorFile}
+          frameW={BANNER_CANVAS_W}
+          frameH={BANNER_CANVAS_H}
+          title="Ajustar imagem da capa"
           onConfirm={handleEditorConfirm}
           onCancel={() => setEditorFile(null)}
         />
@@ -687,14 +695,86 @@ function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
   );
 }
 
-// ───── Banner image transform editor ─────
+// ───── Image transform editor (shared by capa + foto) ─────
 
-function BannerImageEditor({
+/**
+ * Canvas bounding box of the output frame, expressed in the image's own rotated
+ * frame. Rotating the frame instead of the image keeps the coverage maths in one
+ * coordinate system.
+ */
+function rotatedFrameExtent(w: number, h: number, deg: number) {
+  const r = (deg * Math.PI) / 180;
+  const c = Math.abs(Math.cos(r));
+  const s = Math.abs(Math.sin(r));
+  return { w: w * c + h * s, h: w * s + h * c };
+}
+
+/**
+ * Smallest scale at which the image still covers the whole output frame at this
+ * rotation. Below it the export would contain empty wedges (which JPEG flattens
+ * to black), so this is the slider's lower bound — not a suggestion.
+ */
+function minCoverScale(imgW: number, imgH: number, frameW: number, frameH: number, deg: number) {
+  const e = rotatedFrameExtent(frameW, frameH, deg);
+  return Math.max(e.w / imgW, e.h / imgH);
+}
+
+/**
+ * Upper bound: scale 1 means one image pixel per output pixel, i.e. the photo at
+ * its own native resolution — enlarging past that only invents detail. A photo
+ * too small to cover the frame is the one exception: it must be allowed to reach
+ * its cover scale, so the ceiling lifts to meet the floor.
+ */
+function maxAllowedScale(imgW: number, imgH: number, frameW: number, frameH: number, deg: number) {
+  return Math.max(1, minCoverScale(imgW, imgH, frameW, frameH, deg));
+}
+
+/**
+ * Clamps the pan so the frame stays fully inside the image. Without it a member
+ * can drag a correctly-scaled photo half out of frame and export a band of void.
+ */
+function clampOffset(
+  offset: { x: number; y: number },
+  imgW: number,
+  imgH: number,
+  scale: number,
+  frameW: number,
+  frameH: number,
+  deg: number,
+) {
+  const e = rotatedFrameExtent(frameW, frameH, deg);
+  const r = (deg * Math.PI) / 180;
+  const cos = Math.cos(r);
+  const sin = Math.sin(r);
+
+  // Frame centre relative to image centre, rotated into the image's frame.
+  const u = -(offset.x * cos + offset.y * sin);
+  const v = offset.x * sin - offset.y * cos;
+
+  const maxU = Math.max(0, (imgW * scale - e.w) / 2);
+  const maxV = Math.max(0, (imgH * scale - e.h) / 2);
+  const cu = Math.min(maxU, Math.max(-maxU, u));
+  const cv = Math.min(maxV, Math.max(-maxV, v));
+
+  // …and back out to canvas space.
+  return { x: -(cu * cos - cv * sin), y: -(cu * sin + cv * cos) };
+}
+
+function ImageTransformEditor({
   file,
+  frameW,
+  frameH,
+  title,
+  circular = false,
   onConfirm,
   onCancel,
 }: {
   file: File;
+  frameW: number;
+  frameH: number;
+  title: string;
+  /** Circular mask + round export, for avatars. */
+  circular?: boolean;
   onConfirm: (blob: Blob) => void;
   onCancel: () => void;
 }) {
@@ -711,39 +791,59 @@ function BannerImageEditor({
     startOffsetY: number;
   } | null>(null);
 
-  // Load the image and set an initial scale that fills the canvas
+  // Bounds depend on rotation, so they are recomputed on every render.
+  const minScale = img ? minCoverScale(img.width, img.height, frameW, frameH, rotation) : 0.05;
+  const maxScale = img ? maxAllowedScale(img.width, img.height, frameW, frameH, rotation) : 10;
+
+  // Load the image and start at the scale that just covers the frame
   useEffect(() => {
     const image = new Image();
     const url = URL.createObjectURL(file);
     image.onload = () => {
-      const fillScale = Math.max(
-        BANNER_CANVAS_W / image.width,
-        BANNER_CANVAS_H / image.height
-      );
-      setScale(fillScale);
+      setScale(minCoverScale(image.width, image.height, frameW, frameH, 0));
+      setRotation(0);
+      setOffset({ x: 0, y: 0 });
       setImg(image);
     };
     image.src = url;
     return () => URL.revokeObjectURL(url);
-  }, [file]);
+  }, [file, frameW, frameH]);
+
+  // Rotating changes how much image is needed to cover the frame, so a scale and
+  // pan that were legal a moment ago may not be. Re-clamp both when it changes.
+  useEffect(() => {
+    if (!img) return;
+    setScale((s) => Math.min(maxScale, Math.max(minScale, s)));
+  }, [rotation, img, minScale, maxScale]);
+
+  useEffect(() => {
+    if (!img) return;
+    setOffset((o) => clampOffset(o, img.width, img.height, scale, frameW, frameH, rotation));
+  }, [img, scale, rotation, frameW, frameH]);
 
   // Redraw whenever transform changes
   useEffect(() => {
     if (!img || !canvasRef.current) return;
     const ctx = canvasRef.current.getContext("2d")!;
-    ctx.clearRect(0, 0, BANNER_CANVAS_W, BANNER_CANVAS_H);
+    ctx.clearRect(0, 0, frameW, frameH);
     ctx.save();
-    ctx.translate(BANNER_CANVAS_W / 2 + offset.x, BANNER_CANVAS_H / 2 + offset.y);
+    if (circular) {
+      ctx.beginPath();
+      ctx.arc(frameW / 2, frameH / 2, Math.min(frameW, frameH) / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+    }
+    ctx.translate(frameW / 2 + offset.x, frameH / 2 + offset.y);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.scale(scale, scale);
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
     ctx.restore();
-  }, [img, scale, rotation, offset]);
+  }, [img, scale, rotation, offset, frameW, frameH, circular]);
 
   // Ratio between canvas pixels and displayed CSS pixels
   function pixelRatio() {
     if (!canvasRef.current) return 1;
-    return BANNER_CANVAS_W / canvasRef.current.getBoundingClientRect().width;
+    return frameW / canvasRef.current.getBoundingClientRect().width;
   }
 
   function startDrag(clientX: number, clientY: number) {
@@ -756,12 +856,13 @@ function BannerImageEditor({
   }
 
   function moveDrag(clientX: number, clientY: number) {
-    if (!dragRef.current) return;
+    if (!dragRef.current || !img) return;
     const r = pixelRatio();
-    setOffset({
+    const next = {
       x: dragRef.current.startOffsetX + (clientX - dragRef.current.startClientX) * r,
       y: dragRef.current.startOffsetY + (clientY - dragRef.current.startClientY) * r,
-    });
+    };
+    setOffset(clampOffset(next, img.width, img.height, scale, frameW, frameH, rotation));
   }
 
   function endDrag() {
@@ -770,7 +871,7 @@ function BannerImageEditor({
 
   function reset() {
     if (!img) return;
-    setScale(Math.max(BANNER_CANVAS_W / img.width, BANNER_CANVAS_H / img.height));
+    setScale(minCoverScale(img.width, img.height, frameW, frameH, 0));
     setRotation(0);
     setOffset({ x: 0, y: 0 });
   }
@@ -778,23 +879,29 @@ function BannerImageEditor({
   function confirm() {
     canvasRef.current?.toBlob(
       (blob) => { if (blob) onConfirm(blob); },
-      "image/jpeg",
+      // A circular crop needs alpha for the corners, so PNG; the banner stays
+      // JPEG because it is a full-bleed rectangle and compresses far better.
+      circular ? "image/png" : "image/jpeg",
       0.92
     );
   }
+
+  // A photo smaller than the frame has no room to zoom — pin the slider rather
+  // than render a control with min === max that silently does nothing.
+  const zoomLocked = maxScale - minScale < 0.001;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-laps-navy">Ajustar imagem da capa</h3>
+          <h3 className="text-sm font-bold text-laps-navy">{title}</h3>
           <button type="button" onClick={onCancel} className="rounded-full p-1 text-laps-navy/50 hover:bg-laps-ghost hover:text-laps-navy">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Canvas preview — same 4:1 aspect as the actual banner */}
-        <div className="mb-3 overflow-hidden rounded-xl border border-laps-navy/10 bg-laps-ghost/30">
+        {/* Canvas preview — same aspect as the exported image */}
+        <div className={`mb-3 overflow-hidden border border-laps-navy/10 bg-laps-ghost/30 ${circular ? "mx-auto max-w-xs rounded-full" : "rounded-xl"}`}>
           {!img ? (
             <div className="flex items-center justify-center py-12">
               <p className="text-xs text-laps-navy/40">Carregando imagem…</p>
@@ -802,9 +909,9 @@ function BannerImageEditor({
           ) : (
             <canvas
               ref={canvasRef}
-              width={BANNER_CANVAS_W}
-              height={BANNER_CANVAS_H}
-              className="w-full cursor-grab select-none active:cursor-grabbing"
+              width={frameW}
+              height={frameH}
+              className="w-full cursor-grab select-none touch-none active:cursor-grabbing"
               onMouseDown={(e) => startDrag(e.clientX, e.clientY)}
               onMouseMove={(e) => moveDrag(e.clientX, e.clientY)}
               onMouseUp={endDrag}
@@ -825,11 +932,16 @@ function BannerImageEditor({
           <SliderControl
             label="Escala"
             value={scale}
-            min={0.05}
-            max={10}
-            step={0.01}
-            displayValue={`${Math.round(scale * 100)}%`}
-            onChange={setScale}
+            min={minScale}
+            max={maxScale}
+            step={0.001}
+            disabled={zoomLocked}
+            displayValue={
+              zoomLocked
+                ? "Ajuste automático"
+                : `${Math.round((scale / minScale) * 100)}%`
+            }
+            onChange={(v) => setScale(Math.min(maxScale, Math.max(minScale, v)))}
           />
           <SliderControl
             label="Rotação"
@@ -841,6 +953,11 @@ function BannerImageEditor({
             onChange={setRotation}
           />
         </div>
+
+        <p className="mb-4 text-center text-[10px] leading-relaxed text-laps-navy/35">
+          O zoom vai até o tamanho real da foto — ampliar além disso só perderia
+          nitidez. O mínimo mantém a imagem cobrindo todo o quadro.
+        </p>
 
         <div className="flex gap-2">
           <button
@@ -878,6 +995,7 @@ function SliderControl({
   max,
   step,
   displayValue,
+  disabled,
   onChange,
 }: {
   label: string;
@@ -886,10 +1004,11 @@ function SliderControl({
   max: number;
   step: number;
   displayValue?: string;
+  disabled?: boolean;
   onChange: (v: number) => void;
 }) {
   return (
-    <div>
+    <div className={disabled ? "opacity-50" : undefined}>
       <div className="mb-1 flex items-center justify-between">
         <label className="text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
           {label}
@@ -904,8 +1023,9 @@ function SliderControl({
         max={max}
         step={step}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full accent-laps-blue"
+        className="w-full accent-laps-blue disabled:cursor-not-allowed"
       />
     </div>
   );
@@ -916,6 +1036,7 @@ function SliderControl({
 function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tier] }) {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [editorFile, setEditorFile] = useState<File | null>(null);
   const { Icon } = cfg;
 
   const saveMutation = useMutation({
@@ -930,10 +1051,29 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
     onError: () => toast.error("Falha ao enviar foto. Verifique o formato e tente novamente."),
   });
 
+  // The editor hands back the already-cropped square, so what gets uploaded is
+  // exactly what was previewed — no server-side guessing about the focal point.
+  function handleEditorConfirm(blob: Blob) {
+    const file = new File([blob], "avatar.png", { type: "image/png" });
+    setEditorFile(null);
+    uploadMutation.mutate(file);
+  }
+
   const busy = uploadMutation.isPending || saveMutation.isPending;
 
   return (
     <div className="-mt-20 flex flex-col items-start gap-1">
+      {editorFile && (
+        <ImageTransformEditor
+          file={editorFile}
+          frameW={AVATAR_CANVAS_SIZE}
+          frameH={AVATAR_CANVAS_SIZE}
+          title="Ajustar foto de perfil"
+          circular
+          onConfirm={handleEditorConfirm}
+          onCancel={() => setEditorFile(null)}
+        />
+      )}
       <div className={`group relative h-36 w-36 shrink-0 rounded-full bg-white p-1.5 shadow-xl ring-4 ${cfg.ring}`}>
         {me.photoUrl ? (
           <img src={resolveMediaUrl(me.photoUrl)} alt={me.fullName} className="h-full w-full rounded-full object-cover" />
@@ -968,7 +1108,8 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) uploadMutation.mutate(file);
+            if (file) setEditorFile(file);
+            // Reset so re-picking the same file still fires onChange.
             e.target.value = "";
           }}
         />
