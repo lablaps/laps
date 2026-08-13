@@ -45,6 +45,7 @@ import {
 } from "@/lib/api";
 import { resolveMediaUrl } from "@/lib/api";
 import { COUNTRIES, COUNTRY_ORDER, type CountryCode } from "@/lib/exchange-data";
+import { UNDERGRAD_PROGRAMS, UNDERGRAD_PROGRAM_ORDER } from "@/lib/undergrad-programs";
 import { FLAGS } from "@/lib/flags";
 import { searchMembers } from "@/lib/member-search";
 import { useAuth } from "@/hooks/use-auth";
@@ -1136,6 +1137,7 @@ function EditPanel({
 
   const [toRole, setToRole] = useState<MemberRole>(member.currentRole);
   const [exchangeCountry, setExchangeCountry] = useState<string>(member.exchangeCountry ?? "");
+  const [undergradProgram, setUndergradProgram] = useState<string>(member.undergradProgram ?? "");
 
   const projectsQuery = useQuery({ queryKey: ["projects"], queryFn: () => api.projects() });
   const allProjects = projectsQuery.data ?? [];
@@ -1174,6 +1176,8 @@ function EditPanel({
         // "field not sent, leave it alone", so `|| null` made "Nenhum país"
         // a silent no-op — the old value survived the save.
         exchangeCountry,
+        // Same empty-string-clears contract.
+        undergradProgram,
       });
       if (linkedInited) {
         await api.admin.updateMemberProjects(member.id, linkedProjects);
@@ -1310,6 +1314,48 @@ function EditPanel({
                     )}
                   </FieldCard>
                 </div>
+              </Section>
+
+              <Section title="Curso de Graduação">
+                <p className="mb-3 text-[11px] text-laps-navy/55">
+                  De qual bacharelado o membro veio. Independente do cargo no
+                  laboratório — um mestrando ou doutorando também tem curso de
+                  origem. Deixe em branco se não se aplica.
+                </p>
+                <FieldCard label="Bacharelado">
+                  <div className="flex flex-col gap-2">
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <input
+                        type="radio"
+                        name="undergrad-program"
+                        value=""
+                        checked={undergradProgram === ""}
+                        onChange={() => setUndergradProgram("")}
+                        className="h-4 w-4 border-laps-navy/30 text-laps-blue focus:ring-laps-blue"
+                      />
+                      <span className="text-sm text-laps-navy/70">Não informado</span>
+                    </label>
+                    {UNDERGRAD_PROGRAM_ORDER.map((code) => {
+                      const program = UNDERGRAD_PROGRAMS[code];
+                      return (
+                        <label key={code} className="flex cursor-pointer items-center gap-3">
+                          <input
+                            type="radio"
+                            name="undergrad-program"
+                            value={code}
+                            checked={undergradProgram === code}
+                            onChange={() => setUndergradProgram(code)}
+                            className="h-4 w-4 border-laps-navy/30 text-laps-blue focus:ring-laps-blue"
+                          />
+                          <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${program.badge}`}>
+                            {program.short.pt}
+                          </span>
+                          <span className="text-sm text-laps-navy">{program.name.pt}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </FieldCard>
               </Section>
 
               <Section title="Intercâmbio Internacional">

@@ -7,6 +7,7 @@ import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
 import br.uema.laps.member.MemberRole;
 import br.uema.laps.member.MemberStatus;
+import br.uema.laps.member.UndergradProgram;
 import br.uema.laps.publication.Publication;
 import br.uema.laps.publication.PublicationRepository;
 import br.uema.laps.publication.PublicationStatus;
@@ -164,11 +165,29 @@ public class AdminController {
         // Empty string clears the tag; null means no-op (field not sent by SPA).
         if (req.exchangeCountry() != null)
             m.setExchangeCountry(req.exchangeCountry().isBlank() ? null : req.exchangeCountry());
+        if (req.undergradProgram() != null)
+            m.setUndergradProgram(parseUndergradProgram(req.undergradProgram()));
         if (req.languages() != null)
             m.setLanguages(req.languages().isBlank() ? null : req.languages());
         Member saved = memberRepository.save(m);
         auditService.record(AuthenticatedMember.id(), "UPDATE_MEMBER", "Member", id.toString(), req);
         return saved;
+    }
+
+    /**
+     * Blank clears the course; anything else must name a real enum constant.
+     * Rejecting unknown values with 400 rather than silently storing null keeps
+     * a typo in the SPA from quietly wiping a member's course.
+     */
+    private static UndergradProgram parseUndergradProgram(String raw) {
+        if (raw.isBlank()) return null;
+        try {
+            return UndergradProgram.valueOf(raw);
+        } catch (IllegalArgumentException unknown) {
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Unknown undergraduate program: " + raw);
+        }
     }
 
     @DeleteMapping("/members/{id}")
@@ -360,6 +379,10 @@ public class AdminController {
             String contactEmail, String roadmap,
             MemberStatus status,
             String exchangeCountry,
+            // Enum name, or "" to clear. Typed as String rather than
+            // UndergradProgram so the empty-string-clears convention matches
+            // exchangeCountry — Jackson would reject "" for an enum outright.
+            String undergradProgram,
             String languages) {
     }
 

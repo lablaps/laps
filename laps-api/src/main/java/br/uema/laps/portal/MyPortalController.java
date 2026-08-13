@@ -102,6 +102,7 @@ public class MyPortalController {
         out.put("mustChangePassword", me.isMustChangePassword());
         out.put("emailVerified", me.isEmailVerified());
         out.put("exchangeCountry", me.getExchangeCountry());
+        out.put("undergradProgram", me.getUndergradProgram());
         out.put("languages", me.getLanguages());
         // Expose the resolved security role (MANAGER / MEMBER) so the SPA can
         // gate admin access without duplicating the manager-email allowlist.

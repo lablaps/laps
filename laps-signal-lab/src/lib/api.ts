@@ -140,6 +140,8 @@ export interface ApiMember {
   bannerColor: string | null;
   bannerImageUrl: string | null;
   exchangeCountry: string | null;
+  /** Enum name from UndergradProgram; see lib/undergrad-programs.ts. Null when unknown. */
+  undergradProgram: string | null;
   languages: string | null;
   deletedAt: string | null;
 }
@@ -363,7 +365,14 @@ export const api = {
         { method: "POST", body }
       ),
 
-    updateMember: (id: string, body: Partial<Omit<ApiMember, "id" | "slug" | "currentRole">> & { exchangeCountry?: string | null }) =>
+    updateMember: (
+      id: string,
+      body: Partial<Omit<ApiMember, "id" | "slug" | "currentRole">> & {
+        exchangeCountry?: string | null;
+        /** Enum name, or "" to clear. Null is a no-op server-side. */
+        undergradProgram?: string | null;
+      },
+    ) =>
       request<ApiMember>(`/api/v1/admin/members/${id}`, { method: "PUT", body }),
 
     deleteMember: (id: string) =>

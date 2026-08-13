@@ -124,6 +124,14 @@ public class Member {
     @Column(name = "exchange_country", length = 10)
     private String exchangeCountry;
 
+    /**
+     * Which bachelor's course the member came through. Independent of
+     * {@link #currentRole} — see {@link UndergradProgram}. Null when unknown.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "undergrad_program", length = 40)
+    private UndergradProgram undergradProgram;
+
     // JSON array of {code, level} objects — see languages-data.ts for schema.
     @Column(name = "languages", columnDefinition = "text")
     private String languages;

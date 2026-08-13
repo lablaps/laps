@@ -42,6 +42,7 @@ public record MemberPublicView(
         String bannerColor,
         String bannerImageUrl,
         String exchangeCountry,
+        UndergradProgram undergradProgram,
         String languages,
         boolean showEmail,
         boolean showContactEmail,
@@ -84,6 +85,9 @@ public record MemberPublicView(
                 m.getBannerColor(),
                 m.getBannerImageUrl(),
                 m.getExchangeCountry(),
+                // Public: which course someone studies is roster information, not
+                // contact data, so it carries no visibility flag.
+                m.getUndergradProgram(),
                 m.getLanguages(),
                 m.isShowEmail(),
                 m.isShowContactEmail(),

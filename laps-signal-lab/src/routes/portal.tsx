@@ -45,6 +45,7 @@ import {
 } from "@/lib/languages-data";
 import { Input } from "@/components/ui/input";
 import { initials } from "@/lib/team-data";
+import { UNDERGRAD_PROGRAMS, toProgramCode } from "@/lib/undergrad-programs";
 import type { Tier } from "@/lib/team-data";
 
 // ───── Language flags (pt / en / fr) ─────
@@ -342,6 +343,7 @@ function PortalPage() {
             />
             <InterestsEditor me={me} currentInterests={memberInterests} />
             <LanguagesEditor me={me} />
+            <UndergradProgramCard me={me} />
             <ExchangeCountryEditor me={me} />
           </aside>
 
@@ -2733,6 +2735,41 @@ const EXCHANGE_COUNTRY_OPTIONS: { code: string; label: string }[] = [
   { code: "UK", label: "🇬🇧 Reino Unido" },
   { code: "ES", label: "🇪🇸 Espanha" },
 ];
+
+/**
+ * Undergraduate course. Read-only for everyone here — it is an institutional
+ * fact recorded when the member is registered, so it is set from /admin (which
+ * SecurityConfig gates on MANAGER) rather than self-declared, exactly like the
+ * exchange country above.
+ */
+function UndergradProgramCard({ me }: { me: MyProfile }) {
+  const { lang } = useLang();
+  const program = toProgramCode(me.undergradProgram);
+  const meta = program ? UNDERGRAD_PROGRAMS[program] : null;
+
+  return (
+    <PortfolioCard title="CURSO DE GRADUAÇÃO" icon={GraduationCap}>
+      <div className="flex items-center justify-between gap-2">
+        {meta ? (
+          <span className={`rounded-md px-2 py-1 text-xs font-semibold ${meta.badge}`}>
+            {meta.name[lang as "pt" | "en" | "fr"]}
+          </span>
+        ) : (
+          <span className="text-sm italic text-laps-navy/40">Não informado</span>
+        )}
+        <span
+          className="inline-flex shrink-0 items-center gap-1 rounded-md bg-laps-ghost/60 px-2 py-1 text-[10px] font-semibold text-laps-navy/45"
+          title="Somente gerentes podem alterar o curso de graduação."
+        >
+          <Lock className="h-3 w-3" /> Gerenciado
+        </span>
+      </div>
+      <p className="mt-2 text-[10px] text-laps-navy/40">
+        Definido no cadastro pela coordenação. Fale com um gerente para corrigir.
+      </p>
+    </PortfolioCard>
+  );
+}
 
 function ExchangeCountryEditor({ me }: { me: MyProfile }) {
   const qc = useQueryClient();

@@ -36,6 +36,7 @@ import { applyOverlay, decoratePhotoUrl } from "@/lib/static-source";
 import { PublicLayout } from "@/components/PublicLayout";
 import { COUNTRIES, type CountryCode } from "@/lib/exchange-data";
 import { FLAGS } from "@/lib/flags";
+import { UNDERGRAD_PROGRAMS, toProgramCode } from "@/lib/undergrad-programs";
 import {
   parseLanguages, LANGUAGE_BY_CODE, levelShortLabel, levelBadgeClass,
 } from "@/lib/languages-data";
@@ -239,6 +240,9 @@ function TeamMemberPage() {
 
   // Hidden fields arrive as null from the API (MemberPublicView redacts them),
   // so presence is the only check needed here — no client-side flag filtering.
+  const programCode = toProgramCode(member.undergradProgram);
+  const programMeta = programCode ? UNDERGRAD_PROGRAMS[programCode] : null;
+
   const primaryContact = member.contactEmail || member.email;
   const hasAnyContact = !!(
     primaryContact || member.linkedinUrl || member.lattesUrl || member.githubUrl || member.customUrl
@@ -327,6 +331,12 @@ function TeamMemberPage() {
                           {FLAGS[member.exchangeCountry as CountryCode]}
                         </span>
                         Intercambista · {COUNTRIES[member.exchangeCountry as CountryCode]?.name.pt}
+                      </span>
+                    )}
+                    {programMeta && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/20 bg-white px-3 py-1.5 text-xs font-semibold text-laps-navy">
+                        <GraduationCap className="h-3.5 w-3.5 text-laps-blue" />
+                        {programMeta.short[L]}
                       </span>
                     )}
                     {member.status && member.status !== "ACTIVE" && (
