@@ -1448,6 +1448,34 @@ function ResearchAreasEditor({
 
 // ───── Interests / tags editor ─────
 
+/**
+ * Delimiter tokenization — turns one typed string into N discrete tags.
+ *
+ * "Machine Learning, Computer Science" → ["Machine Learning", "Computer Science"].
+ * The comma is also the storage delimiter (interests round-trips as a single
+ * comma-joined column), so a tag may never contain one — tokenizing on input
+ * is what keeps that invariant true instead of corrupting the next read.
+ * Semicolons and newlines are folded in too, since both turn up when the text
+ * is pasted out of a spreadsheet or a doc.
+ *
+ * Pure on purpose: the save path re-runs it over the pending input, which only
+ * works if it never touches component state.
+ */
+export function mergeTokens(existing: string[], raw: string): string[] {
+  const tokens = raw
+    .split(/[,;\n]+/)
+    .map((s) => s.trim().replace(/\s+/g, " "))
+    .filter(Boolean);
+
+  const next = [...existing];
+  for (const token of tokens) {
+    // Case-insensitive dedupe: "machine learning" shouldn't sit next to
+    // "Machine Learning". The spelling entered first wins.
+    if (!next.some((t) => t.toLowerCase() === token.toLowerCase())) next.push(token);
+  }
+  return next;
+}
+
 function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInterests: string[] }) {
   const qc = useQueryClient();
   const { t } = useLang();
@@ -1462,16 +1490,36 @@ function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInter
       setDirty(false);
       toast.success(t.portal.saved);
     },
-    onError: () => toast.error(t.portal.errorSave),
+    // saveAll() optimistically clears `dirty`; restore it on failure so the
+    // Salvar button comes back instead of stranding unsaved edits.
+    onError: () => {
+      setDirty(true);
+      toast.error(t.portal.errorSave);
+    },
   });
 
-  function addTag(tag: string) {
-    const trimmed = tag.trim();
-    if (!trimmed || interests.includes(trimmed)) return;
-    const next = [...interests, trimmed];
+  function addTags(raw: string) {
+    const next = mergeTokens(interests, raw);
+    setNewTag("");
+    if (next.length === interests.length) return;
     setInterests(next);
     setDirty(true);
+  }
+
+  /**
+   * Saves the pending input together with the committed chips.
+   *
+   * Clicking "Salvar" blurs the field first, but the blur's state update isn't
+   * visible to this already-bound click handler — reading `interests` here
+   * would drop a tag the member just typed. Re-tokenizing from `newTag` makes
+   * the save correct no matter how the events interleave.
+   */
+  function saveAll() {
+    const next = mergeTokens(interests, newTag);
+    setInterests(next);
     setNewTag("");
+    setDirty(false);
+    mutation.mutate(next);
   }
 
   function removeTag(tag: string) {
@@ -1485,10 +1533,10 @@ function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInter
       title="INTERESSES"
       icon={Sparkles}
       action={
-        dirty ? (
+        dirty || newTag.trim() ? (
           <button
             type="button"
-            onClick={() => mutation.mutate(interests)}
+            onClick={saveAll}
             disabled={mutation.isPending}
             className="inline-flex items-center gap-1 rounded-md bg-laps-blue px-2 py-1 text-[10px] font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
           >
@@ -1518,20 +1566,43 @@ function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInter
         <div className="flex gap-2">
           <Input
             value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            placeholder="Ex: Machine Learning"
+            onChange={(e) => {
+              const v = e.target.value;
+              if (!/[,;\n]/.test(v)) {
+                setNewTag(v);
+                return;
+              }
+              // A delimiter landed mid-typing. Commit everything before the
+              // last one and keep the trailing partial word in the box, so
+              // typing "Machine Learning, Computer Sci…" never stalls.
+              const cut = Math.max(v.lastIndexOf(","), v.lastIndexOf(";"), v.lastIndexOf("\n"));
+              addTags(v.slice(0, cut));
+              setNewTag(v.slice(cut + 1).trimStart());
+            }}
+            placeholder="Ex: Machine Learning, Computer Science"
             className="h-8 flex-1 text-xs"
-            onKeyDown={(e) => e.key === "Enter" && addTag(newTag)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              // Keep Enter from submitting any enclosing form before the tag lands.
+              e.preventDefault();
+              addTags(newTag);
+            }}
+            // Commit a half-typed tag instead of silently dropping it when the
+            // member clicks straight on "Salvar".
+            onBlur={() => addTags(newTag)}
           />
           <button
             type="button"
-            onClick={() => addTag(newTag)}
+            onClick={() => addTags(newTag)}
             disabled={!newTag.trim()}
             className="inline-flex items-center gap-1 rounded-md border border-laps-blue/25 bg-white px-2 py-1.5 text-xs font-semibold text-laps-blue hover:bg-laps-ghost disabled:opacity-60"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
+        <p className="text-[10px] text-laps-navy/40">
+          Separe por vírgula para adicionar vários de uma vez.
+        </p>
       </div>
     </PortfolioCard>
   );
