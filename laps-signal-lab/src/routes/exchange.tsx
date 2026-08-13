@@ -170,24 +170,18 @@ function ExchangeCard({ entry }: { entry: ExchangeEntry }) {
       className="group flex flex-col gap-3 rounded-2xl border border-laps-light/30 bg-white p-5 transition hover:-translate-y-0.5 hover:border-laps-blue/40 hover:shadow-[0_10px_30px_rgba(11,78,141,0.12)]"
     >
       <div className="flex items-start gap-4">
-        {/* Photo / initials — same pattern as the rest of the site. Clicking
-            anywhere on the card (photo included) hits the /team/$uuid route. */}
+        {/* Initials avatar. This card is built from the static exchange roster,
+            which no longer carries bundled portraits — the API-backed views
+            (/team, /team/$uuid) are where uploaded photos render. Clicking
+            anywhere on the card still hits the /team/$uuid route. */}
         <span
           className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 shadow-md ring-2 ${visual.ring}`}
         >
-          {member.photo ? (
-            <img
-              src={member.photo}
-              alt={member.fullName}
-              className="h-full w-full rounded-full object-cover"
-            />
-          ) : (
-            <span
-              className={`flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br ${visual.gradient} text-base font-bold text-white`}
-            >
-              {initials(member.fullName)}
-            </span>
-          )}
+          <span
+            className={`flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br ${visual.gradient} text-base font-bold text-white`}
+          >
+            {initials(member.fullName)}
+          </span>
         </span>
 
         <div className="min-w-0 flex-1">

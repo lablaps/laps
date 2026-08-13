@@ -1,12 +1,11 @@
-// Frontend asset overlay. The API is now the source of truth for member +
-// project records (see ./api.ts) — this file only adds bundled assets keyed
-// by slug:
-//   - hashed asset URLs for member photos (Vite import → /assets/<hash>.jpg)
-//   - tag chips that we haven't promoted to the database yet
+// Frontend data overlay. The API is the source of truth for member + project
+// records (see ./api.ts) — this file only adds metadata keyed by slug that
+// hasn't been promoted to the database yet (tag chips, research areas).
 //
-// Keeping photos in the bundle avoids the "Render free-tier disk doesn't
-// persist" problem for the seeded roster. Anything uploaded later via the
-// admin UI lives at /uploads/* and the API photoUrl wins over this overlay.
+// Photos are NOT overlaid any more. The bundled member portraits were removed
+// from src/assets/, so a member's avatar comes from the API alone: an uploaded
+// file under /uploads/*, or nothing, in which case the UI falls back to the
+// member's initials.
 
 import type { ApiMember } from "./api";
 import { resolveMediaUrl } from "./api";
@@ -16,7 +15,6 @@ const overlay = new Map(
   seedTeam.map((m) => [
     m.id,
     {
-      photoUrl: m.photo ?? null,
       tags: m.tags ?? [],
       areas: m.areas ?? [],
       primaryArea: m.primaryArea ?? null,
@@ -24,10 +22,10 @@ const overlay = new Map(
   ]),
 );
 
-/** Photo from team-data.ts, if the API photoUrl is empty. */
+/** Member photo, resolved from the API only. Null means "render initials". */
 export function decoratePhotoUrl(m: ApiMember): string | null {
   if (m.photoUrl && m.photoUrl.length > 0) return resolveMediaUrl(m.photoUrl) ?? null;
-  return overlay.get(m.slug)?.photoUrl ?? null;
+  return null;
 }
 
 /** Tags from team-data.ts (the API doesn't carry them yet). */

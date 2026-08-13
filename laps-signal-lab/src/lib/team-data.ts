@@ -1,16 +1,3 @@
-import ewaldoPhoto from "@/assets/ewaldo.jpeg";
-import fhilipiPhoto from "@/assets/fhilipi.jpeg";
-import icaroPhoto from "@/assets/icaro.png";
-import jovinoPhoto from "@/assets/jovino.jpeg";
-import laysaPhoto from "@/assets/laysa.jpeg";
-import luisPhoto from "@/assets/luis.jpeg";
-import marceloPhoto from "@/assets/marcelo.jpeg";
-import patrickPhoto from "@/assets/patrick.jpeg";
-import pauloPhoto from "@/assets/paulo.jpg";
-import pedroPhoto from "@/assets/pedro.jpeg";
-import renanPhoto from "@/assets/renan.jpeg";
-import suamiPhoto from "@/assets/suami.jpeg";
-import yannaPhoto from "@/assets/yanna.jpeg";
 import type { AreaSlug } from "./areas-data";
 
 export type Tier = "head" | "coordinator" | "manager" | "doctorate" | "master" | "undergrad";
@@ -30,7 +17,6 @@ export interface TeamMember {
   areas?: AreaSlug[];
   linkedin?: string;
   lattes?: string;
-  photo?: string;
   bio?: { pt?: string; en?: string; fr?: string };
   tags?: string[];
 }
@@ -45,7 +31,6 @@ export const team: TeamMember[] = [
     primaryArea: "signal-processing",
     areas: ["signal-processing", "iot", "ml-clinical"],
     linkedin: "https://www.linkedin.com/in/ewaldo-santana-4383a874/",
-    photo: ewaldoPhoto,
     tags: ["Signal Processing", "Machine Learning", "IoT"],
     bio: {
       pt: "Chefe do Laboratório de Aquisição e Processamento de Sinais (LAPS) na UEMA.",
@@ -61,7 +46,6 @@ export const team: TeamMember[] = [
     fullName: "Luis Guilherme Busaglo Lopes",
     tier: "coordinator",
     status: "ACTIVE",
-    photo: luisPhoto,
   },
   {
     id: "patrick-melo-albuquerque",
@@ -69,7 +53,6 @@ export const team: TeamMember[] = [
     fullName: "Patrick Melo Albuquerque",
     tier: "coordinator",
     status: "ACTIVE",
-    photo: patrickPhoto,
   },
 
   // Doutorado
@@ -81,7 +64,6 @@ export const team: TeamMember[] = [
     status: "ACTIVE",
     primaryArea: "computer-vision",
     areas: ["computer-vision", "signal-processing"],
-    photo: fhilipiPhoto,
   },
   {
     id: "dailan-de-jesus-pereira-bernardes",
@@ -123,7 +105,6 @@ export const team: TeamMember[] = [
     fullName: "Marcelo Viana da Silva",
     tier: "doctorate",
     status: "ACTIVE",
-    photo: marceloPhoto,
   },
   {
     id: "nilton-rodrigues-cantanhede",
@@ -158,7 +139,6 @@ export const team: TeamMember[] = [
     status: "ACTIVE",
     primaryArea: "computer-vision",
     areas: ["computer-vision", "signal-processing"],
-    photo: yannaPhoto,
   },
 
   // Mestrado
@@ -199,7 +179,6 @@ export const team: TeamMember[] = [
     primaryArea: "iot",
     areas: ["iot", "signal-processing"],
     tags: ["Spring Boot", "Angular", "AI Tooling"],
-    photo: icaroPhoto,
     bio: {
       pt: "Engenharia da Computação (UEMA), pesquisador PIBIC no projeto CISMA / Dataearth.",
       en: "Computer Engineering (UEMA), PIBIC researcher on the CISMA / Dataearth platform.",
@@ -209,16 +188,16 @@ export const team: TeamMember[] = [
   { id: "igor-barros-grilo", uuid: "ca04864b-1c5b-4eca-888a-ab154ef22223", fullName: "Igor Barros Grilo", tier: "undergrad", status: "ACTIVE" },
   { id: "joao-vitor-coelho-ferreira", uuid: "60ab7d44-1d60-4308-8006-094dacc1adbb", fullName: "João Vitor Coelho Ferreira", tier: "undergrad", status: "ACTIVE" },
   { id: "julia-emmyle-lima-cabral", uuid: "0e95a5be-c464-49d3-a3fd-50c4ebc9b7d7", fullName: "Júlia Emmyle Lima Cabral", tier: "undergrad", status: "ACTIVE" },
-  { id: "laysa-cristinna-de-souza-cordeiro", uuid: "981b473f-07dd-45e4-92be-d6afa6275b30", fullName: "Laysa Cristinna de Souza Cordeiro", tier: "undergrad", status: "ACTIVE", photo: laysaPhoto },
+  { id: "laysa-cristinna-de-souza-cordeiro", uuid: "981b473f-07dd-45e4-92be-d6afa6275b30", fullName: "Laysa Cristinna de Souza Cordeiro", tier: "undergrad", status: "ACTIVE" },
   { id: "lethicia-kelly-silva-sousa", uuid: "25c67b6b-3a32-4043-82f6-b24e1bc319fc", fullName: "Lethicia Kelly Silva Sousa", tier: "undergrad", status: "ACTIVE" },
   { id: "maiza-yumi-ueda-almeida", uuid: "a540686b-cc4a-429b-8bfb-ef6c1dd834a8", fullName: "Maiza Yumi Ueda Almeida", tier: "undergrad", status: "ACTIVE" },
   { id: "maria-tereza-cunha-de-albuquerque", uuid: "cf975ef2-d1ea-4482-b06b-db5e2c9effda", fullName: "Maria Tereza Cunha de Albuquerque", tier: "undergrad", status: "ACTIVE" },
-  { id: "paulo-alex-carvalho-barata", uuid: "db47fcd3-e7e7-447b-859e-fb25cc58ec24", fullName: "Paulo Alex Carvalho Barata", tier: "undergrad", status: "ACTIVE", photo: pauloPhoto },
-  { id: "pedro-gabriel-moreira-goncalves", uuid: "81092b08-a5fb-4795-9931-3fcd4cd714d7", fullName: "Pedro Gabriel Moreira Gonçalves", tier: "undergrad", status: "ACTIVE", photo: pedroPhoto },
-  { id: "pedro-luis-jovino-da-silva", uuid: "334294fd-2f48-4462-b229-295868bb6f11", fullName: "Pedro Luis Jovino da Silva", tier: "undergrad", status: "ACTIVE", photo: jovinoPhoto },
-  { id: "renan-de-jesus-montenegro-da-silva", uuid: "cdc82b7b-5d19-4799-9a5b-777898e620d6", fullName: "Renan de Jesus Montenegro da Silva", tier: "undergrad", status: "ACTIVE", photo: renanPhoto },
+  { id: "paulo-alex-carvalho-barata", uuid: "db47fcd3-e7e7-447b-859e-fb25cc58ec24", fullName: "Paulo Alex Carvalho Barata", tier: "undergrad", status: "ACTIVE" },
+  { id: "pedro-gabriel-moreira-goncalves", uuid: "81092b08-a5fb-4795-9931-3fcd4cd714d7", fullName: "Pedro Gabriel Moreira Gonçalves", tier: "undergrad", status: "ACTIVE" },
+  { id: "pedro-luis-jovino-da-silva", uuid: "334294fd-2f48-4462-b229-295868bb6f11", fullName: "Pedro Luis Jovino da Silva", tier: "undergrad", status: "ACTIVE" },
+  { id: "renan-de-jesus-montenegro-da-silva", uuid: "cdc82b7b-5d19-4799-9a5b-777898e620d6", fullName: "Renan de Jesus Montenegro da Silva", tier: "undergrad", status: "ACTIVE" },
   { id: "sofia-barros-coimbra", uuid: "bb4eee65-ff42-4b82-afc1-dfbedaef24b5", fullName: "Sofia Barros Coimbra", tier: "undergrad", status: "ACTIVE" },
-  { id: "suami-gomes-santos", uuid: "22ec0a50-f245-4c41-bdf3-69525b749aa5", fullName: "Suamí Gomes Santos", tier: "undergrad", status: "ACTIVE", photo: suamiPhoto },
+  { id: "suami-gomes-santos", uuid: "22ec0a50-f245-4c41-bdf3-69525b749aa5", fullName: "Suamí Gomes Santos", tier: "undergrad", status: "ACTIVE" },
   { id: "thassia-raquel-silva-ribeiro", uuid: "b9d90c22-131c-4619-98b1-4a197f7a4ed7", fullName: "Thassia Raquel Silva Ribeiro", tier: "undergrad", status: "ACTIVE" },
 
   // Calouros 2026 — Sensores
