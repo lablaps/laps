@@ -83,6 +83,17 @@ public class MyPortalController {
         out.put("lattesUrl", me.getLattesUrl());
         out.put("githubUrl", me.getGithubUrl());
         out.put("contactEmail", me.getContactEmail());
+        out.put("customUrl", me.getCustomUrl());
+        out.put("customUrlLabel", me.getCustomUrlLabel());
+        // Visibility flags — the portal renders a per-field eye toggle from these.
+        // /me is always the unredacted view: a member sees their own data whether
+        // or not the public site shows it.
+        out.put("showEmail", me.isShowEmail());
+        out.put("showContactEmail", me.isShowContactEmail());
+        out.put("showLinkedin", me.isShowLinkedin());
+        out.put("showLattes", me.isShowLattes());
+        out.put("showGithub", me.isShowGithub());
+        out.put("showCustomUrl", me.isShowCustomUrl());
         out.put("roadmap", me.getRoadmap());
         out.put("areas", me.getAreas());
         out.put("interests", me.getInterests());
@@ -269,6 +280,24 @@ public class MyPortalController {
             me.setGithubUrl(u.githubUrl());
         if (u.contactEmail() != null)
             me.setContactEmail(u.contactEmail());
+        if (u.customUrl() != null)
+            me.setCustomUrl(u.customUrl().isBlank() ? null : u.customUrl());
+        if (u.customUrlLabel() != null)
+            me.setCustomUrlLabel(u.customUrlLabel().isBlank() ? null : u.customUrlLabel());
+        // Boxed Booleans: null means "not sent, leave alone", so a partial PATCH
+        // of a single toggle can't reset the other five to their defaults.
+        if (u.showEmail() != null)
+            me.setShowEmail(u.showEmail());
+        if (u.showContactEmail() != null)
+            me.setShowContactEmail(u.showContactEmail());
+        if (u.showLinkedin() != null)
+            me.setShowLinkedin(u.showLinkedin());
+        if (u.showLattes() != null)
+            me.setShowLattes(u.showLattes());
+        if (u.showGithub() != null)
+            me.setShowGithub(u.showGithub());
+        if (u.showCustomUrl() != null)
+            me.setShowCustomUrl(u.showCustomUrl());
         if (u.roadmap() != null)
             me.setRoadmap(u.roadmap());
         if (u.areas() != null)
@@ -372,6 +401,14 @@ public class MyPortalController {
             @Size(max = 500) String githubUrl,
             @Size(max = 255) String contactEmail,
             @Size(max = 255) String email,
+            @Size(max = 500) String customUrl,
+            @Size(max = 60) String customUrlLabel,
+            Boolean showEmail,
+            Boolean showContactEmail,
+            Boolean showLinkedin,
+            Boolean showLattes,
+            Boolean showGithub,
+            Boolean showCustomUrl,
             @Size(max = 8000) String roadmap,
             @Size(max = 4000) String areas,
             @Size(max = 4000) String interests,

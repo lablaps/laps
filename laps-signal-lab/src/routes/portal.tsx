@@ -979,17 +979,47 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
 
 // ───── Contact / links editor ─────
 
-function ContactEditor({ me }: { me: MyProfile }) {
-  const qc = useQueryClient();
-  const { t } = useLang();
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({
+/**
+ * Contact rows that carry a per-field public/hidden toggle.
+ *
+ * `flag` is the server-side visibility column. When it is false the API omits
+ * the value from /api/v1/members entirely for anonymous callers — the toggle is
+ * real access control, not a CSS-level hide.
+ */
+const CONTACT_FIELDS = [
+  { key: "email",        flag: "showEmail",        label: "Email (login e recuperação) *", placeholder: "seu@email.com",     type: "email" },
+  { key: "contactEmail", flag: "showContactEmail", label: "Email de contato (público)",    placeholder: "contato@email.com", type: "email" },
+  { key: "linkedinUrl",  flag: "showLinkedin",     label: "LinkedIn",                      placeholder: "https://linkedin.com/in/…" },
+  { key: "lattesUrl",    flag: "showLattes",       label: "Lattes",                        placeholder: "http://lattes.cnpq.br/…" },
+  { key: "githubUrl",    flag: "showGithub",       label: "GitHub",                        placeholder: "https://github.com/…" },
+  { key: "customUrl",    flag: "showCustomUrl",    label: "URL personalizada",             placeholder: "https://seusite.com" },
+] as const;
+
+function contactFormFromMe(me: MyProfile) {
+  return {
     email: me.email ?? "",
     contactEmail: me.contactEmail ?? "",
     linkedinUrl: me.linkedinUrl ?? "",
     lattesUrl: me.lattesUrl ?? "",
     githubUrl: me.githubUrl ?? "",
-  });
+    customUrl: me.customUrl ?? "",
+    customUrlLabel: me.customUrlLabel ?? "",
+    // `?? true` keeps a profile saved before this feature shipped rendering as
+    // visible rather than flickering to "hidden" while /me is still loading.
+    showEmail: me.showEmail ?? true,
+    showContactEmail: me.showContactEmail ?? true,
+    showLinkedin: me.showLinkedin ?? true,
+    showLattes: me.showLattes ?? true,
+    showGithub: me.showGithub ?? true,
+    showCustomUrl: me.showCustomUrl ?? true,
+  };
+}
+
+function ContactEditor({ me }: { me: MyProfile }) {
+  const qc = useQueryClient();
+  const { t } = useLang();
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState(() => contactFormFromMe(me));
 
   const mutation = useMutation({
     mutationFn: () => api.meUpdate(form),
@@ -1001,7 +1031,7 @@ function ContactEditor({ me }: { me: MyProfile }) {
     onError: () => toast.error(t.portal.errorSave),
   });
 
-  function patch<K extends keyof typeof form>(key: K, value: string) {
+  function patch<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
@@ -1017,13 +1047,7 @@ function ContactEditor({ me }: { me: MyProfile }) {
           <button
             type="button"
             onClick={() => {
-              setForm({
-                email: me.email ?? "",
-                contactEmail: me.contactEmail ?? "",
-                linkedinUrl: me.linkedinUrl ?? "",
-                lattesUrl: me.lattesUrl ?? "",
-                githubUrl: me.githubUrl ?? "",
-              });
+              setForm(contactFormFromMe(me));
               setEditing(true);
             }}
             className="inline-flex items-center gap-1 rounded-md border border-laps-navy/15 px-2 py-1 text-[10px] font-semibold text-laps-navy/60 hover:border-laps-blue/30 hover:text-laps-blue"
@@ -1044,63 +1068,60 @@ function ContactEditor({ me }: { me: MyProfile }) {
 
       {editing ? (
         <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-              Email (login e recuperação) *
-            </label>
-            <Input
-              type="email"
-              value={form.email}
-              onChange={(e) => patch("email", e.target.value)}
-              placeholder="seu@email.com"
-              className="h-9 text-sm"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-              Email de contato (público)
-            </label>
-            <Input
-              type="email"
-              value={form.contactEmail}
-              onChange={(e) => patch("contactEmail", e.target.value)}
-              placeholder="contato@email.com"
-              className="h-9 text-sm"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-              LinkedIn
-            </label>
-            <Input
-              value={form.linkedinUrl}
-              onChange={(e) => patch("linkedinUrl", e.target.value)}
-              placeholder="https://linkedin.com/in/…"
-              className="h-9 text-sm"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-              Lattes
-            </label>
-            <Input
-              value={form.lattesUrl}
-              onChange={(e) => patch("lattesUrl", e.target.value)}
-              placeholder="http://lattes.cnpq.br/…"
-              className="h-9 text-sm"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-              GitHub
-            </label>
-            <Input
-              value={form.githubUrl}
-              onChange={(e) => patch("githubUrl", e.target.value)}
-              placeholder="https://github.com/…"
-              className="h-9 text-sm"
-            />
-          </div>
+          <p className="rounded-lg bg-laps-ghost/40 px-3 py-2 text-[10px] leading-relaxed text-laps-navy/55">
+            Use o <Eye className="inline h-3 w-3" /> para escolher o que aparece no
+            seu perfil público. O que estiver oculto não é enviado pela API — some
+            de verdade, não só da tela.
+          </p>
+
+          {CONTACT_FIELDS.map((f) => (
+            <div key={f.key}>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+                  {f.label}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => patch(f.flag, !form[f.flag])}
+                  aria-pressed={form[f.flag]}
+                  title={form[f.flag] ? "Visível no perfil público" : "Oculto do perfil público"}
+                  className={`inline-flex shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-semibold transition ${
+                    form[f.flag]
+                      ? "border-laps-blue/25 text-laps-blue hover:bg-laps-ghost"
+                      : "border-laps-navy/15 text-laps-navy/40 hover:bg-laps-ghost"
+                  }`}
+                >
+                  {form[f.flag] ? (
+                    <>
+                      <Eye className="h-3 w-3" /> Visível
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="h-3 w-3" /> Oculto
+                    </>
+                  )}
+                </button>
+              </div>
+              <Input
+                type={"type" in f ? f.type : "text"}
+                value={form[f.key]}
+                onChange={(e) => patch(f.key, e.target.value)}
+                placeholder={f.placeholder}
+                className="h-9 text-sm"
+              />
+              {/* The custom link gets an optional caption so it doesn't render
+                  as a bare URL on the public profile. */}
+              {f.key === "customUrl" && (
+                <Input
+                  value={form.customUrlLabel}
+                  onChange={(e) => patch("customUrlLabel", e.target.value)}
+                  placeholder="Nome do link (ex: Meu portfólio, ORCID)"
+                  className="mt-1.5 h-8 text-xs"
+                />
+              )}
+            </div>
+          ))}
+
           <div className="flex gap-2">
             <button
               type="button"
@@ -1122,11 +1143,17 @@ function ContactEditor({ me }: { me: MyProfile }) {
         </div>
       ) : (
         <div className="space-y-1.5 text-xs text-laps-navy/70">
-          <InfoRow label="Email" value={me.email} placeholder="Não cadastrado" highlight={needsEmail} />
-          <InfoRow label="Contato" value={me.contactEmail} />
-          <InfoRow label="LinkedIn" value={me.linkedinUrl} link />
-          <InfoRow label="Lattes" value={me.lattesUrl} link />
-          <InfoRow label="GitHub" value={me.githubUrl} link />
+          <InfoRow label="Email" value={me.email} placeholder="Não cadastrado" highlight={needsEmail} hidden={me.showEmail === false} />
+          <InfoRow label="Contato" value={me.contactEmail} hidden={me.showContactEmail === false} />
+          <InfoRow label="LinkedIn" value={me.linkedinUrl} link hidden={me.showLinkedin === false} />
+          <InfoRow label="Lattes" value={me.lattesUrl} link hidden={me.showLattes === false} />
+          <InfoRow label="GitHub" value={me.githubUrl} link hidden={me.showGithub === false} />
+          <InfoRow
+            label={me.customUrlLabel || "Site"}
+            value={me.customUrl}
+            link
+            hidden={me.showCustomUrl === false}
+          />
         </div>
       )}
 
@@ -1140,18 +1167,24 @@ function InfoRow({
   placeholder,
   link,
   highlight,
+  hidden,
 }: {
   label: string;
   value: string | null | undefined;
   placeholder?: string;
   link?: boolean;
   highlight?: boolean;
+  /** Marks a row the member has hidden from their public profile. */
+  hidden?: boolean;
 }) {
   if (!value && !placeholder) return null;
   return (
     <div className="flex items-start gap-2">
-      <span className="w-16 shrink-0 text-[10px] font-bold uppercase tracking-wider text-laps-navy/40">
-        {label}
+      <span className="flex w-16 shrink-0 items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-laps-navy/40">
+        <span className="truncate">{label}</span>
+        {hidden && value && (
+          <EyeOff className="h-3 w-3 shrink-0 text-laps-navy/35" aria-label="Oculto do perfil público" />
+        )}
       </span>
       {value ? (
         link ? (

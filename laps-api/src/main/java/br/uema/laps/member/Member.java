@@ -82,6 +82,30 @@ public class Member {
     private String githubUrl;
     @Column(name = "contact_email")
     private String contactEmail;
+
+    /** One member-curated link — personal site, ORCID, ResearchGate, portfolio. */
+    @Column(name = "custom_url", length = 500)
+    private String customUrl;
+    /** Link text for {@link #customUrl}; the UI falls back to a generic caption when blank. */
+    @Column(name = "custom_url_label", length = 60)
+    private String customUrlLabel;
+
+    // Per-field public visibility. All default true so existing profiles keep
+    // publishing exactly what they publish today — hiding is an explicit opt-out.
+    // Enforced server-side in MemberController#toPublicView, never client-side.
+    @Column(name = "show_email", nullable = false)
+    private boolean showEmail = true;
+    @Column(name = "show_contact_email", nullable = false)
+    private boolean showContactEmail = true;
+    @Column(name = "show_linkedin", nullable = false)
+    private boolean showLinkedin = true;
+    @Column(name = "show_lattes", nullable = false)
+    private boolean showLattes = true;
+    @Column(name = "show_github", nullable = false)
+    private boolean showGithub = true;
+    @Column(name = "show_custom_url", nullable = false)
+    private boolean showCustomUrl = true;
+
     @Column(columnDefinition = "text")
     private String roadmap;
 

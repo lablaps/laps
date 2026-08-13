@@ -118,6 +118,22 @@ export interface ApiMember {
   lattesUrl: string | null;
   githubUrl: string | null;
   contactEmail: string | null;
+  /** Member-curated link (personal site, ORCID, ResearchGate…). */
+  customUrl: string | null;
+  /** Link text for customUrl; UI falls back to a generic caption when null. */
+  customUrlLabel: string | null;
+  /**
+   * Per-field public visibility. Enforced server-side — when a flag is false the
+   * matching value arrives as null for anonymous callers, so absence of the value
+   * is the real signal. These flags exist so the owner (and managers) can render
+   * the toggle state, not so the SPA can decide what to hide.
+   */
+  showEmail: boolean;
+  showContactEmail: boolean;
+  showLinkedin: boolean;
+  showLattes: boolean;
+  showGithub: boolean;
+  showCustomUrl: boolean;
   roadmap: string | null;
   areas: string | null;
   interests: string | null;

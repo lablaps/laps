@@ -2,6 +2,7 @@ package br.uema.laps.project;
 
 import br.uema.laps.member.Member;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,8 +33,20 @@ public class MemberProject {
     @JsonBackReference
     private Project project;
 
+    /**
+     * Nested member shown as a project leader/participant. Only identity and
+     * avatar are needed here, so the contact block is stripped — otherwise
+     * /api/v1/projects would republish an email that the member deliberately
+     * hid from /api/v1/members, routing around the visibility flags.
+     */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "member_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties({
+            "email", "contactEmail", "linkedinUrl", "lattesUrl", "githubUrl",
+            "customUrl", "customUrlLabel", "roadmap",
+            "showEmail", "showContactEmail", "showLinkedin",
+            "showLattes", "showGithub", "showCustomUrl"
+    })
     private Member member;
 
     @Column(nullable = false)

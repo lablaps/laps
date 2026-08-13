@@ -237,8 +237,12 @@ function TeamMemberPage() {
     ? formatDate(member.currentRoleStartedAt, L)
     : null;
 
+  // Hidden fields arrive as null from the API (MemberPublicView redacts them),
+  // so presence is the only check needed here — no client-side flag filtering.
   const primaryContact = member.contactEmail || member.email;
-  const hasAnyContact = !!(primaryContact || member.linkedinUrl || member.lattesUrl || member.githubUrl);
+  const hasAnyContact = !!(
+    primaryContact || member.linkedinUrl || member.lattesUrl || member.githubUrl || member.customUrl
+  );
   const projectRoleLabel = (role: string) => {
     if (role === "LEAD") return tx.projectRoleLead;
     if (role === "CO_LEAD") return tx.projectRoleCoLead;
@@ -377,6 +381,20 @@ function TeamMemberPage() {
                         className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-white px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
                       >
                         <Github className="h-3.5 w-3.5" /> GitHub
+                      </a>
+                    )}
+                    {member.customUrl && (
+                      <a
+                        href={member.customUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-white px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
+                        title={member.customUrl}
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        <span className="max-w-[14rem] truncate">
+                          {member.customUrlLabel || tx.contact.website}
+                        </span>
                       </a>
                     )}
                   </div>
@@ -776,7 +794,7 @@ const TX: Record<Lang, {
   open: string;
   openArticle: string;
   emptyPortfolio: string;
-  contact: { email: string };
+  contact: { email: string; website: string };
   status: { COMPLETED: string; INACTIVE: string };
   pubStatus: { inProgress: string; inPress: string };
   projectRoleLead: string;
@@ -802,7 +820,7 @@ const TX: Record<Lang, {
     openArticle: "Abrir artigo",
     emptyPortfolio:
       "Portfólio ainda em construção. Em breve, projetos e publicações deste pesquisador aparecerão aqui.",
-    contact: { email: "E-mail" },
+    contact: { email: "E-mail", website: "Site" },
     status: { COMPLETED: "Concluído", INACTIVE: "Inativo" },
     pubStatus: { inProgress: "Em andamento", inPress: "No prelo" },
     projectRoleLead: "Orientador",
@@ -828,7 +846,7 @@ const TX: Record<Lang, {
     openArticle: "Open article",
     emptyPortfolio:
       "Portfolio still in progress. Projects and publications for this researcher will show up here soon.",
-    contact: { email: "Email" },
+    contact: { email: "Email", website: "Website" },
     status: { COMPLETED: "Completed", INACTIVE: "Inactive" },
     pubStatus: { inProgress: "In progress", inPress: "In press" },
     projectRoleLead: "Advisor",
@@ -854,7 +872,7 @@ const TX: Record<Lang, {
     openArticle: "Ouvrir l'article",
     emptyPortfolio:
       "Portfolio en construction. Les projets et publications de ce chercheur apparaîtront ici prochainement.",
-    contact: { email: "E-mail" },
+    contact: { email: "E-mail", website: "Site" },
     status: { COMPLETED: "Terminé", INACTIVE: "Inactif" },
     pubStatus: { inProgress: "En cours", inPress: "Sous presse" },
     projectRoleLead: "Directeur",
