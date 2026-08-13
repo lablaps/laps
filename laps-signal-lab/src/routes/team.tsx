@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
@@ -7,6 +7,7 @@ import {
   GraduationCap,
   Users,
   Network,
+  ArrowDown,
   Triangle,
   List,
   Search,
@@ -23,6 +24,7 @@ import { TeamGraph } from "@/components/TeamGraph";
 import { PublicLayout } from "@/components/PublicLayout";
 import { fetchProjects, type ApiProject } from "@/lib/api";
 import { initials, type Tier } from "@/lib/team-data";
+import teamPhoto from "@/assets/laps-team.jpg";
 
 type View = "mesh" | "pyramid" | "list";
 
@@ -100,6 +102,22 @@ function TeamPage() {
   const { t, lang } = useLang();
   const { members, tierCounts } = useTeamRoster();
   const [view, setView] = useState<View>("mesh");
+  const networkRef = useRef<HTMLElement>(null);
+
+  /**
+   * Hand-off from the team photo into the graph: force the mesh view (the
+   * visitor asked for the network, not whichever tab was last active) and scroll
+   * it into frame. Honours prefers-reduced-motion — a long smooth scroll is a
+   * common vestibular trigger.
+   */
+  function goToNetwork() {
+    setView("mesh");
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    networkRef.current?.scrollIntoView({
+      behavior: reduced ? "auto" : "smooth",
+      block: "start",
+    });
+  }
   const { pathname } = useLocation();
 
   // team.$uuid is registered as a child route of /team, so when the URL is
@@ -158,8 +176,54 @@ function TeamPage() {
         </div>
       </section>
 
+      {/* TEAM PHOTO — the first impression, and the hand-off into the graph */}
+      <section className="relative bg-white pt-10">
+        <div className="mx-auto max-w-6xl px-6">
+          <figure className="group relative overflow-hidden rounded-3xl shadow-[0_24px_70px_-32px_rgba(11,78,141,0.55)]">
+            <img
+              src={teamPhoto}
+              alt={t.structure.teamPhoto.alt}
+              width={1459}
+              height={1078}
+              loading="lazy"
+              decoding="async"
+              /* object-[center_35%] keeps the faces in frame as the crop tightens.
+                 The height caps stop a 4:3 group shot from eating a whole screen. */
+              className="w-full object-cover object-[center_35%] max-h-[20rem] sm:max-h-[26rem] md:max-h-[30rem]"
+            />
+
+            {/* Scrim only exists where the caption overlays the photo (md+).
+                Sized to the text block rather than the whole frame, which would
+                mute the faces this section exists to show. */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-2/3 bg-gradient-to-t from-laps-navy/95 via-laps-navy/60 to-transparent md:block" />
+
+            {/* Below the photo on phones — overlaying it would cover the people.
+                Overlaid from md up, where there's room to do both. */}
+            <figcaption className="bg-laps-navy p-6 md:absolute md:inset-x-0 md:bottom-0 md:bg-transparent md:p-8">
+              <div className="max-w-2xl">
+                <h2 className="font-display text-2xl font-bold text-balance text-white md:text-3xl">
+                  {t.structure.teamPhoto.title}
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-pretty text-white/85 md:text-base">
+                  {t.structure.teamPhoto.caption}
+                </p>
+                <button
+                  type="button"
+                  onClick={goToNetwork}
+                  className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-laps-navy shadow-lg transition-[transform,background-color] duration-200 hover:bg-laps-ghost active:scale-[0.96]"
+                >
+                  <Network className="h-4 w-4 text-laps-blue" />
+                  {t.structure.teamPhoto.cta}
+                  <ArrowDown className="h-4 w-4 text-laps-blue/70" />
+                </button>
+              </div>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
       {/* VIEW TABS */}
-      <section className="relative bg-white pt-4">
+      <section ref={networkRef} className="relative scroll-mt-24 bg-white pt-4">
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex justify-center">
             <div className="relative inline-flex items-center gap-0.5 rounded-full border border-laps-navy/10 bg-white/80 p-1 shadow-sm backdrop-blur">

@@ -44,6 +44,12 @@ export const translations = {
     values: { title: "Nossos Valores", items: ["Confiabilidade", "Tecnologia", "Avanço", "Conhecimento"] },
     team: { title: "Nossa Equipe", cta: "Ver todos os pesquisadores" },
     structure: {
+      teamPhoto: {
+        title: "Quem faz o LAPS",
+        caption: "Cada rosto aqui é um nó da rede abaixo — explore as conexões entre pesquisadores, áreas e projetos.",
+        cta: "Explorar a rede neural",
+        alt: "Equipe do LAPS reunida na UEMA",
+      },
       chip: "Nossa Equipe",
       title: "Rede de Pesquisadores do LAPS",
       body: "Explore nossa equipe como uma rede neural viva — chefe, doutorandos, mestrandos e graduandos conectados pelo trabalho colaborativo. Clique em qualquer nó para conhecer o pesquisador.",
@@ -192,6 +198,12 @@ export const translations = {
     values: { title: "Our Values", items: ["Reliability", "Technology", "Advancement", "Knowledge"] },
     team: { title: "Our Team", cta: "See all researchers" },
     structure: {
+      teamPhoto: {
+        title: "The people behind LAPS",
+        caption: "Every face here is a node in the network below — explore the connections between researchers, areas and projects.",
+        cta: "Explore the neural network",
+        alt: "The LAPS team gathered at UEMA",
+      },
       chip: "Our Team",
       title: "LAPS Researcher Network",
       body: "Explore our team as a living neural network — the head, doctoral students, MSc students and undergrads connected through collaborative work. Click any node to meet the researcher.",
@@ -340,6 +352,12 @@ export const translations = {
     values: { title: "Nos Valeurs", items: ["Fiabilité", "Technologie", "Avancée", "Connaissance"] },
     team: { title: "Notre Équipe", cta: "Voir tous les chercheurs" },
     structure: {
+      teamPhoto: {
+        title: "Ceux qui font le LAPS",
+        caption: "Chaque visage ici est un nœud du réseau ci-dessous — explorez les connexions entre chercheurs, domaines et projets.",
+        cta: "Explorer le réseau neuronal",
+        alt: "L'équipe du LAPS réunie à l'UEMA",
+      },
       chip: "Notre Équipe",
       title: "Réseau de Chercheurs du LAPS",
       body: "Découvrez notre équipe sous la forme d'un réseau neuronal vivant — le chef, les doctorants, les étudiants en master et les étudiants en licence connectés par le travail collaboratif. Cliquez sur un nœud pour découvrir le chercheur.",
