@@ -46,6 +46,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { initials } from "@/lib/team-data";
 import { UNDERGRAD_PROGRAMS, toProgramCode } from "@/lib/undergrad-programs";
+import { formatJoined, semesterYears, type Lang as JoinedLang } from "@/lib/joined-laps";
 import type { Tier } from "@/lib/team-data";
 
 // ───── Language flags (pt / en / fr) ─────
@@ -343,6 +344,7 @@ function PortalPage() {
             />
             <InterestsEditor me={me} currentInterests={memberInterests} />
             <LanguagesEditor me={me} />
+            <JoinedLapsEditor me={me} />
             <UndergradProgramCard me={me} />
             <ExchangeCountryEditor me={me} />
           </aside>
@@ -2735,6 +2737,144 @@ const EXCHANGE_COUNTRY_OPTIONS: { code: string; label: string }[] = [
   { code: "UK", label: "🇬🇧 Reino Unido" },
   { code: "ES", label: "🇪🇸 Espanha" },
 ];
+
+/**
+ * When the member joined LAPS. Member-owned, unlike the exchange country and
+ * undergraduate program above: only they know this, so they fill it in.
+ *
+ * Two granularities, both optional. The month input is `type="month"`, which
+ * collects exactly year + month with no day — matching the storage format
+ * ("YYYY-MM") byte for byte, so no parsing sits between the two.
+ */
+function JoinedLapsEditor({ me }: { me: MyProfile }) {
+  const qc = useQueryClient();
+  const { t, lang } = useLang();
+  const L = lang as JoinedLang;
+  const [editing, setEditing] = useState(false);
+  const [month, setMonth] = useState(me.joinedMonth ?? "");
+  const [semYear, setSemYear] = useState(() => me.joinedSemester?.split(".")[0] ?? "");
+  const [semTerm, setSemTerm] = useState(() => me.joinedSemester?.split(".")[1] ?? "");
+
+  const semester = semYear && semTerm ? `${semYear}.${semTerm}` : "";
+
+  const mutation = useMutation({
+    // Empty string clears server-side; null would be read as "not sent".
+    mutationFn: () => api.meUpdate({ joinedMonth: month, joinedSemester: semester }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setEditing(false);
+      toast.success(t.portal.saved);
+    },
+    onError: () => toast.error(t.portal.errorSave),
+  });
+
+  function reset() {
+    setMonth(me.joinedMonth ?? "");
+    setSemYear(me.joinedSemester?.split(".")[0] ?? "");
+    setSemTerm(me.joinedSemester?.split(".")[1] ?? "");
+  }
+
+  // A year without a term (or vice versa) can't form a valid "YYYY.N".
+  const semesterIncomplete = (!!semYear && !semTerm) || (!semYear && !!semTerm);
+  const current = formatJoined(me, L);
+
+  return (
+    <PortfolioCard
+      title="ENTRADA NO LAPS"
+      icon={Calendar}
+      action={
+        !editing ? (
+          <button
+            type="button"
+            onClick={() => { reset(); setEditing(true); }}
+            className="inline-flex items-center gap-1 rounded-md border border-laps-navy/15 px-2 py-1 text-[10px] font-semibold text-laps-navy/60 hover:border-laps-blue/30 hover:text-laps-blue"
+          >
+            <Edit2 className="h-3 w-3" /> Editar
+          </button>
+        ) : null
+      }
+    >
+      {editing ? (
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Mês e ano
+            </label>
+            <Input
+              type="month"
+              value={month}
+              min="2005-01"
+              onChange={(e) => setMonth(e.target.value)}
+              className="h-9 text-sm"
+            />
+            <p className="mt-1 text-[10px] text-laps-navy/40">
+              Sem dia — apenas o mês em que você começou.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Semestre
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={semYear}
+                onChange={(e) => setSemYear(e.target.value)}
+                className="h-9 flex-1 rounded-md border border-laps-navy/15 bg-white px-2 text-sm text-laps-navy focus:border-laps-blue/40 focus:outline-none"
+              >
+                <option value="">Ano…</option>
+                {semesterYears().map((y) => (
+                  <option key={y} value={String(y)}>{y}</option>
+                ))}
+              </select>
+              <select
+                value={semTerm}
+                onChange={(e) => setSemTerm(e.target.value)}
+                className="h-9 flex-1 rounded-md border border-laps-navy/15 bg-white px-2 text-sm text-laps-navy focus:border-laps-blue/40 focus:outline-none"
+              >
+                <option value="">Período…</option>
+                <option value="1">1º semestre</option>
+                <option value="2">2º semestre</option>
+              </select>
+            </div>
+            {semesterIncomplete && (
+              <p className="mt-1 text-[10px] font-medium text-amber-600">
+                Escolha o ano e o período — ou limpe os dois.
+              </p>
+            )}
+          </div>
+
+          <p className="text-[10px] leading-relaxed text-laps-navy/40">
+            Preencha o que souber. Os dois campos são opcionais e independentes.
+          </p>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => mutation.mutate()}
+              disabled={mutation.isPending || semesterIncomplete}
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-navy disabled:opacity-60"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {mutation.isPending ? "Salvando…" : "Salvar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { reset(); setEditing(false); }}
+              className="rounded-md border border-laps-navy/15 px-3 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-laps-navy/80">
+          {current ?? <span className="italic text-laps-navy/40">Não informado</span>}
+        </p>
+      )}
+    </PortfolioCard>
+  );
+}
 
 /**
  * Undergraduate course. Read-only for everyone here — it is an institutional

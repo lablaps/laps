@@ -37,6 +37,7 @@ import { PublicLayout } from "@/components/PublicLayout";
 import { COUNTRIES, type CountryCode } from "@/lib/exchange-data";
 import { FLAGS } from "@/lib/flags";
 import { UNDERGRAD_PROGRAMS, toProgramCode } from "@/lib/undergrad-programs";
+import { formatJoined } from "@/lib/joined-laps";
 import {
   parseLanguages, LANGUAGE_BY_CODE, levelShortLabel, levelBadgeClass,
 } from "@/lib/languages-data";
@@ -240,6 +241,10 @@ function TeamMemberPage() {
 
   // Hidden fields arrive as null from the API (MemberPublicView redacts them),
   // so presence is the only check needed here — no client-side flag filtering.
+  // Distinct from roleStart below: that is when the CURRENT role began and is
+  // rewritten on promotion, so it understates how long someone has been here.
+  const joinedLaps = formatJoined(member, L);
+
   const programCode = toProgramCode(member.undergradProgram);
   const programMeta = programCode ? UNDERGRAD_PROGRAMS[programCode] : null;
 
@@ -342,6 +347,11 @@ function TeamMemberPage() {
                     {member.status && member.status !== "ACTIVE" && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">
                         {tx.status[member.status as "COMPLETED" | "INACTIVE"]}
+                      </span>
+                    )}
+                    {joinedLaps && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-laps-ghost/70 px-3 py-1.5 text-xs font-medium text-laps-navy/75">
+                        <Calendar className="h-3.5 w-3.5" /> {tx.joinedLaps} {joinedLaps}
                       </span>
                     )}
                     {roleStart && (
@@ -801,6 +811,7 @@ function formatDate(iso: string, lang: Lang): string {
 
 const TX: Record<Lang, {
   since: string;
+  joinedLaps: string;
   open: string;
   openArticle: string;
   emptyPortfolio: string;
@@ -826,6 +837,7 @@ const TX: Record<Lang, {
 }> = {
   pt: {
     since: "desde",
+    joinedLaps: "No LAPS desde",
     open: "Abrir",
     openArticle: "Abrir artigo",
     emptyPortfolio:
@@ -852,6 +864,7 @@ const TX: Record<Lang, {
   },
   en: {
     since: "since",
+    joinedLaps: "At LAPS since",
     open: "Open",
     openArticle: "Open article",
     emptyPortfolio:
@@ -878,6 +891,7 @@ const TX: Record<Lang, {
   },
   fr: {
     since: "depuis",
+    joinedLaps: "Au LAPS depuis",
     open: "Ouvrir",
     openArticle: "Ouvrir l'article",
     emptyPortfolio:

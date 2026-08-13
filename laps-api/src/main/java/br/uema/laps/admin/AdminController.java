@@ -88,9 +88,10 @@ public class AdminController {
         m.setMustChangePassword(true);
         Member saved = memberRepository.save(m);
 
-        // Provision the deterministic temp password the moment the row exists,
-        // and surface it back to the admin so they can hand it to the member
-        // without having to compute the formula manually.
+        // Provision a random temp password the moment the row exists and return
+        // it to the admin. This is the ONLY time it is visible — it is stored
+        // as a BCrypt hash and cannot be recovered, so an admin who loses it
+        // must issue a new one via /members/{id}/reset-password.
         String tempPassword = memberPasswordService.provisionInitial(saved);
 
         auditService.record(AuthenticatedMember.id(), "CREATE_MEMBER", "Member", saved.getId().toString(), req);
@@ -182,6 +183,10 @@ public class AdminController {
             m.setExchangeCountry(req.exchangeCountry().isBlank() ? null : req.exchangeCountry());
         if (req.undergradProgram() != null)
             m.setUndergradProgram(parseUndergradProgram(req.undergradProgram()));
+        if (req.joinedSemester() != null)
+            m.setJoinedSemester(req.joinedSemester().isBlank() ? null : req.joinedSemester());
+        if (req.joinedMonth() != null)
+            m.setJoinedMonth(req.joinedMonth().isBlank() ? null : req.joinedMonth());
         if (req.languages() != null)
             m.setLanguages(req.languages().isBlank() ? null : req.languages());
         Member saved = memberRepository.save(m);
@@ -398,6 +403,10 @@ public class AdminController {
             // UndergradProgram so the empty-string-clears convention matches
             // exchangeCountry — Jackson would reject "" for an enum outright.
             String undergradProgram,
+            // Same empty-string-clears contract; format is enforced by the DB
+            // CHECK constraints from V22 as well as the /me DTO pattern.
+            String joinedSemester,
+            String joinedMonth,
             String languages) {
     }
 

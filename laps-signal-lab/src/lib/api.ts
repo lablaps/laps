@@ -142,6 +142,10 @@ export interface ApiMember {
   exchangeCountry: string | null;
   /** Enum name from UndergradProgram; see lib/undergrad-programs.ts. Null when unknown. */
   undergradProgram: string | null;
+  /** Academic period the member joined LAPS, "YYYY.1" | "YYYY.2". */
+  joinedSemester: string | null;
+  /** Month the member joined LAPS, ISO "YYYY-MM". No day component by design. */
+  joinedMonth: string | null;
   languages: string | null;
   deletedAt: string | null;
 }
@@ -371,6 +375,8 @@ export const api = {
         exchangeCountry?: string | null;
         /** Enum name, or "" to clear. Null is a no-op server-side. */
         undergradProgram?: string | null;
+        joinedSemester?: string | null;
+        joinedMonth?: string | null;
       },
     ) =>
       request<ApiMember>(`/api/v1/admin/members/${id}`, { method: "PUT", body }),

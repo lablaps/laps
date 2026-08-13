@@ -15,6 +15,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -104,6 +105,8 @@ public class MyPortalController {
         out.put("emailVerified", me.isEmailVerified());
         out.put("exchangeCountry", me.getExchangeCountry());
         out.put("undergradProgram", me.getUndergradProgram());
+        out.put("joinedSemester", me.getJoinedSemester());
+        out.put("joinedMonth", me.getJoinedMonth());
         out.put("languages", me.getLanguages());
         // Expose the resolved security role (MANAGER / MEMBER) so the SPA can
         // gate admin access without duplicating the manager-email allowlist.
@@ -296,6 +299,12 @@ public class MyPortalController {
             me.setCustomUrl(u.customUrl().isBlank() ? null : u.customUrl());
         if (u.customUrlLabel() != null)
             me.setCustomUrlLabel(u.customUrlLabel().isBlank() ? null : u.customUrlLabel());
+        // Members own their own join date — unlike exchange country and
+        // undergraduate program, this is something only they can state.
+        if (u.joinedSemester() != null)
+            me.setJoinedSemester(u.joinedSemester().isBlank() ? null : u.joinedSemester());
+        if (u.joinedMonth() != null)
+            me.setJoinedMonth(u.joinedMonth().isBlank() ? null : u.joinedMonth());
         // Boxed Booleans: null means "not sent, leave alone", so a partial PATCH
         // of a single toggle can't reset the other five to their defaults.
         if (u.showEmail() != null)
@@ -415,6 +424,15 @@ public class MyPortalController {
             @Size(max = 255) String email,
             @Size(max = 500) String customUrl,
             @Size(max = 60) String customUrlLabel,
+            // Empty string clears the field; anything else must match exactly.
+            // These are enforced now that updateMe carries @Valid — before that
+            // every constraint on this record was decorative.
+            @Pattern(regexp = "^$|^[0-9]{4}\\.[12]$",
+                     message = "must be a semester like 2024.1")
+            String joinedSemester,
+            @Pattern(regexp = "^$|^[0-9]{4}-(0[1-9]|1[0-2])$",
+                     message = "must be a month like 2024-08")
+            String joinedMonth,
             Boolean showEmail,
             Boolean showContactEmail,
             Boolean showLinkedin,

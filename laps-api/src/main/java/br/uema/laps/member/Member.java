@@ -61,6 +61,22 @@ public class Member {
     @Column(name = "current_role_started_at")
     private LocalDate currentRoleStartedAt;
 
+    /**
+     * Academic period the member joined LAPS — 'YYYY.1' or 'YYYY.2'.
+     * Independent of {@link #currentRoleStartedAt}, which is rewritten on every
+     * promotion and so cannot answer "how long have they been here".
+     */
+    @Column(name = "joined_semester", length = 6)
+    private String joinedSemester;
+
+    /**
+     * Month the member joined LAPS, as ISO 'YYYY-MM'. Stored as text rather
+     * than a date on purpose: there is no day to record, and a DATE would
+     * invent one that the UI would then display.
+     */
+    @Column(name = "joined_month", length = 7)
+    private String joinedMonth;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MemberStatus status = MemberStatus.ACTIVE;
