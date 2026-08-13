@@ -116,17 +116,29 @@ public class SecurityConfig {
             // + X-Frame-Options, no CSP). Setting them here covers both deployments;
             // duplicated headers behind nginx are identical values, not a conflict.
             //
-            // CSP mirrors nginx.conf: 'unsafe-inline' is required for style-src
-            // because the SPA ships inline styles, and img-src allows data: (canvas
-            // previews in the photo editor) and https: (Cloudinary-hosted uploads).
+            // script-src needs 'unsafe-inline': TanStack Start ships the prerendered
+            // route/hydration payload as inline <script> blocks, so a bare
+            // "script-src 'self'" blocks hydration and the SPA renders a white page.
+            // (nginx.conf carried that stricter value, but nginx never serves this
+            // app in production, so the policy was never exercised there.)
+            //
+            // Being straight about the trade-off: with 'unsafe-inline' and no nonce,
+            // script-src stops almost nothing. The directives that still carry weight
+            // here are frame-ancestors (clickjacking), base-uri and form-action
+            // (injection-driven redirection), object-src, and connect-src. Tightening
+            // script-src properly means emitting a per-request nonce into the HTML,
+            // which needs a response filter — worth doing, but not while the site is
+            // down. img-src allows data: for the photo editor's canvas previews and
+            // https: for Cloudinary-hosted uploads.
             .headers(h -> h
                     .contentSecurityPolicy(csp -> csp.policyDirectives(
                             "default-src 'self'; "
-                            + "script-src 'self'; "
+                            + "script-src 'self' 'unsafe-inline'; "
                             + "style-src 'self' 'unsafe-inline'; "
                             + "img-src 'self' data: https:; "
                             + "font-src 'self' data:; "
                             + "connect-src 'self'; "
+                            + "object-src 'none'; "
                             + "frame-ancestors 'none'; "
                             + "base-uri 'self'; "
                             + "form-action 'self'"))
