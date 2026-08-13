@@ -90,11 +90,14 @@ public class Member {
     @Column(name = "custom_url_label", length = 60)
     private String customUrlLabel;
 
-    // Per-field public visibility. All default true so existing profiles keep
-    // publishing exactly what they publish today — hiding is an explicit opt-out.
-    // Enforced server-side in MemberController#toPublicView, never client-side.
+    // Per-field public visibility, enforced server-side in MemberPublicView.
+    //
+    // Links default visible — they are published on purpose. The login email
+    // defaults HIDDEN: it is a credential identifier, and members opt in to
+    // publishing it rather than opting out. Must match V19's column defaults,
+    // which govern rows this constructor never touches.
     @Column(name = "show_email", nullable = false)
-    private boolean showEmail = true;
+    private boolean showEmail = false;
     @Column(name = "show_contact_email", nullable = false)
     private boolean showContactEmail = true;
     @Column(name = "show_linkedin", nullable = false)

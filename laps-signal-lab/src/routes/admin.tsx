@@ -25,8 +25,6 @@ import {
   Replace,
   KeyRound,
   Copy,
-  Eye,
-  EyeOff,
   Mail,
   ShieldAlert,
   ShieldCheck,
@@ -101,7 +99,10 @@ function AdminPage() {
   }
 
   const membersQuery = useQuery({
-    queryKey: ["members"],
+    // Distinct from the public ["members"] key: the same endpoint returns an
+    // unredacted payload for MANAGER callers, so sharing one cache entry across
+    // auth states served the admin UI a redacted roster (blank emails).
+    queryKey: ["admin", "members"],
     queryFn: () => api.members(),
     staleTime: 30_000,
   });
@@ -334,6 +335,7 @@ function AdminPage() {
           onClose={() => setCreating(false)}
           onCreated={() => {
             queryClient.invalidateQueries({ queryKey: ["members"] });
+            queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
             queryClient.invalidateQueries({ queryKey: ["graph"] });
             queryClient.invalidateQueries({ queryKey: ["admin", "auth-status"] });
           }}
@@ -756,6 +758,7 @@ function MemberCard({
   // call but TanStack Router re-runs loaders on next navigation.
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["members"] });
+    queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
     queryClient.invalidateQueries({ queryKey: ["projects"] });
     queryClient.invalidateQueries({ queryKey: ["graph"] });
     queryClient.invalidateQueries({ queryKey: ["member", member.id] });
@@ -862,18 +865,17 @@ function CredentialsPanel({
   member: ApiMember;
   authStatus?: { mustChangePassword: boolean; emailVerified: boolean };
 }) {
-  const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState<"user" | "pwd" | "url" | null>(null);
 
   const portalUrl =
     typeof window !== "undefined" ? `${window.location.origin}/portal` : "/portal";
 
-  const tempPwdQuery = useQuery({
-    queryKey: ["admin", "temp-password", member.id],
-    queryFn: () => api.admin.tempPassword(member.id),
-    enabled: revealed && !!authStatus?.mustChangePassword,
-    retry: false,
-    staleTime: 30_000,
+  // Temp passwords are random and hashed, so there is nothing to "reveal" —
+  // the only way to produce a known credential is to mint a new one. This is a
+  // mutation, not a query: it changes the member's password every time it runs.
+  const resetMutation = useMutation({
+    mutationFn: () => api.admin.resetPassword(member.id),
+    onError: () => toast.error("Falha ao redefinir a senha. Tente novamente."),
   });
 
   async function copy(label: "user" | "pwd" | "url", value: string) {
@@ -943,55 +945,50 @@ function CredentialsPanel({
           </dd>
         </div>
 
-        {!rotated && (
-          <div className="mt-1 flex items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50/60 px-2 py-1.5">
+        <div className="mt-1 rounded-lg border border-amber-200 bg-amber-50/60 px-2 py-1.5">
+          <div className="flex items-center justify-between gap-2">
             <dt className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-amber-800">
               <KeyRound className="h-3 w-3" />
-              Senha temporária
+              Senha
             </dt>
             <dd className="flex items-center gap-1">
-              {revealed ? (
-                tempPwdQuery.isLoading ? (
-                  <span className="text-[10px] text-amber-800">…</span>
-                ) : tempPwdQuery.isError ? (
-                  <span className="text-[10px] text-red-700">Indisponível</span>
-                ) : (
-                  <>
-                    <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] text-amber-900">
-                      {tempPwdQuery.data?.tempPassword}
-                    </code>
-                    <CopyBtn
-                      copied={copied === "pwd"}
-                      onClick={() =>
-                        copy("pwd", tempPwdQuery.data?.tempPassword ?? "")
-                      }
-                    />
-                  </>
-                )
+              {resetMutation.data ? (
+                <>
+                  <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] text-amber-900">
+                    {resetMutation.data.tempPassword}
+                  </code>
+                  <CopyBtn
+                    copied={copied === "pwd"}
+                    onClick={() => copy("pwd", resetMutation.data!.tempPassword)}
+                  />
+                </>
               ) : (
-                <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] text-amber-900 tracking-widest">
-                  ••••••••
-                </code>
+                <button
+                  type="button"
+                  onClick={() => resetMutation.mutate()}
+                  disabled={resetMutation.isPending}
+                  className="rounded-md border border-amber-300 bg-white px-2 py-1 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 disabled:opacity-60"
+                >
+                  {resetMutation.isPending ? "Gerando…" : "Redefinir senha"}
+                </button>
               )}
-              <button
-                type="button"
-                onClick={() => setRevealed((v) => !v)}
-                aria-label={revealed ? "Hide password" : "Reveal password"}
-                className="rounded p-1 text-amber-800 hover:bg-amber-100"
-              >
-                {revealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-              </button>
             </dd>
           </div>
-        )}
+
+          {resetMutation.data && (
+            <p className="mt-1.5 text-[10px] leading-snug text-amber-900">
+              Copie agora — esta senha não pode ser recuperada depois. Se fechar
+              esta tela sem copiar, será preciso redefinir de novo.
+            </p>
+          )}
+        </div>
       </dl>
 
-      {!rotated && (
-        <p className="mt-1.5 text-[10px] leading-snug text-laps-navy/55">
-          Compartilhe usuário + senha pela mesma conversa privada. A senha deixa
-          de funcionar para listagem assim que o membro a rotacionar.
-        </p>
-      )}
+      <p className="mt-1.5 text-[10px] leading-snug text-laps-navy/55">
+        {rotated
+          ? "O membro já definiu a própria senha. Redefinir só é necessário se perder o acesso."
+          : "Compartilhe usuário + senha pela mesma conversa privada. O membro deve trocá-la no primeiro acesso."}
+      </p>
     </div>
   );
 }
@@ -1193,6 +1190,7 @@ function EditPanel({
       // page reflect this edit immediately.
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["members"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
       queryClient.invalidateQueries({ queryKey: ["graph"] });
       queryClient.invalidateQueries({ queryKey: ["member", member.id] });
       queryClient.invalidateQueries({ queryKey: ["member", member.slug] });
@@ -1972,7 +1970,10 @@ function ResearcherPicker({
   onChange: (next: { memberId: string; role: string }[]) => void;
 }) {
   const membersQuery = useQuery({
-    queryKey: ["members"],
+    // Distinct from the public ["members"] key: the same endpoint returns an
+    // unredacted payload for MANAGER callers, so sharing one cache entry across
+    // auth states served the admin UI a redacted roster (blank emails).
+    queryKey: ["admin", "members"],
     queryFn: () => api.members(),
     staleTime: 30_000,
   });

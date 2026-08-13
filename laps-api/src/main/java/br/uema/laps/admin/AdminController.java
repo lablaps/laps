@@ -112,18 +112,33 @@ public class AdminController {
                 .toList();
     }
 
-    @GetMapping("/members/{id}/temp-password")
-    public Map<String, Object> tempPassword(@PathVariable UUID id) {
+    /**
+     * Issues a NEW random temp password and returns it once.
+     *
+     * This replaces the old {@code GET /temp-password}, which recomputed the
+     * deterministic value on demand. Random passwords cannot be recovered, so
+     * "show me their password again" is no longer expressible — the only
+     * answer is to mint a fresh one, which is also what makes the old
+     * publicly-derivable scheme unreachable.
+     *
+     * POST rather than GET: this mutates the member's credential, so it must
+     * not be safe/idempotent, cacheable, or triggerable by link prefetch.
+     *
+     * Deliberately allowed even when the member has already rotated their own
+     * password — that is the account-recovery path for someone locked out.
+     * The action is audited.
+     */
+    @PostMapping("/members/{id}/reset-password")
+    @Transactional
+    public Map<String, Object> resetPassword(@PathVariable UUID id) {
         Member m = memberRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("member not found: " + id));
-        if (!m.isMustChangePassword()) {
-            throw new ResponseStatusException(
-                    org.springframework.http.HttpStatus.NOT_FOUND,
-                    "Member has already rotated their password");
-        }
+        String temp = memberPasswordService.forceReset(m);
+        // Record that a reset happened; the password itself is never logged.
+        auditService.record(AuthenticatedMember.id(), "RESET_MEMBER_PASSWORD", "Member", id.toString(), null);
         return Map.of(
                 "username", m.getSlug(),
-                "tempPassword", memberPasswordService.deterministicTempPassword(m.getSlug(), m.getId()));
+                "tempPassword", temp);
     }
 
     @PutMapping("/members/{id}")

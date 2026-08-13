@@ -80,6 +80,20 @@ services:
       - key: LAPS_RATE_AUTH_BLOCK_SECONDS
         value: "60"
 
-      # --- Media — uploads aren't persistent on free tier; treat as ephemeral. ---
+      # --- Media ---
+      # Cloudinary is what makes uploads survive a deploy. The free plan has no
+      # persistent disk, so without these three the local-disk fallback below is
+      # wiped on every redeploy/restart/spin-down while the database keeps its
+      # /uploads/<uuid>.jpg rows — i.e. permanently broken images on /team.
+      # Set all three in the Render dashboard.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      # Fallback path, used only when the Cloudinary vars above are unset.
+      # Ephemeral on the free tier — see above.
       - key: LAPS_MEDIA_DIR
         value: /app/uploads

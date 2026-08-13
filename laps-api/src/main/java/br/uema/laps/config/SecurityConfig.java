@@ -107,6 +107,35 @@ public class SecurityConfig {
                 .requestMatchers(antMatcher("/api/v1/me/**")).hasAnyAuthority("MEMBER", "MANAGER")
                 .anyRequest().authenticated()
             )
+            // Response hardening headers.
+            //
+            // nginx.conf already sets these, but nginx only exists in the
+            // docker-compose topology. Render runs the monolith Dockerfile where
+            // Spring Boot serves the SPA itself, so that config never executes and
+            // production was running with Spring Security's defaults alone (nosniff
+            // + X-Frame-Options, no CSP). Setting them here covers both deployments;
+            // duplicated headers behind nginx are identical values, not a conflict.
+            //
+            // CSP mirrors nginx.conf: 'unsafe-inline' is required for style-src
+            // because the SPA ships inline styles, and img-src allows data: (canvas
+            // previews in the photo editor) and https: (Cloudinary-hosted uploads).
+            .headers(h -> h
+                    .contentSecurityPolicy(csp -> csp.policyDirectives(
+                            "default-src 'self'; "
+                            + "script-src 'self'; "
+                            + "style-src 'self' 'unsafe-inline'; "
+                            + "img-src 'self' data: https:; "
+                            + "font-src 'self' data:; "
+                            + "connect-src 'self'; "
+                            + "frame-ancestors 'none'; "
+                            + "base-uri 'self'; "
+                            + "form-action 'self'"))
+                    .referrerPolicy(r -> r.policy(
+                            org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
+                                    .ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                    .permissionsPolicyHeader(p -> p.policy(
+                            "camera=(), microphone=(), geolocation=()"))
+            )
             // Custom 401 body — also doubles as a deploy verification marker. If after pushing
             // this commit you still see `"unauthenticated"` (no v3 suffix), Render is serving
             // a stale image and the deploy did not actually pick up your code.

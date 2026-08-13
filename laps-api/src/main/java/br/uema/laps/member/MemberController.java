@@ -36,18 +36,18 @@ public class MemberController {
     @GetMapping("/{slugOrId}")
     public ResponseEntity<MemberPublicView> get(@PathVariable String slugOrId) {
         boolean includeHidden = isManager();
-        Optional<Member> bySlug = memberRepository.findBySlug(slugOrId);
-        if (bySlug.isPresent()) {
-            return ResponseEntity.ok(MemberPublicView.of(bySlug.get(), includeHidden));
+        Optional<Member> found = memberRepository.findBySlug(slugOrId);
+        if (found.isEmpty()) {
+            try {
+                found = memberRepository.findById(UUID.fromString(slugOrId));
+            } catch (IllegalArgumentException notAUuid) {
+                return ResponseEntity.notFound().build();
+            }
         }
-        try {
-            UUID id = UUID.fromString(slugOrId);
-            return memberRepository.findById(id)
-                    .map(m -> ResponseEntity.ok(MemberPublicView.of(m, includeHidden)))
-                    .orElseGet(() -> ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException notAUuid) {
-            return ResponseEntity.notFound().build();
-        }
+        return found
+                .filter(m -> includeHidden || m.getDeletedAt() == null)
+                .map(m -> ResponseEntity.ok(MemberPublicView.of(m, includeHidden)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**
@@ -55,6 +55,11 @@ public class MemberController {
      * still populates the SecurityContext when a valid cookie is present, and
      * AuthenticatedMember.role() degrades to "MEMBER" when it isn't — so an
      * unauthenticated request can never take the unredacted branch.
+     *
+     * Also gates soft-deleted members in {@link #get}: the list endpoint has
+     * always filtered them via MemberSpecifications, but the by-slug lookup did
+     * not, so a removed member's profile stayed retrievable at a stable URL.
+     * Managers keep access so the admin UI can still work with the record.
      */
     private static boolean isManager() {
         return "MANAGER".equals(AuthenticatedMember.role());

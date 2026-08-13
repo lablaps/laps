@@ -12,6 +12,7 @@ import br.uema.laps.publication.PublicationRepository;
 import br.uema.laps.security.AuthenticatedMember;
 import br.uema.laps.translate.TranslationService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -112,8 +113,12 @@ public class MyPortalController {
 
     @PutMapping
     @Transactional
-    public Member updateMe(@RequestBody MyProfileUpdate update) {
+    public Member updateMe(@Valid @RequestBody MyProfileUpdate update) {
         Member me = loadMe();
+        // This is the endpoint the guard's own javadoc was written for, and it
+        // was the one place not calling it — an unrotated temp password could
+        // rewrite the whole profile, including the login email.
+        guardLockedUntilPasswordChanged(me);
         apply(me, update);
         return memberRepository.save(me);
     }
@@ -122,10 +127,16 @@ public class MyPortalController {
     @Transactional
     public ResponseEntity<Map<String, Object>> changePassword(@RequestBody ChangePasswordRequest req) {
         Member me = loadMe();
-        // Force-change after first login still works (the member has no other
-        // way out of the temp password), but voluntary changes after that
-        // require a verified email so a session-hijacker can't lock the real
-        // member out without controlling their inbox.
+        // Voluntary changes require a verified email so a session-hijacker
+        // can't lock the real member out without controlling their inbox.
+        //
+        // The first rotation off a temp password is exempt: the member has no
+        // other way out of it, and requiring verification first would deadlock
+        // an account whose email is not yet confirmed. This exemption is only
+        // safe because temp passwords are now random and delivered
+        // out-of-band — while they were derivable from the public roster, this
+        // branch was what let an attacker take permanent ownership of an
+        // account they had guessed into.
         if (!me.isMustChangePassword() && !me.isEmailVerified()) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,

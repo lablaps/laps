@@ -407,10 +407,18 @@ export const api = {
         }>
       >("/api/v1/admin/auth-status"),
 
-    /** Recompute the deterministic temp password for a member who hasn't rotated yet. */
-    tempPassword: (id: string) =>
+    /**
+     * Issues a NEW random temp password and returns it once.
+     *
+     * Replaces the old `tempPassword` GET, which recomputed a deterministic
+     * value. Random passwords are unrecoverable, so there is no "show it
+     * again" — calling this always changes the member's credential. POST for
+     * that reason: it must never be prefetched or cached.
+     */
+    resetPassword: (id: string) =>
       request<{ username: string; tempPassword: string }>(
-        `/api/v1/admin/members/${id}/temp-password`
+        `/api/v1/admin/members/${id}/reset-password`,
+        { method: "POST" }
       ),
 
     createInvite: (body: { role: MemberRole; validityDays: number }) =>

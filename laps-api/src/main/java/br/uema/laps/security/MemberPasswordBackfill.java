@@ -10,14 +10,24 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Provision the deterministic temp password on members who pre-date the
- * per-member auth migration. V11 only flips `must_change_password` for rows
- * that already have a `password_hash`; the seed members from V4 do not, so
- * without this runner none of them could log in.
+ * Reports accounts that cannot log in because they have no password hash.
  *
- * Re-running is safe: `MemberPasswordService.provisionInitial` no-ops when a
- * hash is already present. Counts are logged so a coordinator can see at
- * startup how many accounts were just bootstrapped.
+ * <h2>Why this no longer provisions anything</h2>
+ * This runner used to stamp a temp password on every password-less member at
+ * startup. That was only viable while passwords were deterministic — the value
+ * could be recomputed later and handed out. It was also precisely what made
+ * the whole seeded roster takeable: every member got a credential derived from
+ * their public slug and id.
+ *
+ * Passwords are random now and shown exactly once, so a startup runner has
+ * nowhere to put the plaintext. Writing it to the log would be worse than the
+ * problem it solves. Instead we count the affected accounts and let a
+ * coordinator issue credentials deliberately via
+ * {@code POST /api/v1/admin/members/{id}/reset-password}, which returns the
+ * new password to the admin in the response.
+ *
+ * A member with no hash simply cannot authenticate — {@code AuthController}
+ * rejects a null hash — so leaving them unprovisioned fails closed.
  */
 @Configuration
 public class MemberPasswordBackfill {
@@ -25,26 +35,24 @@ public class MemberPasswordBackfill {
     private static final Logger log = LoggerFactory.getLogger(MemberPasswordBackfill.class);
 
     @Bean
-    public ApplicationRunner provisionPasswordsAtStartup(
-            MemberRepository memberRepository,
-            MemberPasswordService memberPasswordService
-    ) {
-        return args -> backfill(memberRepository, memberPasswordService);
+    public ApplicationRunner reportMembersWithoutPasswordAtStartup(MemberRepository memberRepository) {
+        return args -> report(memberRepository);
     }
 
-    @Transactional
-    void backfill(MemberRepository memberRepository, MemberPasswordService memberPasswordService) {
-        int provisioned = 0;
-        for (Member m : memberRepository.findAll()) {
-            String hash = m.getPasswordHash();
-            if (hash != null && !hash.isBlank()) continue;
-            memberPasswordService.provisionInitial(m);
-            provisioned++;
-        }
-        if (provisioned > 0) {
-            log.info("Provisioned deterministic temp passwords for {} member(s) without a hash", provisioned);
+    @Transactional(readOnly = true)
+    void report(MemberRepository memberRepository) {
+        long pending = memberRepository.findAll().stream()
+                .filter(m -> m.getDeletedAt() == null)
+                .map(Member::getPasswordHash)
+                .filter(hash -> hash == null || hash.isBlank())
+                .count();
+
+        if (pending > 0) {
+            log.warn("{} member(s) have no password and cannot log in. "
+                    + "Issue credentials from the admin UI (Reset password) — "
+                    + "temp passwords are random and displayed only once.", pending);
         } else {
-            log.debug("All members already have a password_hash — no backfill needed");
+            log.debug("All active members have a password hash.");
         }
     }
 }

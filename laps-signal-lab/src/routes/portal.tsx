@@ -1147,9 +1147,9 @@ function contactFormFromMe(me: MyProfile) {
     githubUrl: me.githubUrl ?? "",
     customUrl: me.customUrl ?? "",
     customUrlLabel: me.customUrlLabel ?? "",
-    // `?? true` keeps a profile saved before this feature shipped rendering as
-    // visible rather than flickering to "hidden" while /me is still loading.
-    showEmail: me.showEmail ?? true,
+    // Fallbacks mirror the column defaults in V19: links are published by
+    // default, the login email is not.
+    showEmail: me.showEmail ?? false,
     showContactEmail: me.showContactEmail ?? true,
     showLinkedin: me.showLinkedin ?? true,
     showLattes: me.showLattes ?? true,
