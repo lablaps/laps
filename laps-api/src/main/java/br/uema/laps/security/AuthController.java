@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -46,23 +47,57 @@ public class AuthController {
     }
 
     /**
-     * Resolve the client IP, honoring X-Forwarded-For when the app sits
-     * behind nginx. Limited to the *first* hop in the header to avoid trust
-     * issues if a downstream client forges its own X-Forwarded-For.
+     * Resolve the client IP, honoring X-Forwarded-For when the app sits behind
+     * a proxy.
+     *
+     * We take the *last* hop, not the first. nginx builds this header with
+     * `$proxy_add_x_forwarded_for` (nginx.conf), which APPENDS the real peer
+     * address to whatever the client already sent — so the trailing entry is
+     * the only one our own infrastructure wrote, and every earlier entry is
+     * attacker-controlled. Reading the first entry (as this did previously)
+     * let a single client mint a fresh rate-limit bucket per request simply by
+     * varying the header, which defeated the limiter entirely.
+     *
+     * If a second proxy is ever put in front of nginx, this must become
+     * "n-th from the end" or move to Spring's ForwardedHeaderFilter with a
+     * trusted-proxy list.
      */
     private static String clientIp(HttpServletRequest request) {
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isBlank()) {
-            int comma = xff.indexOf(',');
-            return (comma > 0 ? xff.substring(0, comma) : xff).trim();
+            int comma = xff.lastIndexOf(',');
+            String last = (comma >= 0 ? xff.substring(comma + 1) : xff).trim();
+            if (!last.isEmpty()) return last;
         }
         return request.getRemoteAddr();
     }
 
     private void enforceRateLimit(HttpServletRequest request) {
-        String ip = clientIp(request);
-        if (!rateLimiter.allow(ip)) {
-            long retry = rateLimiter.retryAfterSeconds(ip);
+        enforceRateLimit(request, null);
+    }
+
+    /**
+     * Rate-limits on two independent keys.
+     *
+     * Per-IP alone cannot see a spray: one attempt against each of N accounts
+     * from one address stays under the threshold forever. The per-identifier
+     * bucket bounds attempts against a single account no matter how many
+     * addresses they arrive from — which is the shape of attack that matters
+     * once credentials are guessable.
+     *
+     * The identifier is lower-cased so "Joao-Silva" and "joao-silva" share a
+     * bucket, and prefixed so it can never collide with an IP key.
+     */
+    private void enforceRateLimit(HttpServletRequest request, String identifier) {
+        checkBucket(clientIp(request));
+        if (identifier != null && !identifier.isBlank()) {
+            checkBucket("id:" + identifier.trim().toLowerCase(Locale.ROOT));
+        }
+    }
+
+    private void checkBucket(String key) {
+        if (!rateLimiter.allow(key)) {
+            long retry = rateLimiter.retryAfterSeconds(key);
             ResponseStatusException tooMany = new ResponseStatusException(
                     HttpStatus.TOO_MANY_REQUESTS, "Too many attempts. Try again later.");
             tooMany.getHeaders().add("Retry-After", String.valueOf(retry));
@@ -81,8 +116,11 @@ public class AuthController {
             @RequestBody LoginRequest req,
             HttpServletRequest request
     ) {
-        enforceRateLimit(request);
+        // Resolve the identifier before limiting so the per-account bucket can
+        // be keyed on it — otherwise a spray across many accounts from one IP
+        // stays under the per-IP threshold indefinitely.
         String identifier = req.username() != null ? req.username() : req.email();
+        enforceRateLimit(request, identifier);
         if (identifier == null || identifier.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
@@ -138,8 +176,8 @@ public class AuthController {
             @RequestBody SetPasswordRequest req,
             HttpServletRequest request
     ) {
-        enforceRateLimit(request);
         String identifier = req.username() != null ? req.username() : req.email();
+        enforceRateLimit(request, identifier);
         if (identifier == null || identifier.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username or email required");
         }

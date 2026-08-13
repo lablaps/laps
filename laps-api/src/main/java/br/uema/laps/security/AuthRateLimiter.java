@@ -1,6 +1,7 @@
 package br.uema.laps.security;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -9,6 +10,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Per-IP sliding-window rate limiter for the /auth endpoints.
@@ -27,13 +29,22 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class AuthRateLimiter {
 
+    /**
+     * Hard ceiling on distinct tracked keys. Without it a caller who varies the
+     * key on every request (a rotating proxy pool, or a spoofed header) grows
+     * these maps without bound until the heap gives out. When the ceiling is
+     * hit we sweep expired entries; if that frees nothing the map is genuinely
+     * saturated and we fail closed rather than keep allocating.
+     */
+    private static final int MAX_TRACKED_KEYS = 50_000;
+
     private final int maxAttempts;
     private final Duration window;
     private final Duration blockFor;
 
-    // IP → timestamps of recent attempts (oldest first).
+    // key → timestamps of recent attempts (oldest first).
     private final Map<String, Deque<Instant>> attempts = new ConcurrentHashMap<>();
-    // IP → timestamp at which the block expires.
+    // key → timestamp at which the block expires.
     private final Map<String, Instant> blockedUntil = new ConcurrentHashMap<>();
 
     public AuthRateLimiter(
@@ -61,6 +72,14 @@ public class AuthRateLimiter {
             blockedUntil.remove(key);
         }
 
+        if (attempts.size() >= MAX_TRACKED_KEYS && !attempts.containsKey(key)) {
+            sweep(now);
+            if (attempts.size() >= MAX_TRACKED_KEYS) {
+                // Saturated: refuse rather than admit an unbounded key space.
+                return false;
+            }
+        }
+
         Deque<Instant> recent = attempts.computeIfAbsent(key, k -> new ArrayDeque<>());
         synchronized (recent) {
             Instant cutoff = now.minus(window);
@@ -81,5 +100,29 @@ public class AuthRateLimiter {
         if (until == null) return blockFor.getSeconds();
         long s = Duration.between(Instant.now(), until).getSeconds();
         return Math.max(1, s);
+    }
+
+    /**
+     * Drops keys whose window has fully elapsed and blocks that have expired.
+     * Called on a scheduled tick and opportunistically when the map saturates —
+     * previously nothing ever removed entries, so the maps only grew.
+     */
+    @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.MINUTES)
+    public void sweep() {
+        sweep(Instant.now());
+    }
+
+    private void sweep(Instant now) {
+        Instant cutoff = now.minus(window);
+        attempts.entrySet().removeIf(e -> {
+            Deque<Instant> d = e.getValue();
+            synchronized (d) {
+                while (!d.isEmpty() && d.peekFirst().isBefore(cutoff)) {
+                    d.pollFirst();
+                }
+                return d.isEmpty();
+            }
+        });
+        blockedUntil.entrySet().removeIf(e -> !e.getValue().isAfter(now));
     }
 }
