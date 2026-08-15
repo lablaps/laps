@@ -128,14 +128,19 @@ public class SecurityConfig {
             // (injection-driven redirection), object-src, and connect-src. Tightening
             // script-src properly means emitting a per-request nonce into the HTML,
             // which needs a response filter — worth doing, but not while the site is
-            // down. img-src allows data: for the photo editor's canvas previews and
-            // https: for Cloudinary-hosted uploads.
+            // down. img-src allows data: for the photo editor's canvas previews,
+            // blob: because that editor loads the file the member picked via
+            // URL.createObjectURL (without it the crop dialog renders an empty
+            // frame and photo upload is broken outright), and https: for
+            // Cloudinary-hosted uploads. blob: grants no capability that data:
+            // does not already — both are same-origin payloads minted by the
+            // page itself, not a remote fetch.
             .headers(h -> h
                     .contentSecurityPolicy(csp -> csp.policyDirectives(
                             "default-src 'self'; "
                             + "script-src 'self' 'unsafe-inline'; "
                             + "style-src 'self' 'unsafe-inline'; "
-                            + "img-src 'self' data: https:; "
+                            + "img-src 'self' data: blob: https:; "
                             + "font-src 'self' data:; "
                             + "connect-src 'self'; "
                             + "object-src 'none'; "

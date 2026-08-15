@@ -10,6 +10,7 @@ import br.uema.laps.security.LapsJwtService;
 import br.uema.laps.security.ManagerAllowlist;
 import br.uema.laps.security.ProofOfWorkService;
 import br.uema.laps.security.RateLimitGuard;
+import br.uema.laps.security.TokenHashing;
 import br.uema.laps.translate.TranslationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -73,7 +74,10 @@ public class InviteController {
     @Transactional
     public Map<String, Object> createInvite(@Valid @RequestBody CreateInviteRequest req) {
         InviteToken invite = new InviteToken();
-        invite.setToken(UUID.randomUUID());
+        // The plaintext is generated here, handed back once in the response, and
+        // never stored — only its digest goes to the database.
+        String plaintextToken = UUID.randomUUID().toString();
+        invite.setTokenHash(TokenHashing.hash(plaintextToken));
         invite.setRole(req.role());
         invite.setExpiresAt(Instant.now().plus(req.validityDays(), ChronoUnit.DAYS));
         invite.setCreatedBy(AuthenticatedMember.id());
@@ -81,7 +85,7 @@ public class InviteController {
 
         Map<String, Object> body = new HashMap<>();
         body.put("id", saved.getId());
-        body.put("token", saved.getToken());
+        body.put("token", plaintextToken);
         body.put("role", saved.getRole());
         body.put("expiresAt", saved.getExpiresAt());
         return body;
@@ -197,13 +201,15 @@ public class InviteController {
     // ───── Helpers ─────
 
     private InviteToken resolveAndCheck(String raw) {
+        // Parse first so only well-formed UUIDs are hashed, and normalise to the
+        // canonical lower-case form the digest was taken over.
         UUID uuid;
         try {
             uuid = UUID.fromString(raw);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid invite token");
         }
-        InviteToken invite = inviteTokenRepository.findByToken(uuid)
+        InviteToken invite = inviteTokenRepository.findByTokenHash(TokenHashing.hash(uuid.toString()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invite not found"));
         if (invite.getUsedAt() != null) {
             throw new ResponseStatusException(HttpStatus.GONE, "Invite already used");

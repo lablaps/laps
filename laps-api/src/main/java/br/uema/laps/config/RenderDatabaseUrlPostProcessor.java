@@ -33,7 +33,17 @@ public class RenderDatabaseUrlPostProcessor implements EnvironmentPostProcessor 
             int port = uri.getPort() > 0 ? uri.getPort() : 5432;
             String db = uri.getPath().substring(1); // strip leading /
 
-            String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + db + "?sslmode=require";
+            // DB_SSLMODE was ignored here: the mode was hardcoded to `require`,
+            // so render.yaml's DB_SSLMODE setting did nothing and there was no
+            // way to move this deployment to `verify-full` at all. `require`
+            // encrypts but performs no certificate validation, which stops
+            // passive interception and not an active man-in-the-middle.
+            //
+            // Default stays `require` so behaviour is unchanged for anyone who
+            // has not set it; raising it to verify-full additionally needs a CA
+            // bundle on the client, which is why it is not the default here.
+            String sslMode = env.getProperty("DB_SSLMODE", "require");
+            String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + db + "?sslmode=" + sslMode;
 
             Map<String, Object> props = new HashMap<>();
             props.put("spring.datasource.url", jdbcUrl);

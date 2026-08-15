@@ -46,9 +46,10 @@ public class Member {
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 
+    /** SHA-256 of the verification token; the plaintext is shown to the member once. */
     @JsonIgnore
-    @Column(name = "email_verification_token")
-    private String emailVerificationToken;
+    @Column(name = "email_verification_token_hash", length = 64)
+    private String emailVerificationTokenHash;
 
     @JsonIgnore
     @Column(name = "email_verification_token_expires_at")

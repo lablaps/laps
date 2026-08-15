@@ -6,11 +6,13 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.Map;
@@ -83,6 +85,47 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
                 .body(body("rate_limited", "Too many attempts. Try again later."));
+    }
+
+    /**
+     * Renders {@link ResponseStatusException} directly instead of letting it
+     * reach the container.
+     *
+     * <p>Without this, Spring's default resolver calls {@code sendError}, which
+     * forwards to {@code /error} as an ERROR dispatch. That forward is matched
+     * by the main security chain, where {@code anyRequest().authenticated()}
+     * rejects it — so every one of these exceptions arrived at the client as
+     * {@code 401 unauthenticated_v3} regardless of what it actually was. A
+     * password that was too short, an expired invite, an unsolved bot
+     * challenge: all reported as "Full authentication is required".
+     *
+     * <p>It went unnoticed because the most common case, {@code 401 Invalid
+     * credentials}, happens to already be a 401 — the status was right by
+     * coincidence and the message was wrong.
+     *
+     * <p>Handling it here keeps the intended status, preserves any headers the
+     * thrower attached, and stays inside the DispatcherServlet so no ERROR
+     * dispatch happens at all. Reasons are developer-authored constants (or an
+     * echo of the caller's own input), never another user's data.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> statusException(ResponseStatusException ex) {
+        String reason = ex.getReason() != null ? ex.getReason() : "Request failed";
+        return ResponseEntity.status(ex.getStatusCode())
+                .headers(ex.getHeaders())
+                .body(body(codeFor(ex.getStatusCode()), reason));
+    }
+
+    private static String codeFor(HttpStatusCode status) {
+        if (status.isSameCodeAs(HttpStatus.UNAUTHORIZED)) return "unauthenticated";
+        if (status.isSameCodeAs(HttpStatus.FORBIDDEN)) return "forbidden";
+        if (status.isSameCodeAs(HttpStatus.NOT_FOUND)) return "not_found";
+        if (status.isSameCodeAs(HttpStatus.CONFLICT)) return "conflict";
+        if (status.isSameCodeAs(HttpStatus.GONE)) return "gone";
+        if (status.isSameCodeAs(HttpStatus.TOO_MANY_REQUESTS)) return "rate_limited";
+        if (status.isSameCodeAs(HttpStatus.PAYLOAD_TOO_LARGE)) return "file_too_large";
+        if (status.isSameCodeAs(HttpStatus.UNSUPPORTED_MEDIA_TYPE)) return "unsupported_media_type";
+        return status.is4xxClientError() ? "bad_request" : "error";
     }
 
     private static Map<String, Object> body(String code, String message) {

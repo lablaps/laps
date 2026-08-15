@@ -21,9 +21,14 @@ public class InviteToken {
     @GeneratedValue
     private UUID id;
 
+    /**
+     * SHA-256 of the invite token, never the token itself — see V24 and
+     * {@link br.uema.laps.security.TokenHashing}. The plaintext exists only in
+     * the response to the manager who created the invite.
+     */
     @JsonIgnore
-    @Column(nullable = false, unique = true)
-    private UUID token;
+    @Column(name = "token_hash", nullable = false, unique = true, length = 64)
+    private String tokenHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

@@ -2,15 +2,15 @@ package br.uema.laps.portal;
 
 import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
+import br.uema.laps.member.MemberRole;
 import br.uema.laps.project.MemberProject;
 import br.uema.laps.project.MemberProjectRepository;
 import br.uema.laps.project.Project;
 import br.uema.laps.project.ProjectRepository;
 import br.uema.laps.project.ProjectStatus;
-import br.uema.laps.publication.Publication;
-import br.uema.laps.publication.PublicationRepository;
 import br.uema.laps.security.AuthenticatedMember;
 import br.uema.laps.security.RateLimitGuard;
+import br.uema.laps.security.TokenHashing;
 import br.uema.laps.translate.TranslationService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +35,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -43,8 +44,12 @@ public class MyPortalController {
 
     private static final SecureRandom RNG = new SecureRandom();
 
+    /** The only role a member may obtain for themselves. Anything above it is a manager action. */
+    private static final String SELF_SERVICE_ROLE = "RESEARCHER";
+
+    private static final int MAX_PARTICIPANTS = 50;
+
     private final MemberRepository memberRepository;
-    private final PublicationRepository publicationRepository;
     private final MemberProjectRepository memberProjectRepository;
     private final ProjectRepository projectRepository;
     private final PasswordEncoder passwordEncoder;
@@ -53,14 +58,12 @@ public class MyPortalController {
 
     public MyPortalController(
             MemberRepository memberRepository,
-            PublicationRepository publicationRepository,
             MemberProjectRepository memberProjectRepository,
             ProjectRepository projectRepository,
             PasswordEncoder passwordEncoder,
             TranslationService translationService,
             RateLimitGuard rateLimitGuard) {
         this.memberRepository = memberRepository;
-        this.publicationRepository = publicationRepository;
         this.memberProjectRepository = memberProjectRepository;
         this.projectRepository = projectRepository;
         this.passwordEncoder = passwordEncoder;
@@ -189,7 +192,9 @@ public class MyPortalController {
             return ResponseEntity.ok(Map.of("message", "Email already verified", "alreadyVerified", true));
         }
         String token = randomToken();
-        me.setEmailVerificationToken(token);
+        // Only the digest is persisted: a database read must not yield a token
+        // that can be presented to verify someone else's address.
+        me.setEmailVerificationTokenHash(TokenHashing.hash(token));
         me.setEmailVerificationTokenExpiresAt(Instant.now().plus(24, ChronoUnit.HOURS));
         memberRepository.save(me);
         // The token is sensitive — only return it to the requester (the member
@@ -207,8 +212,8 @@ public class MyPortalController {
         if (me.isEmailVerified()) {
             return ResponseEntity.ok(Map.of("message", "Already verified"));
         }
-        if (me.getEmailVerificationToken() == null
-                || !me.getEmailVerificationToken().equals(req.token())) {
+        if (me.getEmailVerificationTokenHash() == null
+                || !TokenHashing.matches(req.token(), me.getEmailVerificationTokenHash())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid verification token");
         }
         if (me.getEmailVerificationTokenExpiresAt() == null
@@ -216,7 +221,7 @@ public class MyPortalController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification token expired");
         }
         me.setEmailVerified(true);
-        me.setEmailVerificationToken(null);
+        me.setEmailVerificationTokenHash(null);
         me.setEmailVerificationTokenExpiresAt(null);
         memberRepository.save(me);
         return ResponseEntity.ok(Map.of("message", "Email verified"));
@@ -232,32 +237,59 @@ public class MyPortalController {
         return memberProjectRepository.findByMemberId(AuthenticatedMember.id());
     }
 
+    /**
+     * Replaces the caller's own project links.
+     *
+     * <p>The role on each link is decided by the server, never by the request.
+     * `role` was previously stored verbatim from the body, and the column is a
+     * free-text VARCHAR with no CHECK — so a member could PUT
+     * {@code {"projectId": <any project>, "role": "LEAD"}} and publish
+     * themselves as lead of a project they had no connection to. Both halves
+     * mattered: any project id was accepted, and any role string was accepted.
+     *
+     * <p>Existing links keep the role already stored (so a member who was made
+     * CO_LEAD by a manager, or who created the project, is not demoted the next
+     * time they tick a checkbox), and newly added links are always
+     * {@code RESEARCHER}. Elevating someone remains a manager action.
+     */
     @PutMapping("/projects")
     @Transactional
     public ResponseEntity<Void> updateMyProjects(@RequestBody List<MyProjectLink> links) {
         Member me = loadMe();
         guardLockedUntilPasswordChanged(me);
         UUID myId = me.getId();
+
+        Map<UUID, String> rolesBefore = memberProjectRepository.findByMemberId(myId).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        MemberProject::getProjectId, MemberProject::getRole, (a, b) -> a));
+
         memberProjectRepository.deleteByMemberId(myId);
         if (links != null) {
+            Set<UUID> seen = new java.util.HashSet<>();
             for (MyProjectLink l : links) {
-                memberProjectRepository.save(new MemberProject(l.projectId(), myId, l.role()));
+                if (l == null || l.projectId() == null || !seen.add(l.projectId())) continue;
+                if (!projectRepository.existsById(l.projectId())) {
+                    throw new EntityNotFoundException("project not found: " + l.projectId());
+                }
+                memberProjectRepository.save(new MemberProject(
+                        l.projectId(), myId, rolesBefore.getOrDefault(l.projectId(), SELF_SERVICE_ROLE)));
             }
         }
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/publications/{publicationId}/claim")
-    @Transactional
-    public ResponseEntity<Void> claimPublication(@PathVariable UUID publicationId) {
-        Member me = loadMe();
-        guardLockedUntilPasswordChanged(me);
-        Publication pub = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new EntityNotFoundException("publication not found: " + publicationId));
-        pub.getAuthors().add(me);
-        publicationRepository.save(pub);
-        return ResponseEntity.noContent().build();
-    }
+    // POST /publications/{id}/claim was removed here.
+    //
+    // It let any authenticated member add themselves as an author of ANY
+    // publication, with no ownership test and no approval step — i.e. falsify
+    // the lab's public research record, which is then republished through
+    // /api/v1/publications and the author filter. Nothing in the SPA called it,
+    // so removing it costs no functionality.
+    //
+    // Reinstating self-service authorship needs an approval workflow (member
+    // requests, manager confirms) rather than a direct write; alternatively an
+    // admin-side "set authors on this publication" endpoint, which is the
+    // capability that is actually missing today.
 
     private Member loadMe() {
         UUID myId = AuthenticatedMember.id();
@@ -347,7 +379,7 @@ public class MyPortalController {
         if (u.email() != null && !u.email().equals(me.getEmail())) {
             me.setEmail(u.email());
             me.setEmailVerified(false);
-            me.setEmailVerificationToken(null);
+            me.setEmailVerificationTokenHash(null);
             me.setEmailVerificationTokenExpiresAt(null);
         }
     }
@@ -366,7 +398,7 @@ public class MyPortalController {
 
         Project p = new Project();
         p.setSlug(toSlug(req.titlePt()) + "-" + UUID.randomUUID().toString().substring(0, 8));
-        p.setStatus(req.status() != null ? ProjectStatus.valueOf(req.status()) : ProjectStatus.ACTIVE);
+        p.setStatus(parseStatus(req.status()));
         p.setTitlePt(req.titlePt());
         p.setDescriptionPt(req.descriptionPt());
         if (req.titlePt() != null && !req.titlePt().isBlank()) {
@@ -386,8 +418,18 @@ public class MyPortalController {
 
         Project saved = projectRepository.save(p);
 
-        // Advisor → LEAD
+        // Advisor → LEAD. The javadoc always claimed "any HEAD/COORDINATOR" but
+        // nothing checked it, so any member id could be installed as lead of a
+        // project someone else created.
         if (req.advisorId() != null) {
+            Member advisor = memberRepository.findById(req.advisorId())
+                    .orElseThrow(() -> new EntityNotFoundException("advisor not found: " + req.advisorId()));
+            if (advisor.getDeletedAt() != null
+                    || (advisor.getCurrentRole() != MemberRole.HEAD
+                        && advisor.getCurrentRole() != MemberRole.COORDINATOR)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Advisor must be a lab head or coordinator");
+            }
             memberProjectRepository.save(new MemberProject(saved.getId(), req.advisorId(), "LEAD"));
         }
 
@@ -395,16 +437,39 @@ public class MyPortalController {
         String myRole = req.advisorId() != null ? "CO_LEAD" : "RESEARCHER";
         memberProjectRepository.save(new MemberProject(saved.getId(), me.getId(), myRole));
 
-        // Additional participants → RESEARCHER (skip creator and advisor)
+        // Additional participants → RESEARCHER (skip creator and advisor).
+        // Every id must resolve to a live member: unchecked, this wrote rows
+        // referencing arbitrary UUIDs and was bounded only by request size.
         if (req.participantIds() != null) {
+            if (req.participantIds().size() > MAX_PARTICIPANTS) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Too many participants (max " + MAX_PARTICIPANTS + ")");
+            }
+            Set<UUID> added = new java.util.HashSet<>();
             for (UUID pid : req.participantIds()) {
-                if (!pid.equals(me.getId()) && !pid.equals(req.advisorId())) {
-                    memberProjectRepository.save(new MemberProject(saved.getId(), pid, "RESEARCHER"));
+                if (pid == null || pid.equals(me.getId()) || pid.equals(req.advisorId())) continue;
+                if (!added.add(pid)) continue;
+                Member participant = memberRepository.findById(pid)
+                        .orElseThrow(() -> new EntityNotFoundException("member not found: " + pid));
+                if (participant.getDeletedAt() != null) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST, "Cannot add a removed member to a project");
                 }
+                memberProjectRepository.save(new MemberProject(saved.getId(), pid, SELF_SERVICE_ROLE));
             }
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    /** Unknown status is a 400, not the 500 that ProjectStatus.valueOf produced. */
+    private static ProjectStatus parseStatus(String raw) {
+        if (raw == null || raw.isBlank()) return ProjectStatus.ACTIVE;
+        try {
+            return ProjectStatus.valueOf(raw);
+        } catch (IllegalArgumentException unknown) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown project status: " + raw);
+        }
     }
 
     private static String randomToken() {
