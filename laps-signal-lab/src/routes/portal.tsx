@@ -36,6 +36,7 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import PortalGuide, { type GuideStepId } from "@/components/PortalGuide";
 import { useLang } from "@/hooks/use-lang";
 import { type Lang } from "@/lib/i18n";
 import { api, ApiError, resolveMediaUrl, type ApiMember, type ApiProject, type ApiResearchArea, type MyProfile } from "@/lib/api";
@@ -205,6 +206,22 @@ const BANNER_PRESETS = [
   { label: "Teal", value: "#0D9488" },
 ];
 
+/**
+ * Turns a failed profile write into something the member can act on.
+ *
+ * Every editor on this page mapped all errors to "Falha ao salvar. Tente
+ * novamente." — which, for the one failure new members reliably hit, is advice
+ * that loops forever: the write guard refuses profile edits for as long as the
+ * temporary password is live, so retrying can only fail again. The API reports
+ * it in English, so match on it and say what actually unblocks them.
+ */
+function saveErrorMessage(err: unknown, fallback: string) {
+  if (err instanceof ApiError && err.status === 403 && /temporary password/i.test(err.message)) {
+    return "Troque a senha temporária antes de editar o perfil — a seção «Trocar senha» fica no fim da página e não exige email.";
+  }
+  return fallback;
+}
+
 // ───── Main page ─────
 
 function PortalPage() {
@@ -288,6 +305,17 @@ function PortalPage() {
     ? new Date(me.currentRoleStartedAt).toLocaleDateString("pt-BR", { year: "numeric", month: "short" })
     : null;
 
+  // Which onboarding step the member is actually blocked on. Ordered to match
+  // what the API allows — the temporary password has to go first, because every
+  // profile write is refused until it does.
+  const guideStep: GuideStepId | null = auth.mustChangePassword
+    ? "password"
+    : !me.email
+      ? "email"
+      : !auth.emailVerified
+        ? "verify"
+        : null;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-laps-ghost/30 via-white to-white">
       {/* Top bar */}
@@ -346,9 +374,15 @@ function PortalPage() {
           {/* SIDEBAR */}
           <aside className="flex flex-col gap-6">
             <FullNameEditor me={me} />
-            <ContactEditor me={me} />
-            {auth.mustChangePassword && <FirstLoginBanner emailVerified={auth.emailVerified} />}
-            {!auth.emailVerified && <EmailVerificationBanner me={me} />}
+            <div data-guide="email" className="scroll-mt-24">
+              <ContactEditor me={me} />
+            </div>
+            {auth.mustChangePassword && <FirstLoginBanner hasEmail={!!me.email} />}
+            {!auth.emailVerified && (
+              <div data-guide="verify" className="scroll-mt-24">
+                <EmailVerificationBanner me={me} />
+              </div>
+            )}
 
             <AboutEditor me={me} />
             <ResearchAreasEditor
@@ -373,12 +407,19 @@ function PortalPage() {
               myProjectLinks={myProjectLinks}
               allProjects={allProjects}
             />
-            <PasswordChangeCard emailVerified={auth.emailVerified} />
+            <PasswordChangeCard
+              emailVerified={auth.emailVerified}
+              mustChangePassword={auth.mustChangePassword}
+            />
           </main>
         </div>
 
         <div className="pb-16" />
       </div>
+
+      {/* Walks a new member through password → email → verificação, in the only
+          order the API accepts. Renders nothing once all three are done. */}
+      <PortalGuide step={guideStep} />
     </div>
   );
 }
@@ -479,7 +520,7 @@ function FullNameEditor({ me }: { me: MyProfile }) {
       setEditing(false);
       toast.success(t.portal.saved);
     },
-    onError: () => toast.error(t.portal.errorSave),
+    onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
   });
 
   return (
@@ -1187,7 +1228,7 @@ function ContactEditor({ me }: { me: MyProfile }) {
       setEditing(false);
       toast.success(t.portal.saved);
     },
-    onError: () => toast.error(t.portal.errorSave),
+    onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
   });
 
   function patch<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -1197,12 +1238,18 @@ function ContactEditor({ me }: { me: MyProfile }) {
   // Highlight the card when email is missing — draws attention to the required step
   const needsEmail = !me.email;
 
+  // PUT /me is refused for the whole duration of the temporary password, so
+  // offering the form here only led members into filling it in and being told,
+  // in English, that they were forbidden. Show the reason and the way out up
+  // front instead of letting the API say no.
+  const lockedByTempPassword = me.mustChangePassword;
+
   return (
     <PortfolioCard
       title="CONTATO & LINKS"
       icon={Mail}
       action={
-        !editing ? (
+        !editing && !lockedByTempPassword ? (
           <button
             type="button"
             onClick={() => {
@@ -1213,10 +1260,24 @@ function ContactEditor({ me }: { me: MyProfile }) {
           >
             <Edit2 className="h-3 w-3" /> Editar
           </button>
+        ) : !editing ? (
+          <span className="inline-flex items-center gap-1 rounded-md bg-laps-ghost/60 px-2 py-1 text-[10px] font-semibold text-laps-navy/45">
+            <Lock className="h-3 w-3" /> Bloqueado
+          </span>
         ) : null
       }
     >
-      {needsEmail && !editing && (
+      {lockedByTempPassword && !editing && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-laps-blue/25 bg-laps-ghost/50 px-3 py-2">
+          <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-laps-blue" />
+          <p className="text-[11px] leading-relaxed font-medium text-laps-navy/75">
+            Troque a senha temporária primeiro — a edição do perfil é liberada logo em seguida. A
+            seção <em>Trocar senha</em> fica no fim da página e não exige email.
+          </p>
+        </div>
+      )}
+
+      {needsEmail && !editing && !lockedByTempPassword && (
         <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
           <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-600" />
           <p className="text-[11px] font-medium text-amber-800">
@@ -1389,7 +1450,7 @@ function AboutEditor({ me }: { me: MyProfile }) {
       setEditing(false);
       toast.success(t.portal.saved);
     },
-    onError: () => toast.error(t.portal.errorSave),
+    onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
   });
 
   const currentDef = BIO_LANGS.find((b) => b.tab === activeTab)!;
@@ -1499,7 +1560,7 @@ function ResearchAreasEditor({
       setDirty(false);
       toast.success(t.portal.saved);
     },
-    onError: () => toast.error(t.portal.errorSave),
+    onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
   });
 
   function addArea(slug: string) {
@@ -1819,7 +1880,7 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
       setDirty(false);
       toast.success(t.portal.saved);
     },
-    onError: () => toast.error(t.portal.errorSave),
+    onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
   });
 
   const langDef = addCode ? LANGUAGE_BY_CODE[addCode] : undefined;
@@ -2004,7 +2065,7 @@ function RoadmapEditor({ me }: { me: MyProfile }) {
       setEditing(false);
       toast.success(t.portal.saved);
     },
-    onError: () => toast.error(t.portal.errorSave),
+    onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
   });
 
   if (!editing && !me.roadmap) return null;
@@ -2511,7 +2572,12 @@ function ExistingProjectLinker({
 
 // ───── Account ─────
 
-function FirstLoginBanner({ emailVerified }: { emailVerified: boolean }) {
+// The order here is not cosmetic. These steps used to be listed email-first,
+// which is the order that cannot work: PUT /me is closed while the temporary
+// password is live, so "cadastre seu email e salve" answered with a 403 the
+// member had no way to interpret. Password first is the only sequence the API
+// permits — see PasswordChangeCard and MyPortalController.changePassword.
+function FirstLoginBanner({ hasEmail }: { hasEmail: boolean }) {
   return (
     <section className="rounded-2xl border border-laps-blue/20 bg-gradient-to-br from-laps-ghost/60 to-white p-5 shadow-sm">
       <div className="flex items-start gap-3">
@@ -2523,16 +2589,18 @@ function FirstLoginBanner({ emailVerified }: { emailVerified: boolean }) {
             Bem-vindo(a)! Você está usando uma senha temporária.
           </h2>
           <ol className="mt-2 list-inside list-decimal space-y-1 text-xs text-laps-navy/70">
-            <li className={emailVerified ? "line-through opacity-60" : ""}>
-              Cadastre seu email no formulário abaixo e salve.
+            <li className="font-semibold text-laps-blue">
+              Defina sua senha pessoal na seção <em>Trocar senha</em>, no fim da página.
             </li>
-            <li className={emailVerified ? "line-through opacity-60" : ""}>
-              Solicite o token de verificação e confirme.
+            <li className={hasEmail ? "line-through opacity-60" : ""}>
+              Depois, cadastre seu email em <em>Contato &amp; Links</em>.
             </li>
-            <li className={emailVerified ? "font-semibold text-laps-blue" : ""}>
-              Defina sua senha pessoal na seção <em>Trocar senha</em>.
-            </li>
+            <li>Solicite o token de verificação e confirme.</li>
           </ol>
+          <p className="mt-2 rounded-lg bg-white/70 px-2.5 py-1.5 text-[11px] leading-relaxed text-laps-navy/60">
+            O email só pode ser salvo <strong>depois</strong> da troca de senha — até lá o perfil
+            fica bloqueado para edição.
+          </p>
         </div>
       </div>
     </section>
@@ -2577,13 +2645,22 @@ function EmailVerificationBanner({ me }: { me: MyProfile }) {
           <Mail className="h-4 w-4" />
         </div>
         <div className="flex-1">
+          {/* This heading used to read "Verifique seu email para liberar a troca
+              de senha" unconditionally — which is false during the temp-password
+              phase, and pointed members at a step the API blocks. Verification
+              gates *voluntary* changes later on; the first rotation never
+              needed it. */}
           <h2 className="text-sm font-bold text-amber-900">
-            Verifique seu email para liberar a troca de senha
+            {me.mustChangePassword
+              ? "Depois de trocar a senha, verifique seu email"
+              : "Verifique seu email para liberar a troca de senha"}
           </h2>
           <p className="mt-1 text-xs text-amber-900/70">
-            {me.email
-              ? "Solicite o token, copie-o e cole abaixo para confirmar."
-              : "Cadastre um email no formulário de perfil e salve antes de solicitar o token."}
+            {me.mustChangePassword
+              ? "Comece pela seção «Trocar senha». Só depois disso o perfil é liberado para salvar o email e pedir o token."
+              : me.email
+                ? "Solicite o token, copie-o e cole abaixo para confirmar."
+                : "Cadastre um email no formulário de perfil e salve antes de solicitar o token."}
           </p>
 
           {me.email && !tokenIssued && (
@@ -2631,7 +2708,13 @@ function EmailVerificationBanner({ me }: { me: MyProfile }) {
   );
 }
 
-function PasswordChangeCard({ emailVerified }: { emailVerified: boolean }) {
+function PasswordChangeCard({
+  emailVerified,
+  mustChangePassword,
+}: {
+  emailVerified: boolean;
+  mustChangePassword: boolean;
+}) {
   const qc = useQueryClient();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -2659,7 +2742,13 @@ function PasswordChangeCard({ emailVerified }: { emailVerified: boolean }) {
     mutation.mutate({ a: current, b: next });
   }
 
-  if (!emailVerified) {
+  // Mirrors the rule in MyPortalController.changePassword: a *voluntary* change
+  // needs a verified email, but the first rotation off a temporary password is
+  // exempt — it is the member's only way out, and the email cannot be saved
+  // before it happens because PUT /me refuses every write while the temp
+  // password is live. Gating this card on emailVerified alone deadlocked exactly
+  // that case: no email could be registered, so no password could be changed.
+  if (!mustChangePassword && !emailVerified) {
     return (
       <section className="relative rounded-2xl border border-laps-navy/10 bg-white p-6 shadow-sm">
         <div className="pointer-events-none absolute inset-0 rounded-2xl bg-white/55" />
@@ -2679,9 +2768,24 @@ function PasswordChangeCard({ emailVerified }: { emailVerified: boolean }) {
   }
 
   return (
-    <section className="rounded-2xl border border-laps-navy/10 bg-white p-6 shadow-sm">
+    <section
+      data-guide="password"
+      className={`scroll-mt-24 rounded-2xl border bg-white p-6 shadow-sm ${
+        mustChangePassword ? "border-laps-blue/40 ring-1 ring-laps-blue/15" : "border-laps-navy/10"
+      }`}
+    >
       <h2 className="font-display mb-1 text-base font-bold text-laps-navy">Trocar senha</h2>
-      <p className="mb-4 text-xs text-laps-navy/55">Email verificado — defina sua senha pessoal.</p>
+      {mustChangePassword ? (
+        <p className="mb-4 text-xs leading-relaxed text-laps-navy/65">
+          <strong className="font-semibold text-laps-navy">Comece por aqui.</strong> Digite em
+          «Senha atual» a senha temporária que você recebeu e escolha a sua senha definitiva. Você
+          <em> não</em> precisa cadastrar o email antes deste passo — o email vem depois.
+        </p>
+      ) : (
+        <p className="mb-4 text-xs text-laps-navy/55">
+          Email verificado — defina sua senha pessoal.
+        </p>
+      )}
       <form onSubmit={submit} className="grid gap-3 md:grid-cols-3">
         <PasswordField id="pwd-current" label="Senha atual" value={current} onChange={setCurrent} autoComplete="current-password" />
         <PasswordField id="pwd-next" label="Nova senha" value={next} onChange={setNext} autoComplete="new-password" />
@@ -2779,7 +2883,7 @@ function JoinedLapsEditor({ me }: { me: MyProfile }) {
       setEditing(false);
       toast.success(t.portal.saved);
     },
-    onError: () => toast.error(t.portal.errorSave),
+    onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
   });
 
   function reset() {
@@ -2953,7 +3057,7 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
       setEditing(false);
       toast.success(t.portal.saved);
     },
-    onError: () => toast.error(t.portal.errorSave),
+    onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
   });
 
   const current = EXCHANGE_COUNTRY_OPTIONS.find((c) => c.code === me.exchangeCountry);
