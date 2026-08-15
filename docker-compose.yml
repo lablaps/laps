@@ -84,6 +84,14 @@ services:
       # Rate limit knobs.
       LAPS_RATE_AUTH_PER_MIN: ${LAPS_RATE_AUTH_PER_MIN:-10}
       LAPS_RATE_AUTH_BLOCK_SECONDS: ${LAPS_RATE_AUTH_BLOCK_SECONDS:-60}
+      # Trailing X-Forwarded-For entries written by infrastructure you control.
+      # This stack has no proxy of its own — the header comes from whatever you
+      # put in front of :8080 (see the note at the top of this file), so verify
+      # the value against your host proxy. .env.example explains how.
+      LAPS_TRUSTED_PROXY_HOPS: ${LAPS_TRUSTED_PROXY_HOPS:-1}
+      # Blank = derive the cookie's Secure flag from the request. Set to true
+      # once TLS is terminated in front of this container.
+      LAPS_COOKIE_SECURE: ${LAPS_COOKIE_SECURE:-}
       # Media — persisted in the named volume so uploads survive restarts.
       LAPS_MEDIA_DIR: /app/uploads
     volumes:

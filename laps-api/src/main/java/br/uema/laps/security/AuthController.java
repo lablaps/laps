@@ -3,19 +3,14 @@ package br.uema.laps.security;
 import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -23,86 +18,44 @@ import java.util.Optional;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
+    /**
+     * Burned instead of a real comparison when there is no account to compare
+     * against, so a caller cannot tell "no such member", "member removed", and
+     * "wrong password" apart by response time.
+     *
+     * <p>Generated at startup rather than written as a literal: the encoder
+     * rejects anything that is not a structurally valid BCrypt string and
+     * returns false immediately, which would hand back the exact timing signal
+     * this exists to remove. Deriving it from the live encoder also keeps the
+     * decoy at the configured work factor if that is ever changed again.
+     */
+    private final String timingDecoyHash;
+
     private final MemberRepository memberRepository;
     private final LapsJwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-    private final List<String> managerEmails;
-    private final Duration jwtTtl;
-    private final AuthRateLimiter rateLimiter;
+    private final ManagerAllowlist managerAllowlist;
+    private final MemberAccessPolicy accessPolicy;
+    private final RateLimitGuard rateLimitGuard;
+    private final AuthCookies authCookies;
 
     public AuthController(
             MemberRepository memberRepository,
             LapsJwtService jwtService,
             PasswordEncoder passwordEncoder,
-            @Value("${laps.managers.allowed-emails:}") List<String> managerEmails,
-            @Value("${laps.jwt.ttl}") Duration jwtTtl,
-            AuthRateLimiter rateLimiter
+            ManagerAllowlist managerAllowlist,
+            MemberAccessPolicy accessPolicy,
+            RateLimitGuard rateLimitGuard,
+            AuthCookies authCookies
     ) {
         this.memberRepository = memberRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
-        this.managerEmails = managerEmails;
-        this.jwtTtl = jwtTtl;
-        this.rateLimiter = rateLimiter;
-    }
-
-    /**
-     * Resolve the client IP, honoring X-Forwarded-For when the app sits behind
-     * a proxy.
-     *
-     * We take the *last* hop, not the first. nginx builds this header with
-     * `$proxy_add_x_forwarded_for` (nginx.conf), which APPENDS the real peer
-     * address to whatever the client already sent — so the trailing entry is
-     * the only one our own infrastructure wrote, and every earlier entry is
-     * attacker-controlled. Reading the first entry (as this did previously)
-     * let a single client mint a fresh rate-limit bucket per request simply by
-     * varying the header, which defeated the limiter entirely.
-     *
-     * If a second proxy is ever put in front of nginx, this must become
-     * "n-th from the end" or move to Spring's ForwardedHeaderFilter with a
-     * trusted-proxy list.
-     */
-    private static String clientIp(HttpServletRequest request) {
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) {
-            int comma = xff.lastIndexOf(',');
-            String last = (comma >= 0 ? xff.substring(comma + 1) : xff).trim();
-            if (!last.isEmpty()) return last;
-        }
-        return request.getRemoteAddr();
-    }
-
-    private void enforceRateLimit(HttpServletRequest request) {
-        enforceRateLimit(request, null);
-    }
-
-    /**
-     * Rate-limits on two independent keys.
-     *
-     * Per-IP alone cannot see a spray: one attempt against each of N accounts
-     * from one address stays under the threshold forever. The per-identifier
-     * bucket bounds attempts against a single account no matter how many
-     * addresses they arrive from — which is the shape of attack that matters
-     * once credentials are guessable.
-     *
-     * The identifier is lower-cased so "Joao-Silva" and "joao-silva" share a
-     * bucket, and prefixed so it can never collide with an IP key.
-     */
-    private void enforceRateLimit(HttpServletRequest request, String identifier) {
-        checkBucket(clientIp(request));
-        if (identifier != null && !identifier.isBlank()) {
-            checkBucket("id:" + identifier.trim().toLowerCase(Locale.ROOT));
-        }
-    }
-
-    private void checkBucket(String key) {
-        if (!rateLimiter.allow(key)) {
-            long retry = rateLimiter.retryAfterSeconds(key);
-            ResponseStatusException tooMany = new ResponseStatusException(
-                    HttpStatus.TOO_MANY_REQUESTS, "Too many attempts. Try again later.");
-            tooMany.getHeaders().add("Retry-After", String.valueOf(retry));
-            throw tooMany;
-        }
+        this.managerAllowlist = managerAllowlist;
+        this.accessPolicy = accessPolicy;
+        this.rateLimitGuard = rateLimitGuard;
+        this.authCookies = authCookies;
+        this.timingDecoyHash = passwordEncoder.encode(java.util.UUID.randomUUID().toString());
     }
 
     /**
@@ -120,22 +73,29 @@ public class AuthController {
         // be keyed on it — otherwise a spray across many accounts from one IP
         // stays under the per-IP threshold indefinitely.
         String identifier = req.username() != null ? req.username() : req.email();
-        enforceRateLimit(request, identifier);
+        rateLimitGuard.enforce(request, identifier);
         if (identifier == null || identifier.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            throw invalidCredentials();
         }
 
         Member member = resolveMember(identifier)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+                .filter(accessPolicy::mayAuthenticate)
+                .orElse(null);
 
-        if (member.getPasswordHash() == null
-                || !passwordEncoder.matches(req.password(), member.getPasswordHash())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        // Soft-deleted and INACTIVE members are filtered above rather than after
+        // the password check, and are indistinguishable from a nonexistent
+        // account in both body and timing. Previously they were not filtered at
+        // all: AdminController.softDelete leaves password_hash intact, so
+        // removing a member from the lab did not revoke their ability to log in.
+        if (member == null || member.getPasswordHash() == null) {
+            passwordEncoder.matches(req.password() == null ? "" : req.password(), timingDecoyHash);
+            throw invalidCredentials();
+        }
+        if (!passwordEncoder.matches(req.password(), member.getPasswordHash())) {
+            throw invalidCredentials();
         }
 
-        boolean isManager = member.getEmail() != null
-                && managerEmails.stream().anyMatch(e -> e.equalsIgnoreCase(member.getEmail()));
-        String role = isManager ? "MANAGER" : "MEMBER";
+        String role = managerAllowlist.roleFor(member);
 
         String jwt = jwtService.issue(
                 member.getId().toString(),
@@ -153,7 +113,7 @@ public class AuthController {
         body.put("emailVerified", member.isEmailVerified());
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, buildAuthCookie(jwt, request.isSecure()).toString())
+                .header(HttpHeaders.SET_COOKIE, authCookies.issue(jwt, request).toString())
                 .body(body);
     }
 
@@ -177,7 +137,7 @@ public class AuthController {
             HttpServletRequest request
     ) {
         String identifier = req.username() != null ? req.username() : req.email();
-        enforceRateLimit(request, identifier);
+        rateLimitGuard.enforce(request, identifier);
         if (identifier == null || identifier.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username or email required");
         }
@@ -185,7 +145,8 @@ public class AuthController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must be at least 8 characters");
         }
 
-        Optional<Member> maybeMember = resolveMember(identifier);
+        Optional<Member> maybeMember = resolveMember(identifier)
+                .filter(accessPolicy::mayAuthenticate);
         if (maybeMember.isPresent()
                 && (maybeMember.get().getPasswordHash() == null || maybeMember.get().getPasswordHash().isBlank())) {
             Member member = maybeMember.get();
@@ -206,32 +167,19 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
-        ResponseCookie cleared = ResponseCookie.from("laps_jwt", "")
-                .httpOnly(true)
-                .secure(request.isSecure())
-                .path("/")
-                .maxAge(0)
-                .sameSite("Lax")
-                .build();
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, cleared.toString())
+                .header(HttpHeaders.SET_COOKIE, authCookies.clear(request).toString())
                 .body(Map.of("message", "logged out"));
+    }
+
+    private static ResponseStatusException invalidCredentials() {
+        return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
     }
 
     private Optional<Member> resolveMember(String identifier) {
         Optional<Member> bySlug = memberRepository.findBySlug(identifier.toLowerCase());
         if (bySlug.isPresent()) return bySlug;
         return memberRepository.findByEmailIgnoreCase(identifier);
-    }
-
-    private ResponseCookie buildAuthCookie(String jwt, boolean secure) {
-        return ResponseCookie.from("laps_jwt", jwt)
-                .httpOnly(true)
-                .secure(secure)
-                .path("/")
-                .maxAge(jwtTtl)
-                .sameSite("Lax")
-                .build();
     }
 
     public record LoginRequest(String username, String email, String password) {}

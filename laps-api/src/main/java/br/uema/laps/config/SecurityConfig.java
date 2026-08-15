@@ -161,9 +161,19 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * BCrypt at cost 12 rather than the library default of 10.
+     *
+     * Cost is encoded in each hash, so existing cost-10 hashes keep verifying
+     * and are silently upgraded the next time a member sets a password — no
+     * migration, no lockout. The trade is roughly 4x the CPU per login
+     * (~60ms to ~250ms on modest hardware), which is the point: it is the
+     * attacker's offline cracking rate that scales with it, and login volume
+     * for a research-lab roster is nowhere near where that latency matters.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(12);
     }
 
     /**

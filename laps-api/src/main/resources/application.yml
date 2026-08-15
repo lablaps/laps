@@ -93,12 +93,22 @@ laps:
     full-name: ${LAPS_BOOTSTRAP_FULL_NAME:}
     slug: ${LAPS_BOOTSTRAP_SLUG:}
     password: ${LAPS_BOOTSTRAP_PASSWORD:}
+  auth:
+    # Forces the Secure flag on the session cookie. Unset = derive it from
+    # request.isSecure(), which is correct only when the TLS terminator
+    # forwards X-Forwarded-Proto. Set to true on any HTTPS deployment; leaving
+    # it unset on a plain-HTTP deployment is what keeps login working there.
+    cookie-secure: ${LAPS_COOKIE_SECURE:}
   ratelimit:
-    # Per-IP token bucket on /auth endpoints. Defaults: 10 attempts/min, then
-    # 429s for 60s. Tunable so legitimate clinic-bench shared-IP setups can
-    # raise the ceiling without recompiling.
+    # Per-IP and per-account token buckets on the credential endpoints.
+    # Defaults: 10 attempts/min, then 429s for 60s. Tunable so legitimate
+    # shared-IP setups can raise the ceiling without recompiling.
     auth-attempts-per-minute: ${LAPS_RATE_AUTH_PER_MIN:10}
     auth-block-seconds: ${LAPS_RATE_AUTH_BLOCK_SECONDS:60}
+    # How many trailing X-Forwarded-For entries were written by infrastructure
+    # you control. 1 is correct for the nginx/docker-compose topology. Render
+    # runs without nginx, so verify it there — see .env.example.
+    trusted-proxy-hops: ${LAPS_TRUSTED_PROXY_HOPS:1}
 
 logging:
   level:

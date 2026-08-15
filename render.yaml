@@ -79,6 +79,18 @@ services:
         value: "10"
       - key: LAPS_RATE_AUTH_BLOCK_SECONDS
         value: "60"
+      # Trailing X-Forwarded-For entries written by Render's edge. There is no
+      # nginx in this image, so this is NOT the same as the compose value and
+      # must be verified against a real deploy — the procedure is in
+      # .env.example. Wrong-too-low means one attacker can lock out every login.
+      - key: LAPS_TRUSTED_PROXY_HOPS
+        value: "1"
+
+      # --- Session cookie ---
+      # Render terminates TLS at the edge, so the session cookie must always
+      # carry Secure regardless of what the forwarded request looks like.
+      - key: LAPS_COOKIE_SECURE
+        value: "true"
 
       # --- Media ---
       # Cloudinary is what makes uploads survive a deploy. The free plan has no

@@ -4,18 +4,21 @@ import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
 import br.uema.laps.member.MemberRole;
 import br.uema.laps.member.MemberStatus;
+import br.uema.laps.security.AuthCookies;
 import br.uema.laps.security.AuthenticatedMember;
 import br.uema.laps.security.LapsJwtService;
+import br.uema.laps.security.ManagerAllowlist;
+import br.uema.laps.security.RateLimitGuard;
 import br.uema.laps.translate.TranslationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,11 +26,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.text.Normalizer;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -39,8 +40,9 @@ public class InviteController {
     private final PasswordEncoder passwordEncoder;
     private final LapsJwtService jwtService;
     private final TranslationService translationService;
-    private final List<String> managerEmails;
-    private final Duration jwtTtl;
+    private final ManagerAllowlist managerAllowlist;
+    private final RateLimitGuard rateLimitGuard;
+    private final AuthCookies authCookies;
 
     public InviteController(
             InviteTokenRepository inviteTokenRepository,
@@ -48,15 +50,17 @@ public class InviteController {
             PasswordEncoder passwordEncoder,
             LapsJwtService jwtService,
             TranslationService translationService,
-            @Value("${laps.managers.allowed-emails:}") List<String> managerEmails,
-            @Value("${laps.jwt.ttl}") Duration jwtTtl) {
+            ManagerAllowlist managerAllowlist,
+            RateLimitGuard rateLimitGuard,
+            AuthCookies authCookies) {
         this.inviteTokenRepository = inviteTokenRepository;
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.translationService = translationService;
-        this.managerEmails = managerEmails;
-        this.jwtTtl = jwtTtl;
+        this.managerAllowlist = managerAllowlist;
+        this.rateLimitGuard = rateLimitGuard;
+        this.authCookies = authCookies;
     }
 
     // ───── Admin: create invite ─────
@@ -82,7 +86,11 @@ public class InviteController {
     // ───── Public: validate invite ─────
 
     @GetMapping("/api/v1/invites/{token}")
-    public Map<String, Object> validateInvite(@PathVariable String token) {
+    public Map<String, Object> validateInvite(@PathVariable String token, HttpServletRequest httpReq) {
+        // Unauthenticated and enumerable in principle. The token is a v4 UUID so
+        // guessing is not the real risk; the limit is here so this endpoint
+        // cannot be used as an unmetered oracle or an amplification target.
+        rateLimitGuard.enforce(httpReq);
         InviteToken invite = resolveAndCheck(token);
         Map<String, Object> body = new HashMap<>();
         body.put("role", invite.getRole());
@@ -98,6 +106,12 @@ public class InviteController {
             @PathVariable String token,
             @Valid @RequestBody RegisterRequest req,
             HttpServletRequest httpReq) {
+
+        // This is the one public, unauthenticated, account-creating endpoint in
+        // the API and it had no limit of any kind. Keyed on the invite token as
+        // well as the address so a single leaked invite cannot be hammered from
+        // a botnet.
+        rateLimitGuard.enforce(httpReq, "invite:" + token);
 
         InviteToken invite = resolveAndCheck(token);
 
@@ -154,8 +168,7 @@ public class InviteController {
         inviteTokenRepository.save(invite);
 
         // Issue JWT and auto-login
-        boolean isManager = managerEmails.stream().anyMatch(e -> e.equalsIgnoreCase(saved.getEmail()));
-        String role = isManager ? "MANAGER" : "MEMBER";
+        String role = managerAllowlist.roleFor(saved);
         String jwt = jwtService.issue(saved.getId().toString(), saved.getEmail(), role);
 
         Map<String, Object> body = new HashMap<>();
@@ -166,16 +179,8 @@ public class InviteController {
         body.put("mustChangePassword", false);
         body.put("emailVerified", false);
 
-        ResponseCookie cookie = ResponseCookie.from("laps_jwt", jwt)
-                .httpOnly(true)
-                .secure(httpReq.isSecure())
-                .path("/")
-                .maxAge(jwtTtl)
-                .sameSite("Lax")
-                .build();
-
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .header(HttpHeaders.SET_COOKIE, authCookies.issue(jwt, httpReq).toString())
                 .body(body);
     }
 
@@ -222,7 +227,9 @@ public class InviteController {
 
     public record CreateInviteRequest(
             @NotNull MemberRole role,
-            @NotNull Integer validityDays) {
+            // Was unbounded: a typo or a stray zero minted an invite that stayed
+            // redeemable for centuries. An invite is a credential.
+            @NotNull @Min(1) @Max(90) Integer validityDays) {
     }
 
     public record RegisterRequest(

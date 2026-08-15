@@ -10,8 +10,10 @@ import br.uema.laps.project.ProjectStatus;
 import br.uema.laps.publication.Publication;
 import br.uema.laps.publication.PublicationRepository;
 import br.uema.laps.security.AuthenticatedMember;
+import br.uema.laps.security.RateLimitGuard;
 import br.uema.laps.translate.TranslationService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -47,6 +49,7 @@ public class MyPortalController {
     private final ProjectRepository projectRepository;
     private final PasswordEncoder passwordEncoder;
     private final TranslationService translationService;
+    private final RateLimitGuard rateLimitGuard;
 
     public MyPortalController(
             MemberRepository memberRepository,
@@ -54,13 +57,15 @@ public class MyPortalController {
             MemberProjectRepository memberProjectRepository,
             ProjectRepository projectRepository,
             PasswordEncoder passwordEncoder,
-            TranslationService translationService) {
+            TranslationService translationService,
+            RateLimitGuard rateLimitGuard) {
         this.memberRepository = memberRepository;
         this.publicationRepository = publicationRepository;
         this.memberProjectRepository = memberProjectRepository;
         this.projectRepository = projectRepository;
         this.passwordEncoder = passwordEncoder;
         this.translationService = translationService;
+        this.rateLimitGuard = rateLimitGuard;
     }
 
     @GetMapping
@@ -128,8 +133,14 @@ public class MyPortalController {
 
     @PutMapping("/password")
     @Transactional
-    public ResponseEntity<Map<String, Object>> changePassword(@RequestBody ChangePasswordRequest req) {
+    public ResponseEntity<Map<String, Object>> changePassword(
+            @RequestBody ChangePasswordRequest req,
+            HttpServletRequest request) {
         Member me = loadMe();
+        // The current-password check below is an online guessing oracle for
+        // anyone holding a stolen session, and it was unmetered. Keyed on the
+        // member id so the limit follows the account, not the browser.
+        rateLimitGuard.enforce(request, "pwchange:" + me.getId());
         // Voluntary changes require a verified email so a session-hijacker
         // can't lock the real member out without controlling their inbox.
         //
