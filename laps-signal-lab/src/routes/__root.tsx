@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { CookieConsent } from "@/components/CookieConsent";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -129,6 +130,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <TransitionLoader />
       <Outlet />
+      {/* Mounted at the root so a dismissal survives client-side navigation —
+          the component never unmounts as routes change. */}
+      <CookieConsent />
       <Toaster />
     </QueryClientProvider>
   );

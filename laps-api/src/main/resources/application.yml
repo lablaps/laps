@@ -99,6 +99,12 @@ laps:
     # forwards X-Forwarded-Proto. Set to true on any HTTPS deployment; leaving
     # it unset on a plain-HTTP deployment is what keeps login working there.
     cookie-secure: ${LAPS_COOKIE_SECURE:}
+  pow:
+    # Proof-of-work bot challenge on login, set-password and invite registration.
+    # Leading zero bits required: each +1 doubles the client's expected work.
+    # 16 is roughly a fifth of a second in a browser; 20 is a few seconds.
+    difficulty-bits: ${LAPS_POW_DIFFICULTY_BITS:16}
+    ttl: ${LAPS_POW_TTL:PT5M}
   ratelimit:
     # Per-IP and per-account token buckets on the credential endpoints.
     # Defaults: 10 attempts/min, then 429s for 60s. Tunable so legitimate

@@ -40,6 +40,7 @@ class AuthControllerLoginTest {
     private LapsJwtService jwtService;
     private PasswordEncoder passwordEncoder;
     private RateLimitGuard rateLimitGuard;
+    private ProofOfWorkService proofOfWork;
     private AuthController controller;
 
     @BeforeEach
@@ -48,6 +49,9 @@ class AuthControllerLoginTest {
         jwtService = mock(LapsJwtService.class);
         passwordEncoder = mock(PasswordEncoder.class);
         rateLimitGuard = mock(RateLimitGuard.class);
+        // Real service at the lowest difficulty: the point is to exercise the
+        // real single-use semantics, not to burn CPU in a unit test.
+        proofOfWork = new ProofOfWorkService(8, Duration.ofMinutes(5));
 
         when(jwtService.issue(anyString(), any(), anyString())).thenReturn("signed-jwt");
 
@@ -58,7 +62,20 @@ class AuthControllerLoginTest {
                 new ManagerAllowlist(List.of("coord@uema.br")),
                 new MemberAccessPolicy(),
                 rateLimitGuard,
-                new AuthCookies(Duration.ofHours(8), true));
+                new AuthCookies(Duration.ofHours(8), true),
+                proofOfWork);
+    }
+
+    /** A login request carrying a freshly solved challenge. */
+    private AuthController.LoginRequest loginRequest(String identifier, String password) {
+        String nonce = proofOfWork.issue();
+        for (int counter = 0; counter < 5_000_000; counter++) {
+            String candidate = Integer.toString(counter, 36);
+            if (ProofOfWorkService.leadingZeroBits(nonce, candidate) >= proofOfWork.difficultyBits()) {
+                return new AuthController.LoginRequest(identifier, null, password, nonce, candidate);
+            }
+        }
+        throw new AssertionError("no proof-of-work solution found");
     }
 
     private Member member(MemberStatus status, Instant deletedAt) {
@@ -83,7 +100,7 @@ class AuthControllerLoginTest {
         givenMember(member(MemberStatus.ACTIVE, null));
 
         var response = controller.login(
-                new AuthController.LoginRequest("joao-silva", null, "correct-password"),
+                loginRequest("joao-silva", "correct-password"),
                 new MockHttpServletRequest());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -96,7 +113,7 @@ class AuthControllerLoginTest {
         givenMember(member(MemberStatus.INACTIVE, Instant.now()));
 
         assertThatThrownBy(() -> controller.login(
-                new AuthController.LoginRequest("joao-silva", null, "correct-password"),
+                loginRequest("joao-silva", "correct-password"),
                 new MockHttpServletRequest()))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("401");
@@ -111,7 +128,7 @@ class AuthControllerLoginTest {
         givenMember(member(MemberStatus.INACTIVE, null));
 
         assertThatThrownBy(() -> controller.login(
-                new AuthController.LoginRequest("joao-silva", null, "correct-password"),
+                loginRequest("joao-silva", "correct-password"),
                 new MockHttpServletRequest()))
                 .isInstanceOf(ResponseStatusException.class);
         verify(jwtService, never()).issue(anyString(), any(), anyString());
@@ -124,13 +141,13 @@ class AuthControllerLoginTest {
         // confirm that a given slug was once a real member.
         givenMember(member(MemberStatus.INACTIVE, Instant.now()));
         String removed = catchStatusAndReason(() -> controller.login(
-                new AuthController.LoginRequest("joao-silva", null, "correct-password"),
+                loginRequest("joao-silva", "correct-password"),
                 new MockHttpServletRequest()));
 
         when(memberRepository.findBySlug("ghost")).thenReturn(Optional.empty());
         when(memberRepository.findByEmailIgnoreCase("ghost")).thenReturn(Optional.empty());
         String unknown = catchStatusAndReason(() -> controller.login(
-                new AuthController.LoginRequest("ghost", null, "correct-password"),
+                loginRequest("ghost", "correct-password"),
                 new MockHttpServletRequest()));
 
         assertThat(removed).isEqualTo(unknown);
@@ -143,7 +160,7 @@ class AuthControllerLoginTest {
         when(memberRepository.findByEmailIgnoreCase("ghost")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> controller.login(
-                new AuthController.LoginRequest("ghost", null, "some-password"),
+                loginRequest("ghost", "some-password"),
                 new MockHttpServletRequest()))
                 .isInstanceOf(ResponseStatusException.class);
 
@@ -158,10 +175,41 @@ class AuthControllerLoginTest {
         givenMember(m);
 
         var response = controller.login(
-                new AuthController.LoginRequest("joao-silva", null, "correct-password"),
+                loginRequest("joao-silva", "correct-password"),
                 new MockHttpServletRequest());
 
         assertThat(response.getBody()).containsEntry("role", "MANAGER");
+    }
+
+    @Test
+    @DisplayName("login without a solved challenge is refused before the account is even looked up")
+    void loginRequiresProofOfWork() {
+        givenMember(member(MemberStatus.ACTIVE, null));
+
+        assertThatThrownBy(() -> controller.login(
+                new AuthController.LoginRequest("joao-silva", null, "correct-password", null, null),
+                new MockHttpServletRequest()))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+
+        verify(jwtService, never()).issue(anyString(), any(), anyString());
+        verify(memberRepository, never()).findBySlug(anyString());
+    }
+
+    @Test
+    @DisplayName("a challenge cannot be replayed for a second login attempt")
+    void challengeCannotBeReplayed() {
+        givenMember(member(MemberStatus.ACTIVE, null));
+        AuthController.LoginRequest first = loginRequest("joao-silva", "correct-password");
+
+        assertThat(controller.login(first, new MockHttpServletRequest()).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        // Same nonce and solution, second time: an attacker who solved once must
+        // not get unlimited free guesses from it.
+        assertThatThrownBy(() -> controller.login(first, new MockHttpServletRequest()))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
     }
 
     private static String catchStatusAndReason(Runnable call) {

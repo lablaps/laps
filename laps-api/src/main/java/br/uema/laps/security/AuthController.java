@@ -38,6 +38,7 @@ public class AuthController {
     private final MemberAccessPolicy accessPolicy;
     private final RateLimitGuard rateLimitGuard;
     private final AuthCookies authCookies;
+    private final ProofOfWorkService proofOfWork;
 
     public AuthController(
             MemberRepository memberRepository,
@@ -46,7 +47,8 @@ public class AuthController {
             ManagerAllowlist managerAllowlist,
             MemberAccessPolicy accessPolicy,
             RateLimitGuard rateLimitGuard,
-            AuthCookies authCookies
+            AuthCookies authCookies,
+            ProofOfWorkService proofOfWork
     ) {
         this.memberRepository = memberRepository;
         this.jwtService = jwtService;
@@ -55,7 +57,24 @@ public class AuthController {
         this.accessPolicy = accessPolicy;
         this.rateLimitGuard = rateLimitGuard;
         this.authCookies = authCookies;
+        this.proofOfWork = proofOfWork;
         this.timingDecoyHash = passwordEncoder.encode(java.util.UUID.randomUUID().toString());
+    }
+
+    /**
+     * Mints a proof-of-work challenge. Public and unauthenticated by necessity —
+     * it is what gates login — so it is rate limited like everything else here,
+     * and the store behind it is bounded.
+     */
+    @GetMapping("/challenge")
+    public Map<String, Object> challenge(HttpServletRequest request) {
+        // Own namespace: the SPA fetches a challenge before every login, so
+        // sharing the login bucket would halve the real attempt allowance.
+        rateLimitGuard.enforceNamespaced(request, "pow");
+        return Map.of(
+                "nonce", proofOfWork.issue(),
+                "difficultyBits", proofOfWork.difficultyBits(),
+                "expiresInSeconds", proofOfWork.ttl().getSeconds());
     }
 
     /**
@@ -74,6 +93,7 @@ public class AuthController {
         // stays under the per-IP threshold indefinitely.
         String identifier = req.username() != null ? req.username() : req.email();
         rateLimitGuard.enforce(request, identifier);
+        requireProofOfWork(req.powNonce(), req.powSolution());
         if (identifier == null || identifier.isBlank()) {
             throw invalidCredentials();
         }
@@ -138,6 +158,7 @@ public class AuthController {
     ) {
         String identifier = req.username() != null ? req.username() : req.email();
         rateLimitGuard.enforce(request, identifier);
+        requireProofOfWork(req.powNonce(), req.powSolution());
         if (identifier == null || identifier.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username or email required");
         }
@@ -172,6 +193,19 @@ public class AuthController {
                 .body(Map.of("message", "logged out"));
     }
 
+    /**
+     * Rejected before the account lookup so an unsolved request costs the server
+     * nothing beyond one hash — and so the challenge is spent whether or not the
+     * credentials were going to be right.
+     */
+    private void requireProofOfWork(String nonce, String solution) {
+        if (!proofOfWork.consume(nonce, solution)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid or expired challenge. Please retry.");
+        }
+    }
+
     private static ResponseStatusException invalidCredentials() {
         return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
     }
@@ -182,6 +216,11 @@ public class AuthController {
         return memberRepository.findByEmailIgnoreCase(identifier);
     }
 
-    public record LoginRequest(String username, String email, String password) {}
-    public record SetPasswordRequest(String username, String email, String password) {}
+    public record LoginRequest(
+            String username, String email, String password,
+            String powNonce, String powSolution) {}
+
+    public record SetPasswordRequest(
+            String username, String email, String password,
+            String powNonce, String powSolution) {}
 }

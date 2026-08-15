@@ -1,6 +1,8 @@
 // Thin typed fetch client for the LAPS Spring Boot backend.
 // JWT travels in an HttpOnly cookie set by /api/v1/auth/login → every request uses credentials:"include".
 
+import { solveChallenge, type Challenge } from "@/lib/proof-of-work";
+
 /**
  * Resolve the API base URL.
  *
@@ -240,12 +242,25 @@ export interface ApiProject {
 
 // ───── Endpoints ─────
 
+/**
+ * Fetches a proof-of-work challenge and solves it.
+ *
+ * The server spends the nonce on presentation, so a solution is good for
+ * exactly one attempt — every login or registration pays the cost again. That
+ * is the point: it prices automated attempts without handing visitor data to a
+ * captcha vendor. Expect roughly 200ms on a laptop at the default difficulty.
+ */
+async function solveProofOfWork(): Promise<{ powNonce: string; powSolution: string }> {
+  const challenge = await request<Challenge>("/api/v1/auth/challenge");
+  return { powNonce: challenge.nonce, powSolution: await solveChallenge(challenge) };
+}
+
 export const api = {
   // Auth — `identifier` is either the username (slug) or the member's email.
-  login: (identifier: string, password: string) =>
+  login: async (identifier: string, password: string) =>
     request<LoginResponse>("/api/v1/auth/login", {
       method: "POST",
-      body: { username: identifier, password },
+      body: { username: identifier, password, ...(await solveProofOfWork()) },
     }),
   logout: () => request<void>("/api/v1/auth/logout", { method: "POST" }),
 
@@ -335,7 +350,7 @@ export const api = {
   inviteInfo: (token: string) =>
     request<{ role: MemberRole; expiresAt: string }>(`/api/v1/invites/${token}`),
 
-  inviteRegister: (
+  inviteRegister: async (
     token: string,
     body: {
       fullName: string;
@@ -351,7 +366,7 @@ export const api = {
   ) =>
     request<LoginResponse>(`/api/v1/invites/${token}/register`, {
       method: "POST",
-      body,
+      body: { ...body, ...(await solveProofOfWork()) },
     }),
 
   // Admin (MANAGER)

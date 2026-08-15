@@ -1,9 +1,7 @@
 package br.uema.laps.security;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Locale;
 
@@ -52,12 +50,23 @@ public class RateLimitGuard {
         }
     }
 
+    /**
+     * Limits on a namespaced view of the caller's address, giving the endpoint
+     * its own budget.
+     *
+     * Needed because the proof-of-work challenge is fetched immediately before
+     * every login: sharing one bucket would mean each login attempt spends two
+     * tokens, silently halving the configured allowance, and the resulting 429
+     * would surface on the challenge fetch — a request the member never made
+     * and cannot interpret.
+     */
+    public void enforceNamespaced(HttpServletRequest request, String namespace) {
+        checkBucket(namespace + ":" + clientIpResolver.resolve(request));
+    }
+
     private void checkBucket(String key) {
         if (!limiter.allow(key)) {
-            ResponseStatusException tooMany = new ResponseStatusException(
-                    HttpStatus.TOO_MANY_REQUESTS, "Too many attempts. Try again later.");
-            tooMany.getHeaders().add("Retry-After", String.valueOf(limiter.retryAfterSeconds(key)));
-            throw tooMany;
+            throw new RateLimitExceededException(limiter.retryAfterSeconds(key));
         }
     }
 }

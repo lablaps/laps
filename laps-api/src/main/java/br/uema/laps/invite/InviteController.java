@@ -8,6 +8,7 @@ import br.uema.laps.security.AuthCookies;
 import br.uema.laps.security.AuthenticatedMember;
 import br.uema.laps.security.LapsJwtService;
 import br.uema.laps.security.ManagerAllowlist;
+import br.uema.laps.security.ProofOfWorkService;
 import br.uema.laps.security.RateLimitGuard;
 import br.uema.laps.translate.TranslationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +44,7 @@ public class InviteController {
     private final ManagerAllowlist managerAllowlist;
     private final RateLimitGuard rateLimitGuard;
     private final AuthCookies authCookies;
+    private final ProofOfWorkService proofOfWork;
 
     public InviteController(
             InviteTokenRepository inviteTokenRepository,
@@ -52,7 +54,8 @@ public class InviteController {
             TranslationService translationService,
             ManagerAllowlist managerAllowlist,
             RateLimitGuard rateLimitGuard,
-            AuthCookies authCookies) {
+            AuthCookies authCookies,
+            ProofOfWorkService proofOfWork) {
         this.inviteTokenRepository = inviteTokenRepository;
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
@@ -61,6 +64,7 @@ public class InviteController {
         this.managerAllowlist = managerAllowlist;
         this.rateLimitGuard = rateLimitGuard;
         this.authCookies = authCookies;
+        this.proofOfWork = proofOfWork;
     }
 
     // ───── Admin: create invite ─────
@@ -90,7 +94,7 @@ public class InviteController {
         // Unauthenticated and enumerable in principle. The token is a v4 UUID so
         // guessing is not the real risk; the limit is here so this endpoint
         // cannot be used as an unmetered oracle or an amplification target.
-        rateLimitGuard.enforce(httpReq);
+        rateLimitGuard.enforceNamespaced(httpReq, "invite-validate");
         InviteToken invite = resolveAndCheck(token);
         Map<String, Object> body = new HashMap<>();
         body.put("role", invite.getRole());
@@ -112,6 +116,12 @@ public class InviteController {
         // well as the address so a single leaked invite cannot be hammered from
         // a botnet.
         rateLimitGuard.enforce(httpReq, "invite:" + token);
+        // Account creation is the most attractive automated target on the site,
+        // so the challenge is spent before the token is even looked up.
+        if (!proofOfWork.consume(req.powNonce(), req.powSolution())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Invalid or expired challenge. Please retry.");
+        }
 
         InviteToken invite = resolveAndCheck(token);
 
@@ -241,6 +251,8 @@ public class InviteController {
             String bioLang,
             String linkedinUrl,
             String lattesUrl,
-            String githubUrl) {
+            String githubUrl,
+            String powNonce,
+            String powSolution) {
     }
 }

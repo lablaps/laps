@@ -1,8 +1,10 @@
 package br.uema.laps.web;
 
 import br.uema.laps.roletracking.IllegalRoleTransitionException;
+import br.uema.laps.security.RateLimitExceededException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -68,6 +70,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> tooLarge(MaxUploadSizeExceededException ex) {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
                 .body(body("file_too_large", "File is too large."));
+    }
+
+    /**
+     * Throttled credential endpoints. Rendered here so the Retry-After header
+     * can be attached to the response rather than mutated onto an exception —
+     * see RateLimitExceededException for why the previous approach produced a
+     * 500 instead of this 429.
+     */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> tooManyRequests(RateLimitExceededException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
+                .body(body("rate_limited", "Too many attempts. Try again later."));
     }
 
     private static Map<String, Object> body(String code, String message) {

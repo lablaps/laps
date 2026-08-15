@@ -159,6 +159,13 @@ export const translations = {
       fullName: "NOME COMPLETO",
       noCountry: "Nenhum",
     },
+    cookies: {
+      title: "Este site usa cookies",
+      body: "Usamos cookies essenciais para manter sua sessão ativa e lembrar suas preferências, como o idioma escolhido. Não usamos cookies de publicidade nem compartilhamos seus dados com terceiros.",
+      accept: "Aceitar",
+      close: "Fechar",
+      closeLabel: "Fechar aviso de cookies",
+    },
   },
   en: {
     nav: { sobre: "About", equipe: "Team", home: "Home", projetos: "Projects", intercambio: "International Exchange", contato: "Contact", portal: "My Profile", admin: "Manage", login: "Sign in" },
@@ -313,6 +320,13 @@ export const translations = {
       fullName: "FULL NAME",
       noCountry: "None",
     },
+    cookies: {
+      title: "This site uses cookies",
+      body: "We use essential cookies to keep you signed in and remember your preferences, such as your chosen language. We do not use advertising cookies and we do not share your data with third parties.",
+      accept: "Accept",
+      close: "Close",
+      closeLabel: "Close cookie notice",
+    },
   },
   fr: {
     nav: { sobre: "À propos", equipe: "Équipe", home: "Accueil", projetos: "Projets", intercambio: "Échange International", contato: "Contact", portal: "Mon Profil", admin: "Gérer", login: "Connexion" },
@@ -466,6 +480,13 @@ export const translations = {
       exchangeCountry: "PAYS D'ÉCHANGE",
       fullName: "NOM COMPLET",
       noCountry: "Aucun",
+    },
+    cookies: {
+      title: "Ce site utilise des cookies",
+      body: "Nous utilisons des cookies essentiels pour maintenir votre session et mémoriser vos préférences, comme la langue choisie. Nous n'utilisons pas de cookies publicitaires et ne partageons pas vos données avec des tiers.",
+      accept: "Accepter",
+      close: "Fermer",
+      closeLabel: "Fermer l'avis relatif aux cookies",
     },
   },
 } as const;
