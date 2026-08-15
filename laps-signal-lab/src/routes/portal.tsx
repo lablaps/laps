@@ -37,6 +37,12 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import PortalGuide, { type GuideStepId } from "@/components/PortalGuide";
+import {
+  ExchangePlacementPicker,
+  type Placement,
+} from "@/components/ExchangePlacementPicker";
+import { countryName, brStateName } from "@/lib/exchange-data";
+import { DestinationFlag } from "@/lib/flags";
 import { useLang } from "@/hooks/use-lang";
 import { type Lang } from "@/lib/i18n";
 import { api, ApiError, resolveMediaUrl, type ApiMember, type ApiProject, type ApiResearchArea, type MyProfile } from "@/lib/api";
@@ -216,8 +222,13 @@ const BANNER_PRESETS = [
  * it in English, so match on it and say what actually unblocks them.
  */
 function saveErrorMessage(err: unknown, fallback: string) {
-  if (err instanceof ApiError && err.status === 403 && /temporary password/i.test(err.message)) {
-    return "Troque a senha temporária antes de editar o perfil — a seção «Trocar senha» fica no fim da página e não exige email.";
+  if (err instanceof ApiError && err.status === 403) {
+    if (/temporary password/i.test(err.message)) {
+      return "Troque a senha temporária antes de editar o perfil — a seção «Trocar senha» fica no fim da página e não exige email.";
+    }
+    if (/add or join projects/i.test(err.message)) {
+      return "Membros da graduação não cadastram projetos — peça ao seu orientador para incluir você como participante.";
+    }
   }
   return fallback;
 }
@@ -2138,6 +2149,12 @@ function ProjectsSection({
   const [creating, setCreating] = useState(false);
   const qc = useQueryClient();
 
+  // Both self-service project endpoints are closed to undergrads server-side
+  // (MyPortalController.guardProjectAuthoring), so the card is read-only for
+  // them. Rendering the buttons anyway would only produce a 403 after they had
+  // filled in a whole form.
+  const canAuthorProjects = me.currentRole !== "UNDERGRAD";
+
   return (
     <PortfolioCard title="PROJETOS" icon={Sparkles}>
       <div className="space-y-3">
@@ -2148,12 +2165,22 @@ function ProjectsSection({
 
         {portfolioProjects.length === 0 && !creating && (
           <p className="text-sm italic text-laps-navy/45">
-            Nenhum projeto ainda. Crie um abaixo!
+            {canAuthorProjects
+              ? "Nenhum projeto ainda. Crie um abaixo!"
+              : "Nenhum projeto ainda."}
           </p>
         )}
 
         {/* Create new project */}
-        {creating ? (
+        {!canAuthorProjects ? (
+          <div className="flex items-start gap-2 rounded-xl border border-laps-navy/10 bg-laps-ghost/40 px-3 py-3">
+            <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-laps-navy/45" />
+            <p className="text-[11px] leading-relaxed text-laps-navy/60">
+              Projetos da graduação são cadastrados pelo orientador ou pela coordenação. Peça para
+              ser incluído(a) como participante — o projeto aparece aqui automaticamente.
+            </p>
+          </div>
+        ) : creating ? (
           <CreateProjectForm
             me={me}
             allMembers={allMembers}
@@ -2176,16 +2203,18 @@ function ProjectsSection({
       </div>
 
       {/* Link to existing projects section */}
-      <div className="mt-6 border-t border-laps-navy/8 pt-4">
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-laps-navy/50">
-          Vincular a projetos existentes
-        </p>
-        <ExistingProjectLinker
-          me={me}
-          allProjects={allProjects}
-          myProjectLinks={myProjectLinks}
-        />
-      </div>
+      {canAuthorProjects && (
+        <div className="mt-6 border-t border-laps-navy/8 pt-4">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-laps-navy/50">
+            Vincular a projetos existentes
+          </p>
+          <ExistingProjectLinker
+            me={me}
+            allProjects={allProjects}
+            myProjectLinks={myProjectLinks}
+          />
+        </div>
+      )}
     </PortfolioCard>
   );
 }
@@ -2273,7 +2302,10 @@ function CreateProjectForm({
         participantIds,
       }),
     onSuccess: onCreated,
-    onError: (err) => setError(err instanceof ApiError ? err.message : "Erro ao criar projeto."),
+    onError: (err) =>
+      setError(
+        saveErrorMessage(err, err instanceof ApiError ? err.message : "Erro ao criar projeto."),
+      ),
   });
 
   // Filter HEAD and COORDINATOR members as potential advisors
@@ -2509,6 +2541,12 @@ function ExistingProjectLinker({
       qc.invalidateQueries({ queryKey: ["my-projects"] });
       qc.invalidateQueries({ queryKey: ["projects"] });
       setPending(null);
+    },
+    // A rejected link used to fail silently, leaving the ticked checkbox on
+    // screen as if it had been saved.
+    onError: (err) => {
+      setPending(null);
+      toast.error(saveErrorMessage(err, "Não foi possível atualizar seus projetos."));
     },
   });
 
@@ -2843,18 +2881,13 @@ function PasswordField({
   );
 }
 
-// ───── Exchange country editor ─────
-
-const EXCHANGE_COUNTRY_OPTIONS: { code: string; label: string }[] = [
-  { code: "FR", label: "🇫🇷 França" },
-  { code: "CA", label: "🇨🇦 Canadá" },
-  { code: "PT", label: "🇵🇹 Portugal" },
-  { code: "IT", label: "🇮🇹 Itália" },
-  { code: "DE", label: "🇩🇪 Alemanha" },
-  { code: "US", label: "🇺🇸 Estados Unidos" },
-  { code: "UK", label: "🇬🇧 Reino Unido" },
-  { code: "ES", label: "🇪🇸 Espanha" },
-];
+// ───── Exchange placement editor ─────
+//
+// The eight-country list that used to live here has been replaced by the shared
+// ExchangePlacementPicker. It was a second, drifting copy of the catalogue in
+// exchange-data.ts — and it listed "UK", which is not an ISO 3166-1 code, so a
+// member placed in the United Kingdom through this control got a code no flag
+// or country lookup could ever resolve.
 
 /**
  * When the member joined LAPS. Member-owned, unlike the exchange country and
@@ -3029,11 +3062,29 @@ function UndergradProgramCard({ me }: { me: MyProfile }) {
   );
 }
 
+/** Flag + destination, naming the state when the placement is inside Brazil. */
+function PlacementLabel({ me, empty }: { me: MyProfile; empty: string }) {
+  if (!me.exchangeCountry) return <span className="italic text-laps-navy/40">{empty}</span>;
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="inline-block h-3.5 w-5 shrink-0 overflow-hidden rounded-sm shadow-[0_0_0_1px_rgba(0,0,0,0.1)]">
+        <DestinationFlag country={me.exchangeCountry} state={me.exchangeState} />
+      </span>
+      {me.exchangeState
+        ? `${brStateName(me.exchangeState)} — ${countryName(me.exchangeCountry, "pt")}`
+        : countryName(me.exchangeCountry, "pt")}
+    </span>
+  );
+}
+
 function ExchangeCountryEditor({ me }: { me: MyProfile }) {
   const qc = useQueryClient();
   const { t } = useLang();
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(me.exchangeCountry ?? "");
+  const [value, setValue] = useState<Placement>({
+    country: me.exchangeCountry ?? "",
+    state: me.exchangeState ?? "",
+  });
 
   // Security role, resolved server-side from the manager-email allowlist —
   // deliberately NOT me.currentRole, which is the academic tier and happens to
@@ -3051,7 +3102,11 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
     // The empty string clears the country: AdminController treats null as
     // "field not sent, leave alone", so `code || null` would make clearing a
     // silent no-op.
-    mutationFn: (code: string) => api.admin.updateMember(me.id, { exchangeCountry: code }),
+    mutationFn: (next: Placement) =>
+      api.admin.updateMember(me.id, {
+        exchangeCountry: next.country,
+        exchangeState: next.state,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
       setEditing(false);
@@ -3060,16 +3115,14 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
     onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
   });
 
-  const current = EXCHANGE_COUNTRY_OPTIONS.find((c) => c.code === me.exchangeCountry);
+  const current = <PlacementLabel me={me} empty={t.portal.noCountry} />;
 
   // Members see the country their coordinator assigned, but cannot touch it.
   if (!isManager) {
     return (
       <PortfolioCard title={t.portal.exchangeCountry} icon={MapPin}>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm text-laps-navy/80">
-            {current ? current.label : <span className="italic text-laps-navy/40">{t.portal.noCountry}</span>}
-          </span>
+          <span className="text-sm text-laps-navy/80">{current}</span>
           <span
             className="inline-flex shrink-0 items-center gap-1 rounded-md bg-laps-ghost/60 px-2 py-1 text-[10px] font-semibold text-laps-navy/45"
             title="Somente gerentes podem alterar o país de intercâmbio."
@@ -3088,16 +3141,7 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
     <PortfolioCard title={t.portal.exchangeCountry} icon={MapPin}>
       {editing ? (
         <div className="space-y-2">
-          <select
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="w-full rounded-md border border-laps-navy/15 bg-white px-2 py-2 text-sm text-laps-navy focus:outline-none focus:border-laps-blue/40"
-          >
-            <option value="">— {t.portal.noCountry} —</option>
-            {EXCHANGE_COUNTRY_OPTIONS.map((c) => (
-              <option key={c.code} value={c.code}>{c.label}</option>
-            ))}
-          </select>
+          <ExchangePlacementPicker value={value} onChange={setValue} />
           <div className="flex gap-2">
             <button
               type="button"
@@ -3110,7 +3154,10 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
             </button>
             <button
               type="button"
-              onClick={() => { setValue(me.exchangeCountry ?? ""); setEditing(false); }}
+              onClick={() => {
+                setValue({ country: me.exchangeCountry ?? "", state: me.exchangeState ?? "" });
+                setEditing(false);
+              }}
               className="rounded-md border border-laps-navy/15 px-3 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
             >
               Cancelar
@@ -3119,9 +3166,7 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
         </div>
       ) : (
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm text-laps-navy/80">
-            {current ? current.label : <span className="italic text-laps-navy/40">{t.portal.noCountry}</span>}
-          </span>
+          <span className="text-sm text-laps-navy/80">{current}</span>
           <button
             type="button"
             onClick={() => setEditing(true)}

@@ -145,6 +145,15 @@ public class Member {
     private String exchangeCountry;
 
     /**
+     * UF of a placement inside Brazil, e.g. {@code SP}. Null for every
+     * international placement and for members not on exchange at all — the
+     * {@code member_exchange_state_valid} CHECK from V26 rejects a state that
+     * is not paired with {@code exchangeCountry = "BR"}.
+     */
+    @Column(name = "exchange_state", length = 2)
+    private String exchangeState;
+
+    /**
      * Which bachelor's course the member came through. Independent of
      * {@link #currentRole} — see {@link UndergradProgram}. Null when unknown.
      */

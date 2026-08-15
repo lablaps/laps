@@ -42,6 +42,7 @@ public record MemberPublicView(
         String bannerColor,
         String bannerImageUrl,
         String exchangeCountry,
+        String exchangeState,
         UndergradProgram undergradProgram,
         String joinedSemester,
         String joinedMonth,
@@ -87,6 +88,9 @@ public record MemberPublicView(
                 m.getBannerColor(),
                 m.getBannerImageUrl(),
                 m.getExchangeCountry(),
+                // Where someone is placed is the whole point of /exchange, which
+                // renders anonymously — roster information, no visibility flag.
+                m.getExchangeState(),
                 // Public: which course someone studies is roster information, not
                 // contact data, so it carries no visibility flag.
                 m.getUndergradProgram(),

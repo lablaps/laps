@@ -24,5 +24,16 @@ export default defineConfig({
   // local `vite dev`.
   vite: {
     server: { host: true },
+    build: {
+      // Keep flag SVGs as separate files instead of base64 in the bundle.
+      //
+      // Vite inlines any asset under 4 KB, and most of the ~290 vendored flags
+      // are smaller than that — which put nearly 300 KB of data: URIs into the
+      // chunk that every page importing lib/flags.tsx has to download, to show
+      // one or two flags. Emitted as files they are fetched only when an <img>
+      // actually points at one, and they cache independently of the JS.
+      assetsInlineLimit: (filePath: string) =>
+        filePath.includes("/assets/flags/") ? false : undefined,
+    },
   },
 });

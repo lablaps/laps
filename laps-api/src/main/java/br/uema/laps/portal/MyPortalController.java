@@ -112,6 +112,7 @@ public class MyPortalController {
         out.put("mustChangePassword", me.isMustChangePassword());
         out.put("emailVerified", me.isEmailVerified());
         out.put("exchangeCountry", me.getExchangeCountry());
+        out.put("exchangeState", me.getExchangeState());
         out.put("undergradProgram", me.getUndergradProgram());
         out.put("joinedSemester", me.getJoinedSemester());
         out.put("joinedMonth", me.getJoinedMonth());
@@ -251,12 +252,18 @@ public class MyPortalController {
      * CO_LEAD by a manager, or who created the project, is not demoted the next
      * time they tick a checkbox), and newly added links are always
      * {@code RESEARCHER}. Elevating someone remains a manager action.
+     *
+     * <p>Closed to undergraduates entirely — see {@link #guardProjectAuthoring}.
+     * Because this endpoint replaces the whole list rather than editing it, the
+     * card is read-only for them: additions and removals both come from someone
+     * further up the lab.
      */
     @PutMapping("/projects")
     @Transactional
     public ResponseEntity<Void> updateMyProjects(@RequestBody List<MyProjectLink> links) {
         Member me = loadMe();
         guardLockedUntilPasswordChanged(me);
+        guardProjectAuthoring(me);
         UUID myId = me.getId();
 
         Map<UUID, String> rolesBefore = memberProjectRepository.findByMemberId(myId).stream()
@@ -308,6 +315,30 @@ public class MyPortalController {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "You must change your temporary password before editing your profile");
+        }
+    }
+
+    /**
+     * Undergraduates do not author the lab's project record.
+     *
+     * <p>Both self-service project endpoints write to what the public site
+     * publishes: {@code /projects/new} creates an entry outright, and
+     * {@code /projects} decides whose name appears on one. Undergrads are the
+     * largest tier in the lab and the one with the highest turnover, so the
+     * decision was to have their participation recorded by whoever supervises
+     * the work rather than claimed from the portal.
+     *
+     * <p>This closes the endpoints, not the outcome: an undergrad can still be
+     * put on a project by a manager from the Central de Comando, or listed in
+     * {@code participantIds} by the member creating the project — neither path
+     * goes through here, and both leave an actor other than the undergrad
+     * responsible for the claim.
+     */
+    private void guardProjectAuthoring(Member me) {
+        if (me.getCurrentRole() == MemberRole.UNDERGRAD) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Undergraduate members cannot add or join projects themselves");
         }
     }
 
@@ -389,12 +420,16 @@ public class MyPortalController {
      * as CO_LEAD (or RESEARCHER if no advisor is selected). An optional advisor
      * (any HEAD/COORDINATOR) is added as LEAD. Additional participants are added
      * as RESEARCHER. Title and description are auto-translated PT→EN/FR.
+     *
+     * <p>Closed to undergraduates — see {@link #guardProjectAuthoring}. They may
+     * still be named in {@code participantIds} by whoever creates the project.
      */
     @PostMapping("/projects/new")
     @Transactional
     public ResponseEntity<Project> createMyProject(@RequestBody MemberProjectCreate req) {
         Member me = loadMe();
         guardLockedUntilPasswordChanged(me);
+        guardProjectAuthoring(me);
 
         Project p = new Project();
         p.setSlug(toSlug(req.titlePt()) + "-" + UUID.randomUUID().toString().substring(0, 8));

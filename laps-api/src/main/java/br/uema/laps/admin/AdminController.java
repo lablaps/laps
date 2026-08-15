@@ -3,6 +3,7 @@ package br.uema.laps.admin;
 import br.uema.laps.audit.AuditLog;
 import br.uema.laps.audit.AuditLogRepository;
 import br.uema.laps.audit.AuditService;
+import br.uema.laps.member.BrazilianState;
 import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
 import br.uema.laps.member.MemberRole;
@@ -181,6 +182,13 @@ public class AdminController {
         // Empty string clears the tag; null means no-op (field not sent by SPA).
         if (req.exchangeCountry() != null)
             m.setExchangeCountry(req.exchangeCountry().isBlank() ? null : req.exchangeCountry());
+        if (req.exchangeState() != null)
+            m.setExchangeState(req.exchangeState().isBlank() ? null : req.exchangeState().toUpperCase());
+        // Applied after both, because either field alone can invalidate the pair:
+        // moving someone from São Paulo to France has to drop the UF, and the DB
+        // CHECK would otherwise reject the write with a constraint error the SPA
+        // cannot explain to anyone.
+        normalizeExchange(m);
         if (req.undergradProgram() != null)
             m.setUndergradProgram(parseUndergradProgram(req.undergradProgram()));
         if (req.joinedSemester() != null)
@@ -192,6 +200,44 @@ public class AdminController {
         Member saved = memberRepository.save(m);
         auditService.record(AuthenticatedMember.id(), "UPDATE_MEMBER", "Member", id.toString(), req);
         return saved;
+    }
+
+    /**
+     * Keeps the exchange country and state consistent with each other.
+     *
+     * <p>The two fields are edited independently but only make sense as a pair,
+     * and V26's CHECK enforces that pairing at the table. Reconciling here means
+     * the ordinary edits — clearing a placement, moving someone from Brazil to
+     * France — succeed as a single request instead of coming back as a
+     * constraint violation the SPA can only render as a generic failure.
+     *
+     * <p>Dropping a now-meaningless UF rather than rejecting the write is
+     * deliberate: the alternative asks a coordinator to clear the state first
+     * and change the country second, an ordering nothing in the UI suggests.
+     */
+    private static void normalizeExchange(Member m) {
+        String country = m.getExchangeCountry();
+        if (country == null || country.isBlank()) {
+            m.setExchangeCountry(null);
+            m.setExchangeState(null);
+            return;
+        }
+
+        // The CHECK compares against 'BR' exactly, so a lower-case code stored
+        // verbatim would make a perfectly valid pair fail at the database.
+        country = country.trim().toUpperCase();
+        m.setExchangeCountry(country);
+
+        if (!"BR".equals(country)) {
+            m.setExchangeState(null);
+            return;
+        }
+
+        String uf = m.getExchangeState();
+        if (uf != null && !BrazilianState.isValid(uf)) {
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Unknown Brazilian state: " + uf);
+        }
     }
 
     /**
@@ -399,6 +445,9 @@ public class AdminController {
             String contactEmail, String roadmap,
             MemberStatus status,
             String exchangeCountry,
+            // UF for a placement inside Brazil; "" clears it, and it is dropped
+            // automatically whenever the country is not BR.
+            String exchangeState,
             // Enum name, or "" to clear. Typed as String rather than
             // UndergradProgram so the empty-string-clears convention matches
             // exchangeCountry — Jackson would reject "" for an enum outright.

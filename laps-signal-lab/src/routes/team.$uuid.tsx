@@ -34,8 +34,8 @@ import {
 } from "@/lib/api";
 import { applyOverlay, decoratePhotoUrl } from "@/lib/static-source";
 import { PublicLayout } from "@/components/PublicLayout";
-import { COUNTRIES, type CountryCode } from "@/lib/exchange-data";
-import { FLAGS } from "@/lib/flags";
+import { countryName, brStateName } from "@/lib/exchange-data";
+import { DestinationFlag } from "@/lib/flags";
 import { UNDERGRAD_PROGRAMS, toProgramCode } from "@/lib/undergrad-programs";
 import { formatJoined } from "@/lib/joined-laps";
 import {
@@ -332,10 +332,18 @@ function TeamMemberPage() {
                     </span>
                     {member.exchangeCountry && (
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/25 bg-laps-ghost/80 px-3 py-1.5 text-xs font-semibold text-laps-navy">
-                        <span className="inline-block h-3.5 w-5 overflow-hidden rounded-sm shadow-sm shrink-0">
-                          {FLAGS[member.exchangeCountry as CountryCode]}
+                        <span className="inline-block h-3.5 w-5 shrink-0 overflow-hidden rounded-sm shadow-sm">
+                          <DestinationFlag
+                            country={member.exchangeCountry}
+                            state={member.exchangeState}
+                          />
                         </span>
-                        Intercambista · {COUNTRIES[member.exchangeCountry as CountryCode]?.name.pt}
+                        {/* Domestic placements name the state — "Intercambista ·
+                            Brasil" would say nothing about where they went. */}
+                        Intercambista ·{" "}
+                        {member.exchangeState
+                          ? `${brStateName(member.exchangeState)} — ${countryName(member.exchangeCountry, "pt")}`
+                          : countryName(member.exchangeCountry, "pt")}
                       </span>
                     )}
                     {programMeta && (

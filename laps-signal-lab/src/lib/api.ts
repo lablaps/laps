@@ -142,6 +142,11 @@ export interface ApiMember {
   bannerColor: string | null;
   bannerImageUrl: string | null;
   exchangeCountry: string | null;
+  /**
+   * UF of a placement inside Brazil ("SP", "MA"…). Null for international
+   * placements — the server drops it whenever exchangeCountry is not "BR".
+   */
+  exchangeState: string | null;
   /** Enum name from UndergradProgram; see lib/undergrad-programs.ts. Null when unknown. */
   undergradProgram: string | null;
   /** Academic period the member joined LAPS, "YYYY.1" | "YYYY.2". */
@@ -388,6 +393,8 @@ export const api = {
       id: string,
       body: Partial<Omit<ApiMember, "id" | "slug" | "currentRole">> & {
         exchangeCountry?: string | null;
+        /** UF, or "" to clear. Ignored unless exchangeCountry is "BR". */
+        exchangeState?: string | null;
         /** Enum name, or "" to clear. Null is a no-op server-side. */
         undergradProgram?: string | null;
         joinedSemester?: string | null;

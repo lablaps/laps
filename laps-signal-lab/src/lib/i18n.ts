@@ -106,8 +106,14 @@ export const translations = {
         "Pesquisadores e estudantes do LAPS construindo pontes científicas com universidades parceiras na Europa e nas Américas. Cada perfil resume a destinação, o nível acadêmico e os idiomas de trabalho em campo.",
       summary: {
         label: "Visão geral",
-        countWithCount: (n: number) => `${n} integrantes do LAPS que tiveram mobilidade internacional`,
-        countries: "4 países: França, Canadá, Portugal e Itália",
+        // Counts and destination lists are derived from the live roster — the
+        // page used to hard-code "4 países: França, Canadá, Portugal e Itália",
+        // which went stale the moment anyone was added.
+        countWithCount: (n: number) => `${n} integrantes do LAPS com experiência de mobilidade`,
+        countriesWithCount: (n: number, names: string) =>
+          n === 0
+            ? "Nenhum destino registrado ainda"
+            : `${n} ${n === 1 ? "destino" : "destinos"}: ${names}`,
         languages: "Português + idiomas dos países anfitriões em uso ativo",
       },
       reality: {
@@ -122,6 +128,10 @@ export const translations = {
       },
       labels: {
         students: "intercambistas",
+        national: "Mobilidade nacional",
+        international: "Mobilidade internacional",
+        empty: "Nenhum intercambista cadastrado ainda.",
+        loading: "Carregando intercambistas…",
         country: "País",
         languages: "Idiomas em uso",
         tier: "Nível",
@@ -268,8 +278,9 @@ export const translations = {
         "LAPS researchers and students building scientific bridges with partner universities across Europe and the Americas. Each profile shows the destination, academic level and working languages on the ground.",
       summary: {
         label: "Overview",
-        countWithCount: (n: number) => `${n} LAPS members currently on international mobility`,
-        countries: "4 host countries: France, Canada, Portugal and Italy",
+        countWithCount: (n: number) => `${n} LAPS members with mobility experience`,
+        countriesWithCount: (n: number, names: string) =>
+          n === 0 ? "No destinations recorded yet" : `${n} ${n === 1 ? "destination" : "destinations"}: ${names}`,
         languages: "Portuguese + the host country's language, in active daily use",
       },
       reality: {
@@ -284,6 +295,10 @@ export const translations = {
       },
       labels: {
         students: "exchange researchers",
+        national: "Domestic mobility",
+        international: "International mobility",
+        empty: "No exchange researchers recorded yet.",
+        loading: "Loading exchange researchers…",
         country: "Country",
         languages: "Working languages",
         tier: "Level",
@@ -430,8 +445,9 @@ export const translations = {
         "Chercheurs et étudiants du LAPS construisant des ponts scientifiques avec des universités partenaires en Europe et dans les Amériques. Chaque profil indique la destination, le niveau académique et les langues de travail sur le terrain.",
       summary: {
         label: "Vue d'ensemble",
-        countWithCount: (n: number) => `${n} membres du LAPS actuellement en mobilité internationale`,
-        countries: "4 pays d'accueil : France, Canada, Portugal et Italie",
+        countWithCount: (n: number) => `${n} membres du LAPS ayant une expérience de mobilité`,
+        countriesWithCount: (n: number, names: string) =>
+          n === 0 ? "Aucune destination enregistrée" : `${n} ${n === 1 ? "destination" : "destinations"} : ${names}`,
         languages: "Portugais + langue du pays d'accueil, en usage quotidien actif",
       },
       reality: {
@@ -446,6 +462,10 @@ export const translations = {
       },
       labels: {
         students: "chercheurs en échange",
+        national: "Mobilité nationale",
+        international: "Mobilité internationale",
+        empty: "Aucun chercheur en échange enregistré.",
+        loading: "Chargement des chercheurs en échange…",
         country: "Pays",
         languages: "Langues de travail",
         tier: "Niveau",
