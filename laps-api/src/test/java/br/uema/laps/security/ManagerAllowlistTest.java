@@ -1,6 +1,7 @@
 package br.uema.laps.security;
 
 import br.uema.laps.member.Member;
+import br.uema.laps.member.MemberRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -11,8 +12,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ManagerAllowlistTest {
 
     private static Member withEmail(String email) {
+        return with(email, MemberRole.UNDERGRAD);
+    }
+
+    private static Member with(String email, MemberRole tier) {
         Member m = new Member();
         m.setEmail(email);
+        m.setCurrentRole(tier);
         return m;
     }
 
@@ -51,7 +57,38 @@ class ManagerAllowlistTest {
         ManagerAllowlist allowlist = new ManagerAllowlist(List.of("coord@uema.br"));
         assertThat(allowlist.roleFor(withEmail("coord@uema.br"))).isEqualTo("MANAGER");
         assertThat(allowlist.roleFor(withEmail("member@uema.br"))).isEqualTo("MEMBER");
-        // Members registered without an email can never be managers.
+        // An off-allowlist email on a non-manager tier stays a plain member.
         assertThat(allowlist.roleFor(withEmail(null))).isEqualTo("MEMBER");
+    }
+
+    @Test
+    @DisplayName("the Gerenciador tier grants MANAGER without an allowlist entry")
+    void managerTierGrantsAuthority() {
+        ManagerAllowlist allowlist = new ManagerAllowlist(List.of("coord@uema.br"));
+        assertThat(allowlist.roleFor(with("sofia@uema.br", MemberRole.MANAGER))).isEqualTo("MANAGER");
+        // The path that motivated this: members created from the Central de
+        // Comando often have no email at all, so the allowlist can never reach
+        // them and the tier is their only route to the console.
+        assertThat(allowlist.roleFor(with(null, MemberRole.MANAGER))).isEqualTo("MANAGER");
+    }
+
+    @Test
+    @DisplayName("seniority above Gerenciador is not itself an admin grant")
+    void seniorTiersAreNotManagers() {
+        // COORDINATOR and HEAD outrank MANAGER academically but describe
+        // seniority, not console duty — they need an allowlist entry like anyone
+        // else. Keeping them out is what stops the whole leadership row of the
+        // dashboard from silently becoming administrators.
+        ManagerAllowlist allowlist = new ManagerAllowlist(List.of("coord@uema.br"));
+        assertThat(allowlist.roleFor(with("head@uema.br", MemberRole.HEAD))).isEqualTo("MEMBER");
+        assertThat(allowlist.roleFor(with("other@uema.br", MemberRole.COORDINATOR))).isEqualTo("MEMBER");
+        // …but the allowlist still wins regardless of tier.
+        assertThat(allowlist.roleFor(with("coord@uema.br", MemberRole.COORDINATOR))).isEqualTo("MANAGER");
+    }
+
+    @Test
+    @DisplayName("a null member resolves to MEMBER rather than throwing")
+    void nullMemberIsNotAManager() {
+        assertThat(new ManagerAllowlist(List.of("coord@uema.br")).roleFor(null)).isEqualTo("MEMBER");
     }
 }

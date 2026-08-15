@@ -41,7 +41,13 @@ function LoginPage() {
       toast.success("Login realizado com sucesso!");
       // Managers go straight to /admin; everyone else lands in /portal where
       // the must-change-password gate (if any) is enforced inline.
-      const dest: "/admin" | "/portal" = res.role === "MANAGER" ? "/admin" : "/portal";
+      //
+      // A manager still on a temporary password is the exception: the gate only
+      // renders in /portal, so sending them to the console would let them work
+      // the whole session on the credential a coordinator read out to them. They
+      // land in /portal, rotate, then take the Central de Comando button across.
+      const dest: "/admin" | "/portal" =
+        res.role === "MANAGER" && !res.mustChangePassword ? "/admin" : "/portal";
       navigate({ to: dest });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {

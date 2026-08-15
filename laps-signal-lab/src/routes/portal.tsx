@@ -17,6 +17,7 @@ import {
   GraduationCap,
   ImageIcon,
   KeyRound,
+  LayoutDashboard,
   Lock,
   Mail,
   MapPin,
@@ -300,6 +301,19 @@ function PortalPage() {
           </Link>
           <div className="flex items-center gap-2">
             <PortalLangSwitcher />
+            {/* Managers work in both halves of the app — their own portfolio and
+                the lab-wide console. Rendered off auth.isManager (the resolved
+                security role) rather than me.currentRole, so the button is only
+                offered when /admin will actually let them in. */}
+            {auth.isManager && (
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/30 bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white shadow-[0_6px_18px_-8px_rgba(11,78,141,0.65)] transition hover:bg-laps-navy"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                {t.portal.commandCenter}
+              </Link>
+            )}
             <Link
               to="/team/$uuid"
               params={{ uuid: me.id }}

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -31,6 +31,7 @@ import {
   Link2,
   Clock,
   CheckCircle2,
+  UserCircle,
 } from "lucide-react";
 import {
   api,
@@ -178,6 +179,15 @@ function AdminPage() {
             Gerenciar
           </span>
           <div className="ml-auto flex items-center gap-3">
+            {/* Return leg of the portal ↔ console switch. A manager is also a
+                member with a portfolio of their own, so the console is a place
+                they pass through rather than a terminus. */}
+            <Link
+              to="/portal"
+              className="inline-flex items-center gap-1.5 rounded-md border border-laps-blue/25 bg-laps-ghost px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-blue/10"
+            >
+              <UserCircle className="h-3.5 w-3.5" /> Meu portfólio
+            </Link>
             <a
               href="/team"
               className="hidden items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-laps-navy/60 transition hover:text-laps-blue md:inline-flex"
