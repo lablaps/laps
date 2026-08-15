@@ -73,9 +73,24 @@ public class TranslationService {
                 default -> translateViaMyMemory(text, targetLang);
             };
         } catch (Exception ex) {
-            log.warn("Translation to {} failed; keeping source. cause={}", targetLang, ex.toString());
+            log.warn("Translation to {} failed; keeping source. cause={}", targetLang, redactKey(ex.toString()));
             return text;
         }
+    }
+
+    /**
+     * Strips {@code laps.translate.api-key} out of anything we log.
+     *
+     * The key is a query parameter on the MyMemory request URL, and the
+     * exceptions that reach the catch above (URI parsing, connect/timeout
+     * failures) embed the full URL in their own message — so logging the cause
+     * verbatim published the key. Provider response bodies get the same
+     * treatment: they are third-party text that can echo the request back.
+     * No-op when no key is configured, which is the default.
+     */
+    private String redactKey(String message) {
+        if (apiKey.isBlank() || message == null) return message;
+        return message.replace(apiKey, "***");
     }
 
     private String translateViaMyMemory(String text, String targetLang) throws Exception {
@@ -94,7 +109,7 @@ public class TranslationService {
                 .build();
         HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (res.statusCode() / 100 != 2) {
-            log.warn("MyMemory returned {} for target={}: {}", res.statusCode(), targetLang, res.body());
+            log.warn("MyMemory returned {} for target={}: {}", res.statusCode(), targetLang, redactKey(res.body()));
             return text;
         }
         JsonNode node = mapper.readTree(res.body());
@@ -130,7 +145,7 @@ public class TranslationService {
                 .build();
         HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         if (res.statusCode() / 100 != 2) {
-            log.warn("LibreTranslate returned {} for target={}: {}", res.statusCode(), targetLang, res.body());
+            log.warn("LibreTranslate returned {} for target={}: {}", res.statusCode(), targetLang, redactKey(res.body()));
             return text;
         }
         JsonNode node = mapper.readTree(res.body());

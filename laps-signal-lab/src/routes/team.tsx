@@ -24,7 +24,7 @@ import { TeamGraph } from "@/components/TeamGraph";
 import { PublicLayout } from "@/components/PublicLayout";
 import { fetchProjects, type ApiProject } from "@/lib/api";
 import { initials, type Tier } from "@/lib/team-data";
-import teamPhoto from "@/assets/laps-team.jpg";
+import teamPhoto from "@/assets/laps-team.jpeg";
 
 type View = "mesh" | "pyramid" | "list";
 

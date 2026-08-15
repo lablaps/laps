@@ -27,7 +27,10 @@ uploads/
 # ─── Secrets ────────────────────────────────────────────────────────────────
 .env
 .env.*
-.env.example
+# The template carries no secrets and must stay tracked — without this negation
+# the pattern above hides it, and a `git rm --cached` would drop the only
+# per-module documentation of the required variables without anyone noticing.
+!.env.example
 
 # ─── IDEs ───────────────────────────────────────────────────────────────────
 .idea/
