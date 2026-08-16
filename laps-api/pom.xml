@@ -5,7 +5,19 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.0</version>
+        <!--
+          3.5.16, not 3.4.x. The 3.4 line stopped at 3.4.13 and is past its OSS
+          support window, so it receives no further patches — staying on it means
+          every future advisory is permanent. 3.5 is the last line before the 4.x
+          break and is still shipping patch releases; it runs the same Spring
+          Framework 6.2 generation as 3.4, which is why this is a version bump
+          rather than a migration.
+
+          Moving to 4.x is the eventual answer, not this one: it is a major with
+          breaking changes, and the reason to move today is unpatched security,
+          which 3.5.16 solves without a rewrite.
+        -->
+        <version>3.5.16</version>
         <relativePath/>
     </parent>
 
@@ -91,6 +103,19 @@
             <optional>true</optional>
         </dependency>
 
+        <!--
+            H2 exists for exactly one test: ApplicationContextSmokeTest, which
+            needs *a* database because the startup runners are @Transactional
+            and open one before their first line executes. It is not a stand-in
+            for Postgres anywhere else — the schema under test there is
+            generated from the entities, not from the Flyway migrations, and
+            every behavioural test in this module runs on mocks.
+        -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
