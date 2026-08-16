@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { initials, type Tier } from "@/lib/team-data";
+import { TIER_COLOR, TIER_GRADIENT } from "@/lib/tier-visual";
 import { useTeamRoster, type RosterMember } from "@/hooks/use-team-roster";
 import { fetchProjects, type ApiProject } from "@/lib/api";
 
@@ -35,23 +36,8 @@ const TIER_ORDER: Tier[] = [
   "undergrad",
 ];
 
-const TIER_COLOR: Record<Tier, string> = {
-  head: "#193A59",
-  coordinator: "#5B21B6",
-  manager: "#7C3AED",
-  doctorate: "#0B4E8D",
-  master: "#059669",
-  undergrad: "#D97706",
-};
-
-const TIER_GRADIENT: Record<Tier, [string, string]> = {
-  head: ["#193A59", "#0B4E8D"],
-  coordinator: ["#5B21B6", "#A78BFA"],
-  manager: ["#7C3AED", "#C4B5FD"],
-  doctorate: ["#0B4E8D", "#74B5F2"],
-  master: ["#10B981", "#6EE7B7"],
-  undergrad: ["#F59E0B", "#FCD34D"],
-};
+// Both tables now live in lib/tier-visual.ts — see the note there on why the
+// six-hue version was replaced by one ramp plus an accent.
 
 // Radial annulus [rMin, rMax] per tier — head at center.
 const TIER_ANNULUS: Record<Tier, [number, number]> = {
@@ -517,7 +503,7 @@ export function TeamGraph({ labels }: Props) {
 
         {/* Main graph */}
         <div className="relative flex-1 min-w-0">
-          <div className="relative mx-auto aspect-[12/7.8] w-full max-w-6xl overflow-hidden rounded-2xl border border-laps-light/20 shadow-[0_4px_32px_rgba(25,58,89,0.06)]"
+          <div className="relative mx-auto aspect-[12/7.8] w-full max-w-6xl overflow-hidden rounded-md border border-laps-navy/15"
             style={{ background: "radial-gradient(ellipse at 50% 40%, #f8fafc 35%, #eef2f7 100%)" }}
           >
             {/* Faint dotted grid */}
@@ -1163,7 +1149,7 @@ function DraggableNode({
           fill="white"
           letterSpacing="-0.5"
           pointerEvents="none"
-          style={{ fontFamily: "Space Grotesk, sans-serif" }}
+          style={{ fontFamily: "Archivo, sans-serif" }}
         >
           {initials(member.fullName)}
         </text>
@@ -1192,7 +1178,7 @@ function DraggableNode({
           opacity={isActive ? 1 : 0.82}
           pointerEvents="none"
           style={{
-            fontFamily: "Space Grotesk, sans-serif",
+            fontFamily: "Archivo, sans-serif",
             fontVariantNumeric: "tabular-nums",
           }}
         >

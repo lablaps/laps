@@ -1,21 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import {
-  Crown,
-  Microscope,
-  GraduationCap,
-  Users,
-  Network,
-  ArrowDown,
-  Triangle,
-  List,
-  Search,
-  Filter,
-  X,
-  Shield,
-  Briefcase,
-} from "lucide-react";
+// Crown / Shield / Briefcase / Microscope / GraduationCap / Users went with the
+// per-tier icon chips; ArrowDown went with the arrow stapled to the photo CTA.
+import { Network, Triangle, List, Search, Filter, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLang } from "@/hooks/use-lang";
 import { useTeamRoster, type RosterMember } from "@/hooks/use-team-roster";
@@ -24,6 +12,7 @@ import { TeamGraph } from "@/components/TeamGraph";
 import { PublicLayout } from "@/components/PublicLayout";
 import { fetchProjects, type ApiProject } from "@/lib/api";
 import { initials, type Tier } from "@/lib/team-data";
+import { TIER_CLASS } from "@/lib/tier-visual";
 import teamPhoto from "@/assets/laps-team.jpeg";
 
 type View = "mesh" | "pyramid" | "list";
@@ -36,53 +25,8 @@ const VIEW_ICON: Record<View, typeof Network> = {
 
 const TIER_ORDER: Tier[] = ["head", "coordinator", "manager", "doctorate", "master", "undergrad"];
 
-const TIER_VISUAL: Record<
-  Tier,
-  { gradient: string; ring: string; icon: typeof Crown; chipBg: string; chipText: string }
-> = {
-  head: {
-    gradient: "from-laps-ink to-laps-blue",
-    ring: "ring-laps-light/40",
-    icon: Crown,
-    chipBg: "bg-laps-ghost",
-    chipText: "text-laps-blue",
-  },
-  coordinator: {
-    gradient: "from-violet-700 to-violet-400",
-    ring: "ring-violet-200",
-    icon: Shield,
-    chipBg: "bg-violet-50",
-    chipText: "text-violet-700",
-  },
-  manager: {
-    gradient: "from-purple-600 to-purple-300",
-    ring: "ring-purple-200",
-    icon: Briefcase,
-    chipBg: "bg-purple-50",
-    chipText: "text-purple-700",
-  },
-  doctorate: {
-    gradient: "from-laps-blue to-laps-light",
-    ring: "ring-laps-blue/30",
-    icon: Microscope,
-    chipBg: "bg-blue-50",
-    chipText: "text-laps-blue",
-  },
-  master: {
-    gradient: "from-emerald-500 to-emerald-300",
-    ring: "ring-emerald-200",
-    icon: GraduationCap,
-    chipBg: "bg-emerald-50",
-    chipText: "text-emerald-700",
-  },
-  undergrad: {
-    gradient: "from-amber-400 to-amber-200",
-    ring: "ring-amber-200",
-    icon: Users,
-    chipBg: "bg-amber-50",
-    chipText: "text-amber-700",
-  },
-};
+// Tier colours come from lib/tier-visual.ts now — one ramp shared with the
+// graph and /exchange, instead of three drifting copies of a six-hue table.
 
 export const Route = createFileRoute("/team")({
   component: TeamPage,
@@ -133,53 +77,65 @@ function TeamPage() {
 
   return (
     <PublicLayout>
-      {/* HERO */}
-      <section className="relative bg-gradient-to-b from-laps-ghost/40 via-surface to-surface py-16">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <span className="inline-block rounded-full bg-laps-ghost px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-laps-blue">
-            {t.structure.chip}
-          </span>
-          <h1 className="font-display mt-6 text-4xl font-bold text-laps-navy md:text-5xl">
-            {t.structure.title}
-          </h1>
-          <p className="mt-5 text-base leading-relaxed text-laps-navy/75 md:text-lg">
-            {t.structure.body}
-          </p>
-        </div>
+      {/* ── HERO ─────────────────────────────────────────────────────────── */}
+      <section className="border-b border-laps-navy/15 bg-laps-paper">
+        <div className="mx-auto max-w-[1280px] px-6 py-20 md:px-10">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-7">
+              <p className="label-tech">/ {t.structure.chip}</p>
+              <h1 className="font-display mt-6 text-[clamp(2.25rem,5vw,4.25rem)] font-extrabold leading-[0.95] text-laps-navy">
+                {t.structure.title}
+              </h1>
+            </div>
+            <p className="text-base leading-relaxed text-laps-navy/70 lg:col-span-5 lg:pt-3">
+              {t.structure.body}
+            </p>
+          </div>
 
-        {/* Tier counts */}
-        <div className="mx-auto mt-10 grid max-w-6xl gap-4 px-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {[
-            { tier: "head" as Tier, label: labels.tier.head, value: tierCounts.head },
-            { tier: "coordinator" as Tier, label: labels.tier.coordinator, value: tierCounts.coordinator },
-            { tier: "doctorate" as Tier, label: labels.tier.doctorate, value: tierCounts.doctorate },
-            { tier: "master" as Tier, label: labels.tier.master, value: tierCounts.master },
-            { tier: "undergrad" as Tier, label: labels.tier.undergrad, value: tierCounts.undergrad },
-          ].map((tier) => {
-            const v = TIER_VISUAL[tier.tier];
-            const Icon = v.icon;
-            return (
+          {/* ── Tier counts ────────────────────────────────────────────────
+              A ruled census, not five lifting cards each with its own coloured
+              icon chip. The tiers are a ladder, so they are shown as one: read
+              left to right they run senior → junior, and the only colour spent
+              is the accent on `head`, which is one person.
+              The dropped chips were Crown / Shield / Microscope / GraduationCap
+              / Users — the stock glyph for each word, adding nothing the label
+              beside them did not already say. */}
+          <div className="mt-16 grid grid-cols-2 border-t border-laps-navy/15 sm:grid-cols-3 lg:grid-cols-5">
+            {[
+              { tier: "head" as Tier, label: labels.tier.head, value: tierCounts.head },
+              { tier: "coordinator" as Tier, label: labels.tier.coordinator, value: tierCounts.coordinator },
+              { tier: "doctorate" as Tier, label: labels.tier.doctorate, value: tierCounts.doctorate },
+              { tier: "master" as Tier, label: labels.tier.master, value: tierCounts.master },
+              { tier: "undergrad" as Tier, label: labels.tier.undergrad, value: tierCounts.undergrad },
+            ].map((tier, i) => (
               <div
                 key={tier.label}
-                className="group rounded-2xl border border-laps-light/25 bg-surface p-5 shadow-[0_2px_20px_rgba(25,58,89,0.05)] transition hover:-translate-y-1 hover:shadow-[0_14px_40px_-12px_rgba(11,78,141,0.18)]"
+                className={[
+                  "border-b border-laps-navy/15 py-6 pr-6 lg:border-b-0",
+                  i > 0 ? "border-l border-laps-navy/15 pl-6" : "",
+                ].join(" ")}
               >
-                <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${v.chipBg} ring-4 ring-${tier.tier === "head" ? "laps-blue/20" : "transparent"}`}>
-                  <Icon className={`h-5 w-5 ${v.chipText}`} />
-                </div>
-                <div className={`font-display mt-4 text-3xl font-bold ${v.chipText}`}>
+                <div
+                  className={`tnum font-mono text-3xl font-medium ${TIER_CLASS[tier.tier].text}`}
+                >
                   <CountUp end={tier.value} />
                 </div>
-                <div className="mt-1 text-sm font-medium text-laps-navy/70">{tier.label}</div>
+                <div className="mt-2 font-mono text-[10px] font-medium uppercase leading-tight tracking-[0.12em] text-laps-navy/55">
+                  {tier.label}
+                </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* TEAM PHOTO — the first impression, and the hand-off into the graph */}
-      <section className="relative bg-surface pt-10">
-        <div className="mx-auto max-w-6xl px-6">
-          <figure className="group relative overflow-hidden rounded-3xl shadow-[0_24px_70px_-32px_rgba(11,78,141,0.55)]">
+      <section className="relative bg-surface pt-16">
+        <div className="mx-auto max-w-[1280px] px-6 md:px-10">
+          {/* Square and unshadowed. A 24px radius with a 70px tinted drop shadow
+              made the one real photograph on the site look like a stock card;
+              a hard edge lets it read as a document. */}
+          <figure className="group relative overflow-hidden border border-laps-navy/15">
             <img
               src={teamPhoto}
               alt={t.structure.teamPhoto.alt}
@@ -210,11 +166,10 @@ function TeamPage() {
                 <button
                   type="button"
                   onClick={goToNetwork}
-                  className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-surface px-5 py-2.5 text-sm font-semibold text-laps-navy shadow-lg transition-[transform,background-color] duration-200 hover:bg-laps-ghost active:scale-[0.96]"
+                  className="mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-laps-ink transition-colors duration-150 hover:bg-laps-signal hover:text-white active:translate-y-px"
                 >
-                  <Network className="h-4 w-4 text-laps-blue" />
+                  <Network className="h-4 w-4" />
                   {t.structure.teamPhoto.cta}
-                  <ArrowDown className="h-4 w-4 text-laps-blue/70" />
                 </button>
               </div>
             </figcaption>
@@ -223,54 +178,49 @@ function TeamPage() {
       </section>
 
       {/* VIEW TABS */}
-      <section ref={networkRef} className="relative scroll-mt-24 bg-surface pt-4">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="flex justify-center">
-            <div className="relative inline-flex items-center gap-0.5 rounded-full border border-laps-navy/10 bg-surface/80 p-1 shadow-sm backdrop-blur">
-              {(Object.keys(VIEW_ICON) as View[]).map((v) => {
-                const Icon = VIEW_ICON[v];
-                const active = view === v;
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setView(v)}
-                    className="relative isolate px-1 py-1"
-                    aria-pressed={active}
+      <section ref={networkRef} className="relative scroll-mt-24 bg-surface pt-16">
+        <div className="mx-auto max-w-[1280px] px-6 md:px-10">
+          {/* Flush-left tabs on a rule, marked by the same 2px accent the header
+              nav uses. The floating capsule with a sliding pill inside it was
+              the header's old treatment duplicated — two pill switchers on one
+              page, neither of them belonging to the page's structure. */}
+          <div className="flex border-b border-laps-navy/15">
+            {(Object.keys(VIEW_ICON) as View[]).map((v) => {
+              const Icon = VIEW_ICON[v];
+              const active = view === v;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  className="relative isolate -mb-px"
+                  aria-pressed={active}
+                >
+                  <span
+                    className={`relative inline-flex items-center gap-2 px-5 py-3 text-xs font-semibold transition-colors md:text-sm ${
+                      active ? "text-laps-navy" : "text-laps-navy/55 hover:text-laps-navy"
+                    }`}
                   >
-                    {active && (
-                      <>
-                        <motion.span
-                          layoutId="view-pill-outer"
-                          transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                          className="absolute inset-0 -z-10 rounded-full bg-laps-accent shadow-[0_4px_14px_rgba(11,78,141,0.25)]"
-                        />
-                        <motion.span
-                          layoutId="view-pill-inner"
-                          transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                          className="absolute inset-[3px] -z-10 rounded-full bg-surface"
-                        />
-                      </>
-                    )}
-                    <span
-                      className={`relative inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors md:text-sm ${
-                        active ? "text-laps-blue" : "text-laps-navy/65 hover:text-laps-navy"
-                      }`}
-                    >
-                      <Icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                      {labels.views[v]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                    <Icon className="h-4 w-4" />
+                    {labels.views[v]}
+                  </span>
+                  {active && (
+                    <motion.span
+                      layoutId="view-marker"
+                      transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                      className="absolute inset-x-0 bottom-0 h-0.5 bg-laps-signal"
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* VIEW CONTENT */}
-      <section className="relative bg-surface pb-24 pt-8">
-        <div className="mx-auto max-w-6xl px-6">
+      <section className="relative bg-surface pb-24 pt-10">
+        <div className="mx-auto max-w-[1280px] px-6 md:px-10">
           {view === "mesh" && <TeamGraph labels={labels} lang={lang} />}
           {view === "pyramid" && <PyramidView members={members} labels={labels} />}
           {view === "list" && <ListView members={members} labels={labels} />}
@@ -294,8 +244,7 @@ function PyramidView({
       {TIER_ORDER.map((tier, tierIdx) => {
         const tierMembers = members.filter((m) => m.tier === tier);
         if (tierMembers.length === 0) return null;
-        const v = TIER_VISUAL[tier];
-        const Icon = v.icon;
+        const c = TIER_CLASS[tier];
         return (
           <motion.div
             key={tier}
@@ -304,18 +253,20 @@ function PyramidView({
             transition={{ duration: 0.4, delay: tierIdx * 0.08 }}
             className="relative"
           >
-            <div className="mb-4 flex items-center justify-center gap-3">
-              <div className={`flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br ${v.gradient} text-white shadow-sm`}>
-                <Icon className="h-4 w-4" />
-              </div>
-              <h3 className="font-display text-lg font-bold text-laps-navy">
+            {/* Tier heading as a ruled band: a dot on the ramp, the name, and
+                the count in mono at the far right. Flush-left, because a
+                hierarchy that centres each row hides the shape it is trying to
+                show. */}
+            <div className="flex items-baseline gap-3 border-b border-laps-navy/15 pb-3">
+              <span className={`h-2 w-2 shrink-0 translate-y-[-1px] ${c.dot}`} />
+              <h3 className={`font-display text-base font-bold ${c.text}`}>
                 {labels.tier[tier]}
               </h3>
-              <span className="rounded-full bg-laps-ghost px-2 py-0.5 text-xs font-bold text-laps-blue">
-                {tierMembers.length}
+              <span className="tnum ml-auto font-mono text-[11px] text-laps-navy/45">
+                {String(tierMembers.length).padStart(2, "0")}
               </span>
             </div>
-            <div className="mx-auto flex max-w-5xl flex-wrap items-start justify-center gap-3 md:gap-4">
+            <div className="mt-6 flex flex-wrap items-start gap-x-4 gap-y-6">
               {tierMembers.map((m) => (
                 <Link
                   key={m.id}
@@ -324,7 +275,7 @@ function PyramidView({
                   className="group flex w-24 flex-col items-center text-center md:w-28"
                 >
                   <div
-                    className={`relative h-16 w-16 overflow-hidden rounded-full bg-gradient-to-br ${v.gradient} p-0.5 shadow-sm ring-2 ring-white transition group-hover:scale-105 group-hover:shadow-md md:h-20 md:w-20`}
+                    className={`relative h-16 w-16 overflow-hidden rounded-full border-2 border-transparent bg-laps-ghost transition-colors group-hover:border-laps-signal md:h-20 md:w-20`}
                   >
                     {m.photo ? (
                       <img
@@ -333,12 +284,12 @@ function PyramidView({
                         className="h-full w-full rounded-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center rounded-full text-sm font-bold text-white">
+                      <div className="flex h-full w-full items-center justify-center rounded-full font-mono text-xs font-semibold text-laps-navy/60">
                         {initials(m.fullName)}
                       </div>
                     )}
                   </div>
-                  <span className="mt-2 line-clamp-2 text-[11px] font-semibold leading-tight text-laps-navy/85 group-hover:text-laps-blue md:text-xs">
+                  <span className="mt-2 line-clamp-2 text-[11px] font-semibold leading-tight text-laps-navy/80 transition-colors group-hover:text-laps-signal md:text-xs">
                     {m.fullName}
                   </span>
                 </Link>
@@ -505,20 +456,26 @@ function ListView({
           {labels.views.noResults}
         </p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((m) => {
-            const v = TIER_VISUAL[m.tier];
-            const Icon = v.icon;
+        // A ruled roster instead of a grid of shadowed, lifting cards. The tier
+        // is now a dot on the ramp plus its name in mono — the pill badge that
+        // carried a Lucide glyph and a tinted fill said the same thing three
+        // times over.
+        <div className="grid border-t border-laps-navy/15 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((m, i) => {
+            const c = TIER_CLASS[m.tier];
             return (
               <Link
                 key={m.id}
                 to="/team/$uuid"
                 params={{ uuid: m.uuid ?? m.id }}
-                className="group flex items-center gap-4 rounded-2xl border border-laps-navy/8 bg-surface p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-laps-blue/25 hover:shadow-md"
+                className={[
+                  "group relative flex items-center gap-4 border-b border-laps-navy/15 py-4 pr-4 transition-colors hover:bg-laps-ghost/60",
+                  i % 2 === 1 ? "sm:border-l sm:border-laps-navy/15 sm:pl-4" : "",
+                  i % 3 !== 0 ? "lg:border-l lg:border-laps-navy/15 lg:pl-4" : "lg:border-l-0 lg:pl-0",
+                ].join(" ")}
               >
-                <div
-                  className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-gradient-to-br ${v.gradient} p-0.5 ring-2 ring-white`}
-                >
+                <span className="absolute left-0 top-0 h-0.5 w-0 bg-laps-signal transition-all duration-300 group-hover:w-full" />
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-laps-ghost">
                   {m.photo ? (
                     <img
                       src={m.photo}
@@ -526,19 +483,20 @@ function ListView({
                       className="h-full w-full rounded-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center rounded-full text-xs font-bold text-white">
+                    <div className="flex h-full w-full items-center justify-center rounded-full font-mono text-[11px] font-semibold text-laps-navy/60">
                       {initials(m.fullName)}
                     </div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-laps-navy group-hover:text-laps-blue">
+                  <p className="truncate text-sm font-semibold text-laps-navy transition-colors group-hover:text-laps-signal">
                     {m.fullName}
                   </p>
-                  <span
-                    className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${v.chipBg} ${v.chipText}`}
-                  >
-                    <Icon className="h-3 w-3" /> {labels.tier[m.tier]}
+                  <span className="mt-1.5 inline-flex items-center gap-2">
+                    <span className={`h-1.5 w-1.5 shrink-0 ${c.dot}`} />
+                    <span className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-laps-navy/50">
+                      {labels.tier[m.tier]}
+                    </span>
                   </span>
                 </div>
               </Link>

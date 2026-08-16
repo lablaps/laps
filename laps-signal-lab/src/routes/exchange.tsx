@@ -1,10 +1,13 @@
 import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Globe, Plane, Users, Languages, Loader2, MapPin } from "lucide-react";
+// Globe / Users / Languages / Plane went with the summary chips and the country
+// header — see the notes at those call sites.
+import { Loader2, MapPin } from "lucide-react";
 import { useLang } from "@/hooks/use-lang";
 import { PublicLayout } from "@/components/PublicLayout";
 import { initials, type Tier } from "@/lib/team-data";
+import { TIER_CLASS } from "@/lib/tier-visual";
 import { fetchMembers, resolveMediaUrl, type ApiMember } from "@/lib/api";
 import { applyOverlay } from "@/lib/static-source";
 import {
@@ -42,16 +45,9 @@ const ROLE_TO_TIER: Record<string, Tier> = {
   UNDERGRAD: "undergrad",
 };
 
-// Visual styling per tier — mirrors the palette used on /team and /team/$uuid
-// so an exchange researcher's card reads like a peer-card you'd see elsewhere.
-const TIER_VISUAL: Record<Tier, { gradient: string; ring: string }> = {
-  head: { gradient: "from-laps-ink to-laps-blue", ring: "ring-laps-light/40" },
-  coordinator: { gradient: "from-violet-700 to-violet-400", ring: "ring-violet-200" },
-  manager: { gradient: "from-purple-600 to-purple-300", ring: "ring-purple-200" },
-  doctorate: { gradient: "from-laps-blue to-laps-light", ring: "ring-laps-blue/30" },
-  master: { gradient: "from-emerald-500 to-emerald-300", ring: "ring-emerald-200" },
-  undergrad: { gradient: "from-amber-400 to-amber-200", ring: "ring-amber-200" },
-};
+// The tier ramp lives in lib/tier-visual.ts — the same table the roster and the
+// network graph read, so an exchange card places a member on exactly the same
+// scale they occupy on /team.
 
 interface CountryGroup {
   code: CountryCode;
@@ -133,39 +129,41 @@ function ExchangePage() {
 
   return (
     <PublicLayout>
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-laps-ghost/40 via-surface to-surface py-20">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <span className="inline-block rounded-full bg-laps-ghost px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-laps-blue">
-            {tx.chip}
-          </span>
-          <h1 className="font-display mt-6 text-4xl font-bold text-laps-navy md:text-5xl">
-            {tx.heroTitle}
-          </h1>
-          <p className="mt-6 text-base leading-relaxed text-laps-navy/75 md:text-lg">
-            {tx.heroBody}
-          </p>
+      {/* ── HERO ─────────────────────────────────────────────────────────── */}
+      <section className="border-b border-laps-navy/15 bg-laps-paper">
+        <div className="mx-auto max-w-[1280px] px-6 py-20 md:px-10">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-7">
+              <p className="label-tech">/ {tx.chip}</p>
+              <h1 className="font-display mt-6 text-[clamp(2.25rem,5vw,4.25rem)] font-extrabold leading-[0.95] text-laps-navy">
+                {tx.heroTitle}
+              </h1>
+            </div>
+            <p className="text-base leading-relaxed text-laps-navy/70 lg:col-span-5 lg:pt-3">
+              {tx.heroBody}
+            </p>
+          </div>
 
-          {/* Quick summary cards — all three derived from the live roster. */}
-          <div className="mt-10 grid gap-3 sm:grid-cols-3">
+          {/* Quick summary — all three derived from the live roster.
+              Ruled columns rather than three shadowed cards each led by a
+              Globe / Users / Languages glyph. All three carried the same
+              `tx.summary.label`, so the icons were the only thing telling them
+              apart — which is the job the values themselves should do. */}
+          <dl className="mt-16 grid border-t border-laps-navy/15 sm:grid-cols-3">
+            <SummaryCard label={tx.summary.label} value={tx.summary.countWithCount(totalCount)} index={0} />
             <SummaryCard
-              icon={Users}
-              label={tx.summary.label}
-              value={tx.summary.countWithCount(totalCount)}
-            />
-            <SummaryCard
-              icon={Globe}
               label={tx.summary.label}
               value={tx.summary.countriesWithCount(groups.length, destinationNames)}
+              index={1}
             />
-            <SummaryCard icon={Languages} label={tx.summary.label} value={tx.summary.languages} />
-          </div>
+            <SummaryCard label={tx.summary.label} value={tx.summary.languages} index={2} />
+          </dl>
         </div>
       </section>
 
       {/* COUNTRY SECTIONS */}
-      <section className="bg-surface pb-20">
-        <div className="mx-auto max-w-6xl space-y-12 px-6">
+      <section className="bg-surface pb-20 pt-16">
+        <div className="mx-auto max-w-[1280px] space-y-12 px-6 md:px-10">
           {isLoading && (
             <div className="flex items-center justify-center gap-2 py-16 text-sm text-laps-navy/55">
               <Loader2 className="h-5 w-5 animate-spin" /> {tx.labels.loading}
@@ -179,29 +177,28 @@ function ExchangePage() {
           {groups.map((group) => {
             const isBrazil = group.code === BRAZIL;
             return (
-              <div
-                key={group.code}
-                className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface shadow-[0_2px_20px_rgba(25,58,89,0.06)]"
-              >
-                {/* Country header — flag + name + count */}
-                <div className="flex flex-col gap-4 border-b border-laps-blue/10 bg-laps-ghost/30 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div key={group.code} className="border border-laps-navy/15 bg-surface">
+                {/* Country header — flag + name + count.
+                    The decorative Plane glyph is gone: a page called "exchange"
+                    listing countries by flag does not need a picture of an
+                    aeroplane to explain itself. */}
+                <div className="flex flex-col gap-4 border-b border-laps-navy/15 bg-laps-ghost/60 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="h-[52px] w-[80px] shrink-0 overflow-hidden rounded-md shadow-[0_0_0_1px_rgba(0,0,0,0.12)]">
+                    <div className="h-[52px] w-[80px] shrink-0 overflow-hidden rounded-sm shadow-[0_0_0_1px_rgba(0,0,0,0.12)]">
                       <CountryFlag code={group.code} />
                     </div>
                     <div>
                       <h2 className="font-display text-2xl font-bold text-laps-navy">
                         {countryName(group.code, lang)}
                       </h2>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-laps-navy/55">
-                        {group.members.length} {tx.labels.students}
+                      <p className="mt-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/50">
+                        <span className="tnum">{group.members.length}</span> {tx.labels.students}
                         <span className="ml-2 text-laps-navy/35">
                           · {isBrazil ? tx.labels.national : tx.labels.international}
                         </span>
                       </p>
                     </div>
                   </div>
-                  <Plane className="hidden h-6 w-6 shrink-0 text-laps-blue/60 sm:block" />
                 </div>
 
                 {isBrazil ? (
@@ -253,11 +250,11 @@ function ExchangePage() {
       {/* CULTURAL IMMERSION + LAB OPPORTUNITY */}
       <section className="bg-laps-ghost/30 py-20">
         <div className="mx-auto grid max-w-6xl gap-6 px-6 md:grid-cols-2">
-          <article className="rounded-2xl border border-laps-blue/15 bg-surface p-7 shadow-[0_2px_20px_rgba(25,58,89,0.06)]">
+          <article className="rounded-md border border-laps-navy/15 bg-surface p-7">
             <h3 className="font-display text-xl font-bold text-laps-navy">{tx.reality.title}</h3>
             <p className="mt-4 text-sm leading-relaxed text-laps-navy/80">{tx.reality.body}</p>
           </article>
-          <article className="overflow-hidden rounded-2xl bg-gradient-to-br from-laps-ink to-laps-blue p-7 text-white shadow-lg">
+          <article className="overflow-hidden rounded-md bg-laps-ink p-7 text-white">
             <h3 className="font-display text-xl font-bold">{tx.opportunity.title}</h3>
             <p className="mt-4 text-sm leading-relaxed text-white/90">{tx.opportunity.body}</p>
           </article>
@@ -268,25 +265,25 @@ function ExchangePage() {
 }
 
 function SummaryCard({
-  icon: IconComp,
   label,
   value,
+  index,
 }: {
-  icon: typeof Globe;
   label: string;
   value: string;
+  index: number;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-laps-blue/12 bg-surface p-4 text-left">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-laps-ghost text-laps-blue">
-        <IconComp className="h-5 w-5" />
-      </span>
-      <div className="min-w-0">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-          {label}
-        </div>
-        <div className="text-sm font-semibold text-laps-navy">{value}</div>
-      </div>
+    <div
+      className={[
+        "border-b border-laps-navy/15 py-5 pr-6 sm:border-b-0",
+        index > 0 ? "sm:border-l sm:border-laps-navy/15 sm:pl-6" : "",
+      ].join(" ")}
+    >
+      <dt className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/45">
+        {label}
+      </dt>
+      <dd className="mt-2 text-sm font-semibold leading-relaxed text-laps-navy">{value}</dd>
     </div>
   );
 }
@@ -295,7 +292,7 @@ function ExchangeCard({ member }: { member: ApiMember }) {
   const { t, lang } = useLang();
   const tx = t.exchange;
   const tier = ROLE_TO_TIER[member.currentRole] ?? "undergrad";
-  const visual = TIER_VISUAL[tier];
+  const visual = TIER_CLASS[tier];
   const photo = member.photoUrl ? resolveMediaUrl(member.photoUrl) : null;
   // Languages come from the member's own profile now, rather than from a
   // hand-kept list that had to be edited alongside the roster.
@@ -305,12 +302,11 @@ function ExchangeCard({ member }: { member: ApiMember }) {
     <Link
       to="/team/$uuid"
       params={{ uuid: member.id }}
-      className="group flex flex-col gap-3 rounded-2xl border border-laps-light/30 bg-surface p-5 transition hover:-translate-y-0.5 hover:border-laps-blue/40 hover:shadow-[0_10px_30px_rgba(11,78,141,0.12)]"
+      className="group relative flex flex-col gap-3 rounded-md border border-laps-navy/15 bg-surface p-5 transition-colors hover:border-laps-navy/40 hover:bg-laps-ghost/50"
     >
+      <span className="absolute left-0 right-0 top-0 h-0.5 w-0 bg-laps-signal transition-all duration-300 group-hover:w-full" />
       <div className="flex items-start gap-4">
-        <span
-          className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface p-1 shadow-md ring-2 ${visual.ring}`}
-        >
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-laps-ghost">
           {photo ? (
             <img
               src={photo}
@@ -319,9 +315,7 @@ function ExchangeCard({ member }: { member: ApiMember }) {
               className="h-full w-full rounded-full object-cover"
             />
           ) : (
-            <span
-              className={`flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br ${visual.gradient} text-base font-bold text-white`}
-            >
+            <span className="flex h-full w-full items-center justify-center rounded-full font-mono text-xs font-semibold text-laps-navy/60">
               {initials(member.fullName)}
             </span>
           )}
@@ -329,8 +323,11 @@ function ExchangeCard({ member }: { member: ApiMember }) {
 
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-bold leading-tight text-laps-navy">{member.fullName}</h4>
-          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-laps-blue">
-            {tx.tier[tier]}
+          <p className="mt-1.5 inline-flex items-center gap-2">
+            <span className={`h-1.5 w-1.5 shrink-0 ${visual.dot}`} />
+            <span className="font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-laps-navy/50">
+              {tx.tier[tier]}
+            </span>
           </p>
         </div>
       </div>

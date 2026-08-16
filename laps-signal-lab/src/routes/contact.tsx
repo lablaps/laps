@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, MapPin, Phone, Linkedin, Github } from "lucide-react";
+import { Linkedin, Github } from "lucide-react";
 import { useLang } from "@/hooks/use-lang";
 import { PublicLayout } from "@/components/PublicLayout";
 
@@ -54,48 +54,57 @@ function ContactPage() {
 
   return (
     <PublicLayout>
-      {/* HERO */}
-      <section className="relative bg-gradient-to-b from-laps-ghost/40 via-surface to-surface py-20">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <span className="inline-block rounded-full bg-laps-ghost px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-laps-blue">
-            {t.nav.contato}
-          </span>
-          <h1 className="font-display mt-6 text-4xl font-bold text-laps-navy md:text-5xl">
-            {labels.title}
-          </h1>
-          <p className="mt-6 text-base leading-relaxed text-laps-navy/75 md:text-lg">
-            {labels.lead}
-          </p>
+      {/* ── HERO ─────────────────────────────────────────────────────────── */}
+      <section className="border-b border-laps-navy/15 bg-laps-paper">
+        <div className="mx-auto max-w-[1280px] px-6 py-20 md:px-10 lg:py-28">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-7">
+              <p className="label-tech">/ {t.nav.contato}</p>
+              <h1 className="font-display mt-6 text-[clamp(2.25rem,5vw,4.25rem)] font-extrabold leading-[0.95] text-laps-navy">
+                {labels.title}
+              </h1>
+            </div>
+            <p className="text-base leading-relaxed text-laps-navy/70 lg:col-span-5 lg:pt-3 lg:text-lg">
+              {labels.lead}
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* INFO + MAP */}
-      <section className="bg-surface pb-24">
-        <div className="mx-auto grid max-w-7xl gap-8 px-6 lg:grid-cols-[1fr_1.8fr]">
+      {/* ── INFO + MAP ─────────────────────────────────────────────────────
+          The contact block was a 24px-radius gradient panel with an icon in a
+          tinted rounded square on every row — decoration standing between the
+          reader and three lines of plain fact. As a ruled definition list the
+          same three facts are faster to read and the map, which is the part
+          people actually came for, gets the weight. */}
+      <section className="bg-surface">
+        <div className="mx-auto grid max-w-[1280px] gap-12 px-6 pb-24 pt-16 md:px-10 lg:grid-cols-12 lg:gap-16">
           {/* Info */}
-          <div className="rounded-3xl bg-gradient-to-br from-laps-ink to-laps-blue p-8 text-white shadow-[0_8px_30px_rgba(11,78,141,0.18)] md:p-10">
-            <h3 className="font-display text-xl font-bold">{labels.infoTitle}</h3>
-            <ul className="mt-6 space-y-5 text-sm">
-              <InfoRow Icon={MapPin} label={labels.addrLabel} value={t.footer.address} />
+          <div className="lg:col-span-4">
+            <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-laps-navy/45">
+              {labels.infoTitle}
+            </h2>
+            <dl className="mt-6 border-t border-laps-navy/15">
+              <InfoRow label={labels.addrLabel} value={t.footer.address} />
               <InfoRow
-                Icon={Mail}
                 label={labels.mailLabel}
                 value={CONTACT_EMAIL}
                 href={`mailto:${CONTACT_EMAIL}`}
               />
-              <InfoRow Icon={Phone} label={labels.phoneLabel} value="+55 (98) 3245-5400" />
-            </ul>
-            <div className="mt-7 border-t border-white/15 pt-5">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-laps-light">
+              <InfoRow label={labels.phoneLabel} value="+55 (98) 3245-5400" href="tel:+559832455400" />
+            </dl>
+
+            <div className="mt-10">
+              <div className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-laps-navy/45">
                 {labels.socialLabel}
               </div>
-              <div className="mt-3 flex gap-3">
+              <div className="mt-4 flex gap-2">
                 <a
                   href="https://www.linkedin.com/company/laborat%C3%B3rio-de-aquisi%C3%A7%C3%A3o-e-processamento-de-sinais"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="LinkedIn"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 text-white/80 transition hover:border-laps-light hover:text-laps-light"
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-laps-navy/20 text-laps-navy/70 transition-colors hover:border-laps-signal hover:text-laps-signal"
                 >
                   <Linkedin className="h-4 w-4" />
                 </a>
@@ -104,7 +113,7 @@ function ContactPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="GitHub"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 text-white/80 transition hover:border-laps-light hover:text-laps-light"
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-laps-navy/20 text-laps-navy/70 transition-colors hover:border-laps-signal hover:text-laps-signal"
                 >
                   <Github className="h-4 w-4" />
                 </a>
@@ -113,23 +122,26 @@ function ContactPage() {
           </div>
 
           {/* Map */}
-          <div className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface p-2 shadow-[0_2px_20px_rgba(25,58,89,0.06)]">
-            <iframe
-              title="LAPS — Laboratório de Aquisição e Processamento de Sinais"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3985.760580136095!2d-44.20991709999999!3d-2.5842826!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7f69b74faebfacf%3A0x7b51d3fd663371da!2sLAPS%20-%20Laborat%C3%B3rio%20de%20Aquisi%C3%A7%C3%A3o%20e%20Processamento%20de%20Sinais!5e0!3m2!1sen!2sbr!4v1786840299388!5m2!1sen!2sbr"
-              className="h-[480px] w-full rounded-2xl lg:h-full lg:min-h-[520px]"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
-            />
+          <div className="lg:col-span-8">
+            <div className="border border-laps-navy/20">
+              <iframe
+                title="LAPS — Laboratório de Aquisição e Processamento de Sinais"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3985.760580136095!2d-44.20991709999999!3d-2.5842826!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7f69b74faebfacf%3A0x7b51d3fd663371da!2sLAPS%20-%20Laborat%C3%B3rio%20de%20Aquisi%C3%A7%C3%A3o%20e%20Processamento%20de%20Sinais!5e0!3m2!1sen!2sbr!4v1786840299388!5m2!1sen!2sbr"
+                className="block h-[480px] w-full lg:h-[560px]"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
             <a
               href="https://www.google.com/maps/place/LAPS+-+Laborat%C3%B3rio+de+Aquisi%C3%A7%C3%A3o+e+Processamento+de+Sinais/@-2.5842826,-44.2099171,17z"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 block px-3 pb-1 text-[11px] font-medium text-laps-blue hover:underline"
+              className="group mt-3 inline-flex items-center gap-3 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/55 transition-colors hover:text-laps-signal"
             >
-              São Cristóvão, São Luís — MA · {labels.mapsLink} ↗
+              São Cristóvão, São Luís — MA · {labels.mapsLink}
+              <span className="h-px w-6 bg-laps-navy/30 transition-all duration-300 group-hover:w-10 group-hover:bg-laps-signal" />
             </a>
           </div>
         </div>
@@ -138,38 +150,35 @@ function ContactPage() {
   );
 }
 
+/**
+ * One row of the contact definition list.
+ *
+ * A real <dt>/<dd> pair now, not a <li> holding two divs: the label and the
+ * value are a term and its definition, and saying so is free.
+ */
 function InfoRow({
-  Icon,
   label,
   value,
   href,
 }: {
-  Icon: typeof MapPin;
   label: string;
   value: string;
   href?: string;
 }) {
-  const body = (
-    <>
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 text-laps-light">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-laps-light">{label}</div>
-        <div className="mt-1 text-sm text-white/85">{value}</div>
-      </div>
-    </>
-  );
-
   return (
-    <li>
-      {href ? (
-        <a href={href} className="flex gap-3 transition hover:text-laps-light">
-          {body}
-        </a>
-      ) : (
-        <div className="flex gap-3">{body}</div>
-      )}
-    </li>
+    <div className="border-b border-laps-navy/15 py-4">
+      <dt className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/45">
+        {label}
+      </dt>
+      <dd className="mt-1.5 text-sm leading-relaxed text-laps-navy">
+        {href ? (
+          <a href={href} className="transition-colors hover:text-laps-signal">
+            {value}
+          </a>
+        ) : (
+          value
+        )}
+      </dd>
+    </div>
   );
 }

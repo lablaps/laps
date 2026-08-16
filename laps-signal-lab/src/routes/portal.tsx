@@ -58,6 +58,7 @@ import { initials } from "@/lib/team-data";
 import { UNDERGRAD_PROGRAMS, toProgramCode } from "@/lib/undergrad-programs";
 import { formatJoined, semesterYears, type Lang as JoinedLang } from "@/lib/joined-laps";
 import type { Tier } from "@/lib/team-data";
+import { TIER_CONFIG } from "@/lib/tier-visual";
 
 // ───── Language flags (pt / en / fr) ─────
 
@@ -150,56 +151,10 @@ const tierMap: Record<string, Tier> = {
   UNDERGRAD: "undergrad",
 };
 
-const tierConfig: Record<Tier, { gradient: string; ring: string; chip: string; band: string; label: string; Icon: typeof Crown }> = {
-  head: {
-    gradient: "from-laps-ink to-laps-blue",
-    band: "from-laps-ink via-laps-blue to-laps-light",
-    ring: "ring-laps-light/40",
-    chip: "bg-gradient-to-r from-laps-ink to-laps-blue text-white",
-    label: "HEAD",
-    Icon: Crown,
-  },
-  coordinator: {
-    gradient: "from-violet-700 to-violet-400",
-    band: "from-violet-700 via-violet-400 to-violet-200",
-    ring: "ring-violet-200",
-    chip: "bg-violet-50 text-violet-700",
-    label: "COORDINATOR",
-    Icon: Shield,
-  },
-  manager: {
-    gradient: "from-purple-600 to-purple-300",
-    band: "from-purple-600 via-purple-300 to-purple-100",
-    ring: "ring-purple-200",
-    chip: "bg-purple-50 text-purple-700",
-    label: "MANAGER",
-    Icon: Briefcase,
-  },
-  doctorate: {
-    gradient: "from-laps-blue to-laps-light",
-    band: "from-laps-blue via-laps-light to-blue-200",
-    ring: "ring-laps-blue/30",
-    chip: "bg-laps-ghost text-laps-blue",
-    label: "DOCTORATE",
-    Icon: Microscope,
-  },
-  master: {
-    gradient: "from-emerald-500 to-emerald-300",
-    band: "from-emerald-500 via-emerald-300 to-emerald-100",
-    ring: "ring-emerald-200",
-    chip: "bg-emerald-50 text-emerald-700",
-    label: "MASTER",
-    Icon: GraduationCap,
-  },
-  undergrad: {
-    gradient: "from-amber-400 to-amber-200",
-    band: "from-amber-400 via-amber-200 to-amber-50",
-    ring: "ring-amber-200",
-    chip: "bg-amber-50 text-amber-700",
-    label: "UNDERGRAD",
-    Icon: Users,
-  },
-};
+// The tier table lives in lib/tier-visual.ts now. Five screens used to carry
+// their own near-identical copy of it, all including the violet/purple pair
+// that belonged to no palette on this site.
+const tierConfig = TIER_CONFIG;
 
 // ───── Preset banner options ─────
 
@@ -330,7 +285,7 @@ function PortalPage() {
         : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-laps-ghost/30 via-surface to-surface">
+    <div className="min-h-screen bg-laps-paper">
       {/* Top bar */}
       <div className="mx-auto max-w-6xl px-6 pt-8">
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -351,7 +306,7 @@ function PortalPage() {
             {auth.isManager && (
               <Link
                 to="/admin"
-                className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/30 bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white shadow-[0_6px_18px_-8px_rgba(11,78,141,0.65)] transition hover:bg-laps-ink"
+                className="inline-flex items-center gap-1.5 rounded-md bg-laps-cta px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-laps-accent active:translate-y-px"
               >
                 <LayoutDashboard className="h-3.5 w-3.5" />
                 {t.portal.commandCenter}
@@ -360,14 +315,14 @@ function PortalPage() {
             <Link
               to="/team/$uuid"
               params={{ uuid: me.id }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/25 bg-surface px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-ghost"
+              className="inline-flex items-center gap-1.5 rounded-md border border-laps-navy/20 px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-laps-navy transition-colors hover:border-laps-navy hover:bg-laps-ghost"
             >
               {t.portal.viewProfile}
             </Link>
             <button
               type="button"
               onClick={() => api.logout().then(() => navigate({ to: "/login" }))}
-              className="inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-surface px-4 py-2 text-xs font-semibold text-laps-navy/75 transition hover:border-laps-blue/30 hover:text-laps-blue"
+              className="inline-flex items-center gap-1.5 rounded-md border border-laps-navy/20 px-4 py-2 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-laps-navy/75 transition-colors hover:border-laps-navy hover:text-laps-navy"
             >
               {t.portal.logout}
             </button>
@@ -457,10 +412,8 @@ function HeroCard({
   memberAreas: string[];
   portfolioProjects: ApiProject[];
 }) {
-  const { Icon } = cfg;
-
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface shadow-[0_20px_60px_-30px_rgba(11,78,141,0.35)]">
+    <div className="relative overflow-hidden rounded-md border border-laps-navy/20 bg-surface">
       {/* Banner */}
       <BannerEditor me={me} cfg={cfg} />
 
@@ -474,14 +427,17 @@ function HeroCard({
               {me.fullName}
             </h1>
             <div className="mt-3 flex flex-wrap items-center gap-2">
+              {/* Outlined, mono, no glyph. The role chip used to be a filled
+                  pastel capsule led by a Crown / Shield / Microscope icon —
+                  the word beside it already said which tier this is. */}
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider ${cfg.chip}`}
+                className={`inline-flex items-center rounded-sm border px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] ${cfg.chip}`}
               >
-                <Icon className="h-3.5 w-3.5" /> {cfg.label}
+                {cfg.label}
               </span>
               {roleStart && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-laps-ghost/70 px-3 py-1.5 text-xs font-medium text-laps-navy/75">
-                  <Calendar className="h-3.5 w-3.5" /> desde {roleStart}
+                <span className="inline-flex items-center gap-1.5 rounded-sm border border-laps-navy/20 px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/60">
+                  <Calendar className="h-3 w-3" /> desde {roleStart}
                 </span>
               )}
             </div>
@@ -493,7 +449,7 @@ function HeroCard({
                 href={me.linkedinUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-laps-ink px-3 py-2 text-xs font-semibold text-white transition hover:bg-laps-accent"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-laps-cta px-3 py-2 text-xs font-semibold text-white transition hover:bg-laps-accent"
               >
                 LinkedIn
               </a>
@@ -553,7 +509,7 @@ function FullNameEditor({ me }: { me: MyProfile }) {
             type="button"
             onClick={() => mutation.mutate(value)}
             disabled={mutation.isPending || !value.trim()}
-            className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
           >
             <Save className="h-3.5 w-3.5" />
             {mutation.isPending ? "…" : "Salvar"}
@@ -643,7 +599,10 @@ function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
       )}
 
       <div
-        className={`relative h-40 md:h-48 ${!me.bannerImageUrl && !me.bannerColor ? `bg-gradient-to-r ${cfg.band}` : ""}`}
+        // Flat tier colour when the member has not set a banner. The default
+        // used to be a three-stop gradient per tier, which meant the fallback
+        // was louder than any banner someone actually chose.
+        className={`relative h-40 md:h-48 ${!me.bannerImageUrl && !me.bannerColor ? cfg.band : ""}`}
         style={bannerStyle}
       >
         <svg
@@ -670,14 +629,14 @@ function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50"
+          className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-md bg-black/40 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-black/60"
         >
           <Palette className="h-3.5 w-3.5" /> Editar capa
         </button>
 
         {/* Banner editor panel */}
         {open && (
-          <div className="absolute right-4 top-14 z-10 w-72 rounded-2xl border border-laps-navy/15 bg-surface p-4 shadow-xl">
+          <div className="absolute right-4 top-14 z-10 w-72 rounded-md border border-laps-navy/30 bg-surface p-4">
             <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
               Cor de fundo
             </p>
@@ -1039,7 +998,7 @@ function ImageTransformEditor({
             type="button"
             onClick={confirm}
             disabled={!img}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-laps-accent px-4 py-2 text-xs font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-laps-accent px-4 py-2 text-xs font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
           >
             <CheckCircle2 className="h-3.5 w-3.5" /> Confirmar
           </button>
@@ -1112,7 +1071,6 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [editorFile, setEditorFile] = useState<File | null>(null);
-  const { Icon } = cfg;
 
   const saveMutation = useMutation({
     mutationFn: (url: string) => api.meUpdate({ photoUrl: url }),
@@ -1149,17 +1107,17 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
           onCancel={() => setEditorFile(null)}
         />
       )}
-      <div className={`group relative h-36 w-36 shrink-0 rounded-full bg-surface p-1.5 shadow-xl ring-4 ${cfg.ring}`}>
+      {/* A 2px ring in the tier's own colour instead of a 4px pastel halo plus
+          a shadow-xl. The badge that sat in the corner held the same tier glyph
+          as the role chip two lines below it. */}
+      <div className={`group relative h-36 w-36 shrink-0 rounded-full bg-surface p-1 ring-2 ${cfg.ring}`}>
         {me.photoUrl ? (
           <img src={resolveMediaUrl(me.photoUrl)} alt={me.fullName} className="h-full w-full rounded-full object-cover" />
         ) : (
-          <div className={`flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br ${cfg.gradient} text-4xl font-bold text-white`}>
+          <div className={`flex h-full w-full items-center justify-center rounded-full ${cfg.fill} text-4xl font-bold text-white`}>
             {initials(me.fullName)}
           </div>
         )}
-        <div className="absolute -right-1 -top-1 flex h-10 w-10 items-center justify-center rounded-full bg-surface text-laps-blue shadow ring-2 ring-white">
-          <Icon className="h-5 w-5" />
-        </div>
         {/* Upload / saving overlay */}
         {busy ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/50">
@@ -1363,7 +1321,7 @@ function ContactEditor({ me }: { me: MyProfile }) {
               type="button"
               onClick={() => mutation.mutate()}
               disabled={mutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
             >
               <Save className="h-3.5 w-3.5" />
               {mutation.isPending ? "Salvando…" : "Salvar"}
@@ -1524,7 +1482,7 @@ function AboutEditor({ me }: { me: MyProfile }) {
               type="button"
               onClick={() => mutation.mutate(values)}
               disabled={mutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
             >
               <Save className="h-3.5 w-3.5" />
               {mutation.isPending ? "Salvando…" : "Salvar"}
@@ -1618,7 +1576,7 @@ function ResearchAreasEditor({
             type="button"
             onClick={() => mutation.mutate(areas)}
             disabled={mutation.isPending}
-            className="inline-flex items-center gap-1 rounded-md bg-laps-accent px-2 py-1 text-[10px] font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+            className="inline-flex items-center gap-1 rounded-md bg-laps-accent px-2 py-1 text-[10px] font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
           >
             <Save className="h-3 w-3" /> {mutation.isPending ? "…" : "Salvar"}
           </button>
@@ -1633,7 +1591,7 @@ function ResearchAreasEditor({
             return (
               <span
                 key={slug}
-                className="inline-flex items-center gap-1.5 rounded-full border border-laps-light/40 bg-surface px-2.5 py-1 text-[11px] font-medium text-laps-navy/80"
+                className="inline-flex items-center gap-1.5 rounded-sm border border-laps-navy/20 bg-surface px-2 py-0.5 font-mono text-[11px] font-medium text-laps-navy/75"
               >
                 <span
                   className="inline-block h-2 w-2 shrink-0 rounded-full"
@@ -1653,7 +1611,7 @@ function ResearchAreasEditor({
           <button
             type="button"
             onClick={() => setShowInput(!showInput)}
-            className="inline-flex items-center gap-1 rounded-full border border-dashed border-laps-blue/40 px-2.5 py-1 text-[11px] font-medium text-laps-blue/70 transition hover:border-laps-blue hover:text-laps-blue"
+            className="inline-flex items-center gap-1 rounded-sm border border-dashed border-laps-navy/35 px-2 py-0.5 font-mono text-[11px] font-medium text-laps-navy/60 transition-colors hover:border-laps-signal hover:text-laps-signal"
           >
             <Plus className="h-3 w-3" /> Adicionar
           </button>
@@ -1673,7 +1631,7 @@ function ResearchAreasEditor({
                       key={a.slug}
                       type="button"
                       onClick={() => addArea(a.slug)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-laps-light/40 bg-surface px-2.5 py-1 text-[11px] font-medium text-laps-navy/70 transition hover:border-laps-blue/40 hover:text-laps-blue"
+                      className="inline-flex items-center gap-1.5 rounded-sm border border-laps-navy/20 bg-surface px-2 py-0.5 font-mono text-[11px] font-medium text-laps-navy/70 transition-colors hover:border-laps-signal hover:text-laps-signal"
                     >
                       <span
                         className="inline-block h-2 w-2 rounded-full"
@@ -1807,7 +1765,7 @@ function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInter
             type="button"
             onClick={saveAll}
             disabled={mutation.isPending}
-            className="inline-flex items-center gap-1 rounded-md bg-laps-accent px-2 py-1 text-[10px] font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+            className="inline-flex items-center gap-1 rounded-md bg-laps-accent px-2 py-1 text-[10px] font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
           >
             <Save className="h-3 w-3" /> {mutation.isPending ? "…" : "Salvar"}
           </button>
@@ -1936,7 +1894,7 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
             type="button"
             onClick={() => mutation.mutate(entries)}
             disabled={mutation.isPending}
-            className="inline-flex items-center gap-1 rounded-md bg-laps-accent px-2 py-1 text-[10px] font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+            className="inline-flex items-center gap-1 rounded-md bg-laps-accent px-2 py-1 text-[10px] font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
           >
             <Save className="h-3 w-3" /> {mutation.isPending ? "…" : "Salvar"}
           </button>
@@ -1961,7 +1919,7 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide ${levelBadgeClass(entry.level)}`}
+                    className={`rounded-sm px-2 py-0.5 font-mono text-[10px] font-medium tracking-[0.08em] ${levelBadgeClass(entry.level)}`}
                   >
                     {levelShortLabel(entry.level, "pt")}
                   </span>
@@ -2052,7 +2010,7 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
           <button
             type="button"
             onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-1 rounded-full border border-dashed border-laps-blue/40 px-2.5 py-1 text-[11px] font-medium text-laps-blue/70 transition hover:border-laps-blue hover:text-laps-blue"
+            className="inline-flex items-center gap-1 rounded-sm border border-dashed border-laps-navy/35 px-2 py-0.5 font-mono text-[11px] font-medium text-laps-navy/60 transition-colors hover:border-laps-signal hover:text-laps-signal"
           >
             <Plus className="h-3 w-3" /> Adicionar idioma
           </button>
@@ -2115,7 +2073,7 @@ function RoadmapEditor({ me }: { me: MyProfile }) {
               type="button"
               onClick={() => mutation.mutate(value)}
               disabled={mutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
             >
               <Save className="h-3.5 w-3.5" />
               {mutation.isPending ? "Salvando…" : "Salvar"}
@@ -2321,11 +2279,11 @@ function PublicationRow({ publication }: { publication: ApiPublication }) {
         : { label: "Em revisão", className: "bg-amber-50 text-amber-700", Icon: Clock };
 
   return (
-    <div className="rounded-xl border border-laps-blue/15 bg-gradient-to-br from-surface to-laps-ghost/30 p-4">
+    <div className="rounded-md border border-laps-navy/15 bg-surface p-4">
       <div className="mb-2 flex items-start justify-between gap-3">
         <h4 className="text-sm font-bold text-laps-navy">{publication.title}</h4>
         <span
-          className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${chip.className}`}
+          className={`inline-flex shrink-0 items-center gap-1 rounded-sm px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-[0.1em] ${chip.className}`}
         >
           <chip.Icon className="h-3 w-3" /> {chip.label}
         </span>
@@ -2397,7 +2355,7 @@ function SubmitPublicationForm({
     parsedYear <= 2100;
 
   return (
-    <div className="rounded-xl border border-laps-blue/20 bg-gradient-to-br from-laps-ghost/30 to-surface p-4 shadow-sm">
+    <div className="rounded-md border border-laps-navy/15 bg-laps-ghost/50 p-4">
       <h4 className="mb-4 text-sm font-bold text-laps-navy">Nova publicação</h4>
 
       <div className="space-y-3">
@@ -2510,7 +2468,7 @@ function SubmitPublicationForm({
             type="button"
             onClick={() => mutation.mutate()}
             disabled={!valid || mutation.isPending}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-laps-accent py-2.5 text-sm font-semibold text-white transition hover:bg-laps-ink disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-laps-accent py-2.5 text-sm font-semibold text-white transition hover:bg-laps-cta disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
             {mutation.isPending ? "Enviando…" : "Enviar para revisão"}
@@ -2537,13 +2495,13 @@ function ProjectCard({ project, me }: { project: ApiProject; me: MyProfile }) {
     myLink?.role === "CO_LEAD" ? "Co-orientador" : "Pesquisador";
 
   return (
-    <div className="rounded-xl border border-laps-blue/15 bg-gradient-to-br from-surface to-laps-ghost/30 p-4 transition hover:border-laps-blue/30 hover:shadow-sm">
+    <div className="rounded-md border border-laps-navy/15 bg-surface p-4 transition-colors hover:border-laps-navy/35 hover:bg-laps-ghost/50">
       <div className="mb-2 flex items-start justify-between gap-3">
         <h4 className="text-sm font-bold text-laps-navy">
           {project.titlePt || project.titleEn || project.slug}
         </h4>
         <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+          className={`shrink-0 rounded-sm px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-[0.1em] ${
             project.status === "ACTIVE"
               ? "bg-laps-accent/10 text-laps-blue"
               : "bg-laps-ink/10 text-laps-navy"
@@ -2553,7 +2511,7 @@ function ProjectCard({ project, me }: { project: ApiProject; me: MyProfile }) {
         </span>
       </div>
       {myLink && myLink.role !== "RESEARCHER" && (
-        <div className="mb-2 inline-flex rounded-full bg-laps-ghost px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-laps-blue">
+        <div className="mb-2 inline-flex rounded-sm border border-laps-navy/20 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-laps-navy/70">
           {roleLabel}
         </div>
       )}
@@ -2640,7 +2598,7 @@ function CreateProjectForm({
   }
 
   return (
-    <div className="rounded-xl border border-laps-blue/20 bg-gradient-to-br from-laps-ghost/30 to-surface p-4 shadow-sm">
+    <div className="rounded-md border border-laps-navy/15 bg-laps-ghost/50 p-4">
       <h4 className="mb-4 text-sm font-bold text-laps-navy">Novo projeto</h4>
 
       <div className="space-y-3">
@@ -2813,7 +2771,7 @@ function CreateProjectForm({
             type="button"
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !title.trim()}
-            className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-4 py-2 text-xs font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-4 py-2 text-xs font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
           >
             <Save className="h-3.5 w-3.5" />
             {mutation.isPending ? "Criando…" : "Criar projeto"}
@@ -2891,7 +2849,7 @@ function ExistingProjectLinker({
             <button
               type="button"
               onClick={() => toggle(p)}
-              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
+              className={`shrink-0 rounded-sm px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors ${
                 linked
                   ? "border border-red-200 bg-surface text-red-600 hover:bg-red-50"
                   : "border border-laps-blue/25 bg-surface text-laps-blue hover:bg-laps-ghost"
@@ -2907,7 +2865,7 @@ function ExistingProjectLinker({
           type="button"
           onClick={() => mutation.mutate(editable)}
           disabled={mutation.isPending}
-          className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
         >
           <Save className="h-3.5 w-3.5" />
           {mutation.isPending ? "Salvando…" : "Salvar vínculos"}
@@ -2926,7 +2884,7 @@ function ExistingProjectLinker({
 // permits — see PasswordChangeCard and MyPortalController.changePassword.
 function FirstLoginBanner({ hasEmail }: { hasEmail: boolean }) {
   return (
-    <section className="rounded-2xl border border-laps-blue/20 bg-gradient-to-br from-laps-ghost/60 to-surface p-5 shadow-sm">
+    <section className="rounded-md border border-laps-navy/15 bg-laps-ghost/50 p-5">
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-laps-accent/15 text-laps-blue">
           <KeyRound className="h-4 w-4" />
@@ -2956,7 +2914,7 @@ function FirstLoginBanner({ hasEmail }: { hasEmail: boolean }) {
 
 function EmailVerificationBanner({ me }: { me: MyProfile }) {
   return (
-    <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-surface p-5 shadow-sm">
+    <section className="rounded-md border-l-2 border-l-laps-signal border-y border-r border-y-laps-navy/15 border-r-laps-navy/15 bg-surface p-5">
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
           <Mail className="h-4 w-4" />
@@ -3078,7 +3036,7 @@ function PasswordChangeCard({
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-4 py-2 text-xs font-semibold text-white transition hover:bg-laps-ink disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-4 py-2 text-xs font-semibold text-white transition hover:bg-laps-cta disabled:opacity-60"
           >
             <KeyRound className="h-3.5 w-3.5" />
             {mutation.isPending ? "Salvando…" : "Trocar senha"}
@@ -3245,7 +3203,7 @@ function JoinedLapsEditor({ me }: { me: MyProfile }) {
               type="button"
               onClick={() => mutation.mutate()}
               disabled={mutation.isPending || semesterIncomplete}
-              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
             >
               <Save className="h-3.5 w-3.5" />
               {mutation.isPending ? "Salvando…" : "Salvar"}
@@ -3388,7 +3346,7 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
               type="button"
               onClick={() => mutation.mutate(value)}
               disabled={mutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
             >
               <Save className="h-3.5 w-3.5" />
               {mutation.isPending ? "…" : "Salvar"}
@@ -3435,7 +3393,7 @@ function PortfolioCard({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-laps-blue/12 bg-surface p-5 shadow-[0_2px_20px_rgba(25,58,89,0.04)]">
+    <div className="rounded-md border border-laps-navy/15 bg-surface p-5">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-laps-ghost text-laps-blue">

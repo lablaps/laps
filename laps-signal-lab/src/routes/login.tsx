@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { ShieldCheck, Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, Lock, User, Eye, EyeOff } from "lucide-react";
 import LapsLogoMono from "@/components/LapsLogoMono";
 import { Input } from "@/components/ui/input";
 import { api, ApiError } from "@/lib/api";
@@ -62,39 +62,38 @@ function LoginPage() {
 
   return (
     <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
-      {/* Left — animated logo + tagline */}
-      <aside
-        className="relative flex flex-col justify-between overflow-hidden px-10 py-14 text-white lg:px-16 lg:py-20"
-        style={{
-          background:
-            "radial-gradient(circle at 20% 20%, #0B4E8D 0%, #193A59 55%, #0F2A42 100%)",
-        }}
-      >
-        <div className="absolute inset-0 opacity-[0.07] [background:radial-gradient(circle_at_1px_1px,#74B5F2_1px,transparent_0)_0_0/22px_22px]" />
-        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-laps-light/10 blur-3xl" />
-        <div className="absolute -bottom-40 -right-24 h-[28rem] w-[28rem] rounded-full bg-laps-accent/30 blur-3xl" />
+      {/* Left — animated logo + tagline.
+          Flat ink, a dot grid, and one hairline rule. What this replaces: a
+          radial gradient with two large blurred colour orbs floating over it —
+          the "glow behind the panel" effect that every generated dark hero
+          ships with. It was also the only place on the site with soft blurred
+          colour, so it read as borrowed from somewhere else. */}
+      <aside className="relative flex flex-col justify-between overflow-hidden bg-laps-ink px-10 py-14 text-white lg:px-16 lg:py-20">
+        <div className="absolute inset-0 opacity-[0.09] [background:radial-gradient(circle_at_1px_1px,#74B5F2_1px,transparent_0)_0_0/22px_22px]" />
 
-        <div className="relative flex items-center gap-3">
-          <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-laps-light">
+        {/* Centred. This panel is a single self-contained brand statement with
+            no scanning or comparing to do, so symmetry reads as poise rather
+            than as the default — unlike the content pages, where centring
+            everything is what flattened their hierarchy. */}
+        <div className="relative text-center">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-laps-signal-ink">
             Interno · Gerenciamento
-          </span>
+          </p>
         </div>
 
         <div className="relative mx-auto flex w-full max-w-md flex-col items-center text-center">
-          <div className="flex w-full items-center justify-center">
-            <LapsLogoMono />
-          </div>
-          <h1 className="font-display mt-10 text-center text-3xl font-bold leading-tight md:text-4xl">
+          <LapsLogoMono />
+          <h1 className="font-display mt-10 text-3xl font-extrabold leading-[1.05] text-balance md:text-4xl">
             Laboratório para Aquisição e Processamento de Sinais
           </h1>
-          <p className="mt-4 text-center text-sm text-white/65">
+          <p className="mt-5 max-w-[46ch] text-sm leading-relaxed text-pretty text-white/60">
             Acesso restrito ao pessoal autorizado. Gerencie a equipe,
             publicações e funções do laboratório — cada alteração é refletida
             no grafo público da equipe instantaneamente.
           </p>
         </div>
 
-        <div className="relative flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-white/45">
+        <div className="relative flex items-center justify-center gap-2.5 border-t border-white/15 pt-5 font-mono text-[10px] uppercase tracking-[0.12em] text-white/45">
           <ShieldCheck className="h-3.5 w-3.5" />
           Seguro · JWT HttpOnly · Sessão de 1 hora
         </div>
@@ -103,14 +102,12 @@ function LoginPage() {
       {/* Right — login form */}
       <section className="flex items-center justify-center bg-surface px-6 py-14 lg:px-12">
         <div className="w-full max-w-sm">
-          <div className="mb-10 space-y-2">
-            <span className="inline-block rounded-full bg-laps-ghost px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-laps-blue">
-              Entrar
-            </span>
-            <h2 className="font-display text-2xl font-bold text-laps-navy">
+          <div className="mb-10">
+            <p className="label-tech">Entrar</p>
+            <h2 className="font-display mt-5 text-3xl font-extrabold leading-tight text-laps-navy">
               Bem-vindo de volta
             </h2>
-            <p className="text-sm text-laps-navy/60">
+            <p className="mt-3 text-sm leading-relaxed text-laps-navy/60">
               Use as credenciais fornecidas pelo coordenador do laboratório.
             </p>
           </div>
@@ -162,13 +159,14 @@ function LoginPage() {
               />
             </Field>
 
+            {/* The arrow glyph that used to slide right on hover is gone — a
+                submit button labelled "Entrar" does not need a direction. */}
             <button
               type="submit"
               disabled={submitting}
-              className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-laps-accent px-4 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(11,78,141,0.55)] transition hover:bg-laps-ink disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-12 w-full items-center justify-center rounded-md bg-laps-cta px-4 text-sm font-semibold text-white transition-colors duration-150 hover:bg-laps-accent active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? "Entrando…" : "Entrar"}
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </button>
 
           </form>
@@ -195,7 +193,7 @@ function Field({
     <div className="space-y-1.5">
       <label
         htmlFor={htmlFor}
-        className="block text-xs font-semibold uppercase tracking-[0.18em] text-laps-navy/65"
+        className="block font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/55"
       >
         {label}
       </label>

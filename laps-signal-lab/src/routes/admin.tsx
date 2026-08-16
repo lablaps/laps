@@ -54,7 +54,8 @@ import { searchMembers } from "@/lib/member-search";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
-import { initials } from "@/lib/team-data";
+import { initials, type Tier } from "@/lib/team-data";
+import { TIER_CLASS, TIER_CONFIG } from "@/lib/tier-visual";
 import lapsLogo from "@/assets/laps-logo2.png";
 import LapsLogoMono from "@/components/LapsLogoMono";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -73,12 +74,16 @@ const TIER_META: Record<
   MemberRole,
   { label: string; Icon: typeof Crown; accent: string; chip: string }
 > = {
-  HEAD: { label: "Head", Icon: Crown, accent: "text-laps-blue", chip: "bg-laps-ghost text-laps-blue" },
-  COORDINATOR: { label: "Coordenador", Icon: Shield, accent: "text-violet-700", chip: "bg-violet-50 text-violet-700" },
-  MANAGER: { label: "Gerenciador", Icon: Briefcase, accent: "text-purple-700", chip: "bg-purple-50 text-purple-700" },
-  DOCTORATE: { label: "Doutorando", Icon: Microscope, accent: "text-laps-blue", chip: "bg-blue-50 text-laps-blue" },
-  MASTER: { label: "Mestrando", Icon: GraduationCap, accent: "text-emerald-600", chip: "bg-emerald-50 text-emerald-700" },
-  UNDERGRAD: { label: "Graduação", Icon: Users, accent: "text-amber-600", chip: "bg-amber-50 text-amber-700" },
+  // accent/chip come from the shared tier ramp in lib/tier-visual.ts rather
+  // than the six-hue table this used to hold (violet, purple, emerald, amber).
+  // The console shows every role side by side in one list, which is exactly
+  // where six unrelated pastels stopped being a hierarchy and became noise.
+  HEAD: { label: "Head", Icon: Crown, accent: TIER_CLASS.head.text, chip: TIER_CONFIG.head.chip },
+  COORDINATOR: { label: "Coordenador", Icon: Shield, accent: TIER_CLASS.coordinator.text, chip: TIER_CONFIG.coordinator.chip },
+  MANAGER: { label: "Gerenciador", Icon: Briefcase, accent: TIER_CLASS.manager.text, chip: TIER_CONFIG.manager.chip },
+  DOCTORATE: { label: "Doutorando", Icon: Microscope, accent: TIER_CLASS.doctorate.text, chip: TIER_CONFIG.doctorate.chip },
+  MASTER: { label: "Mestrando", Icon: GraduationCap, accent: TIER_CLASS.master.text, chip: TIER_CONFIG.master.chip },
+  UNDERGRAD: { label: "Graduação", Icon: Users, accent: TIER_CLASS.undergrad.text, chip: TIER_CONFIG.undergrad.chip },
 };
 
 // Canonical role order — used in the change-role dropdown so the manager
@@ -176,11 +181,11 @@ function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-laps-ghost/30 via-surface to-surface text-laps-navy">
-      <header className="sticky top-0 z-30 border-b border-laps-navy/10 bg-surface/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-6 py-3">
+    <div className="min-h-screen bg-laps-paper text-laps-navy">
+      <header className="sticky top-0 z-30 border-b border-laps-navy/15 bg-surface/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1600px] items-center gap-4 px-6 py-3 md:px-10">
           <img src={lapsLogo} alt="LAPS" className="h-8 w-auto" />
-          <span className="rounded-full bg-laps-ghost px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-laps-blue">
+          <span className="rounded-sm border border-laps-signal px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-laps-signal">
             Gerenciar
           </span>
           <div className="ml-auto flex items-center gap-3">
@@ -189,7 +194,7 @@ function AdminPage() {
                 they pass through rather than a terminus. */}
             <Link
               to="/portal"
-              className="inline-flex items-center gap-1.5 rounded-md border border-laps-blue/25 bg-laps-ghost px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-accent/10"
+              className="inline-flex items-center gap-1.5 rounded-md border border-laps-navy/20 px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-laps-navy transition-colors hover:border-laps-navy hover:bg-laps-ghost"
             >
               <UserCircle className="h-3.5 w-3.5" /> Meu portfólio
             </Link>
@@ -237,7 +242,7 @@ function AdminPage() {
           {/* Divider — horizontal accent on mobile, vertical hairline on desktop. */}
           <div
             aria-hidden
-            className="h-px w-24 bg-gradient-to-r from-transparent via-laps-light/45 to-transparent md:h-24 md:w-px md:bg-gradient-to-b"
+            className="h-px w-24 bg-laps-navy/15 md:h-24 md:w-px"
           />
 
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
@@ -263,7 +268,7 @@ function AdminPage() {
             return (
               <div
                 key={role}
-                className="rounded-2xl border border-laps-light/25 bg-surface p-5 shadow-[0_2px_20px_rgba(25,58,89,0.05)]"
+                className="rounded-2xl border border-laps-light/25 bg-surface p-5 "
               >
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-laps-navy/55">
                   <meta.Icon className={`h-4 w-4 ${meta.accent}`} /> {meta.label}
@@ -315,7 +320,7 @@ function AdminPage() {
               <button
                 type="button"
                 onClick={() => setCreating(true)}
-                className="inline-flex items-center gap-2 rounded-md bg-laps-accent px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-laps-ink"
+                className="inline-flex items-center gap-2 rounded-md bg-laps-accent px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-laps-cta"
               >
                 <Plus className="h-4 w-4" /> Novo membro
               </button>
@@ -518,7 +523,7 @@ function CreateMemberDialog({
               <button
                 type="submit"
                 disabled={mutation.isPending}
-                className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-laps-ink disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-laps-cta disabled:opacity-60"
               >
                 {mutation.isPending ? "Criando…" : "Criar membro"}
               </button>
@@ -567,7 +572,7 @@ function CreateMemberDialog({
             <button
               type="button"
               onClick={onClose}
-              className="self-end rounded-md bg-laps-accent px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-laps-ink"
+              className="self-end rounded-md bg-laps-accent px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-laps-cta"
             >
               Concluído
             </button>
@@ -645,7 +650,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl border border-laps-navy/10 bg-surface p-6 shadow-[0_8px_40px_rgba(25,58,89,0.15)]">
+      <div className="w-full max-w-md rounded-2xl border border-laps-navy/10 bg-surface p-6 ">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="font-display text-lg font-bold text-laps-navy">Gerar link de convite</h2>
           <button
@@ -707,7 +712,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
               type="button"
               onClick={() => mutation.mutate()}
               disabled={mutation.isPending}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-laps-accent px-4 py-2.5 text-sm font-bold text-white transition hover:bg-laps-ink disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-laps-accent px-4 py-2.5 text-sm font-bold text-white transition hover:bg-laps-cta disabled:opacity-60"
             >
               {mutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -797,11 +802,11 @@ function MemberCard({
   const status = STATUS_META[member.status];
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-laps-light/20 bg-surface shadow-[0_2px_20px_rgba(25,58,89,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_40px_-12px_rgba(11,78,141,0.18)]">
+    <article className="group relative flex flex-col overflow-hidden rounded-md border border-laps-navy/15 bg-surface transition-colors hover:border-laps-navy/40">
       {/* Header band */}
-      <div className="flex items-start justify-between gap-3 border-b border-laps-light/15 bg-gradient-to-b from-laps-ghost/40 to-surface px-4 py-3">
+      <div className="flex items-start justify-between gap-3 border-b border-laps-navy/15 bg-laps-ghost/50 px-4 py-3">
         <div className="min-w-0">
-          <div className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] ${meta.chip}`}>
+          <div className={`inline-flex items-center gap-1 rounded-sm border px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] ${meta.chip}`}>
             <meta.Icon className="h-3 w-3" /> {meta.label}
           </div>
           <h3 className="mt-2 truncate text-sm font-bold text-laps-navy" title={member.fullName}>
@@ -1081,47 +1086,19 @@ function ActionButton({
 }
 
 // ───── Helpers ─────
-const tierConfig: Record<
-  MemberRole,
-  { gradient: string; ring: string; chip: string; Icon: typeof Crown }
-> = {
-  HEAD: {
-    gradient: "from-laps-ink to-laps-blue",
-    ring: "ring-laps-light/40",
-    chip: "bg-gradient-to-r from-laps-ink to-laps-blue text-white",
-    Icon: Crown,
-  },
-  COORDINATOR: {
-    gradient: "from-violet-700 to-violet-400",
-    ring: "ring-violet-200",
-    chip: "bg-violet-50 text-violet-700",
-    Icon: Shield,
-  },
-  MANAGER: {
-    gradient: "from-purple-600 to-purple-300",
-    ring: "ring-purple-200",
-    chip: "bg-purple-50 text-purple-700",
-    Icon: Briefcase,
-  },
-  DOCTORATE: {
-    gradient: "from-laps-blue to-laps-light",
-    ring: "ring-laps-blue/30",
-    chip: "bg-laps-ghost text-laps-blue",
-    Icon: Microscope,
-  },
-  MASTER: {
-    gradient: "from-emerald-500 to-emerald-300",
-    ring: "ring-emerald-200",
-    chip: "bg-emerald-50 text-emerald-700",
-    Icon: GraduationCap,
-  },
-  UNDERGRAD: {
-    gradient: "from-amber-400 to-amber-200",
-    ring: "ring-amber-200",
-    chip: "bg-amber-50 text-amber-700",
-    Icon: Users,
-  },
+const ROLE_TO_TIER: Record<MemberRole, Tier> = {
+  HEAD: "head",
+  COORDINATOR: "coordinator",
+  MANAGER: "manager",
+  DOCTORATE: "doctorate",
+  MASTER: "master",
+  UNDERGRAD: "undergrad",
 };
+
+/** Role visuals, resolved through the one shared tier ramp. */
+const tierConfig: Record<MemberRole, (typeof TIER_CONFIG)[Tier]> = Object.fromEntries(
+  (Object.keys(ROLE_TO_TIER) as MemberRole[]).map((r) => [r, TIER_CONFIG[ROLE_TO_TIER[r]]]),
+) as Record<MemberRole, (typeof TIER_CONFIG)[Tier]>;
 
 // ───── Edit dialog ─────
 // Mirrors team.$personId.tsx visual layout (left = identity, right = content)
@@ -1244,17 +1221,17 @@ function EditPanel({
   });
 
   const cfg = tierConfig[member.currentRole];
-  const Icon = cfg.Icon;
+  const Icon = TIER_META[member.currentRole].Icon;
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface p-0 shadow-[0_20px_60px_-20px_rgba(11,78,141,0.45)] w-[95vw] max-w-5xl">
+      <DialogContent className="w-[95vw] max-w-5xl overflow-hidden rounded-md border border-laps-navy/25 bg-surface p-0">
         <DialogTitle className="sr-only">Editando {member.fullName}</DialogTitle>
 
         <div className="flex flex-col md:h-[85vh] md:max-h-[800px] md:flex-row">
           {/* LEFT PANEL — identity, mirrors team.$personId.tsx */}
           <div className="relative flex flex-col md:w-5/12 overflow-y-auto border-b md:border-b-0 md:border-r border-laps-blue/10">
-            <div className={`relative h-28 md:h-32 shrink-0 bg-gradient-to-r ${cfg.gradient}`}>
+            <div className={`relative h-28 shrink-0 md:h-32 ${cfg.band}`}>
               <svg
                 className="absolute bottom-0 left-0 h-8 w-full text-white/40"
                 viewBox="0 0 200 20"
@@ -1273,11 +1250,11 @@ function EditPanel({
             </div>
 
             <div className="-mt-14 md:-mt-16 flex flex-col items-center px-6 pb-8 text-center md:px-8">
-              <div className={`relative h-28 w-28 md:h-32 md:w-32 shrink-0 rounded-full bg-surface p-1.5 shadow-xl ring-4 ${cfg.ring}`}>
+              <div className={`relative h-28 w-28 shrink-0 rounded-full bg-surface p-1 ring-2 md:h-32 md:w-32 ${cfg.ring}`}>
                 {photoUrl ? (
                   <img src={resolveMediaUrl(photoUrl)} alt={fullName} className="h-full w-full rounded-full object-cover" />
                 ) : (
-                  <div className={`flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br ${cfg.gradient} text-3xl font-bold text-white`}>
+                  <div className={`flex h-full w-full items-center justify-center rounded-full ${cfg.fill} text-3xl font-bold text-white`}>
                     {initials(fullName)}
                   </div>
                 )}
@@ -1495,7 +1472,7 @@ function EditPanel({
               <button
                 onClick={() => save.mutate()}
                 disabled={save.isPending}
-                className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-laps-ink to-laps-blue px-6 py-2 text-sm font-bold text-white shadow-md shadow-laps-blue/25 transition hover:shadow-laps-blue/40 disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-laps-cta px-6 text-sm font-semibold text-white transition-colors hover:bg-laps-accent active:translate-y-px disabled:opacity-50"
               >
                 {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Salvar perfil
@@ -1744,7 +1721,7 @@ function PublicationApprovalSection() {
                 type="button"
                 disabled={busy}
                 onClick={() => approveMutation.mutate(p.id)}
-                className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-laps-ink disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-laps-cta disabled:opacity-50"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar
               </button>
@@ -1790,7 +1767,7 @@ function ProjectSection() {
   const projects = projectsQuery.data ?? [];
 
   return (
-    <div className="sticky top-24 flex flex-col max-h-[calc(100vh-8rem)] rounded-2xl border border-laps-light/25 bg-surface p-5 shadow-[0_2px_20px_rgba(25,58,89,0.05)]">
+    <div className="sticky top-24 flex flex-col max-h-[calc(100vh-8rem)] rounded-2xl border border-laps-light/25 bg-surface p-5 ">
       <div className="flex items-center justify-between mb-4 shrink-0">
         <h3 className="font-display text-lg font-bold text-laps-navy flex items-center gap-2">
           <Folder className="h-5 w-5 text-laps-blue" />
@@ -1798,7 +1775,7 @@ function ProjectSection() {
         </h3>
         <button
           onClick={() => setEditing("new")}
-          className="inline-flex items-center gap-1 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-laps-ink"
+          className="inline-flex items-center gap-1 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-laps-cta"
         >
           <Plus className="h-3.5 w-3.5" /> Novo
         </button>
@@ -1951,13 +1928,13 @@ function ProjectEditPanel({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface p-0 shadow-[0_20px_60px_-20px_rgba(11,78,141,0.45)] w-[95vw] max-w-5xl">
+      <DialogContent className="w-[95vw] max-w-5xl overflow-hidden rounded-md border border-laps-navy/25 bg-surface p-0">
         <DialogTitle className="sr-only">{isNew ? "Novo projeto" : `Editando ${titleEn || titlePt}`}</DialogTitle>
 
         <div className="flex flex-col md:h-[88vh] md:max-h-[820px] md:flex-row">
           {/* LEFT — identity */}
           <div className="relative flex flex-col md:w-5/12 overflow-y-auto border-b md:border-b-0 md:border-r border-laps-blue/10">
-            <div className="relative h-24 shrink-0 bg-gradient-to-r from-laps-ink to-laps-blue">
+            <div className="relative h-24 shrink-0 bg-laps-ink">
               <div className="absolute right-5 top-4 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
                 {isNew ? "Novo projeto" : "Editando projeto"}
               </div>
@@ -2054,7 +2031,7 @@ function ProjectEditPanel({
               <button
                 onClick={() => save.mutate()}
                 disabled={save.isPending || !slug || !(titleEn || titlePt)}
-                className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-laps-ink to-laps-blue px-6 py-2 text-sm font-bold text-white shadow-md shadow-laps-blue/25 transition hover:shadow-laps-blue/40 disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-laps-cta px-6 text-sm font-semibold text-white transition-colors hover:bg-laps-accent active:translate-y-px disabled:opacity-50"
               >
                 {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {isNew ? "Criar projeto" : "Salvar projeto"}

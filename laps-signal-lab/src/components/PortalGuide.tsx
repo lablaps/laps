@@ -138,7 +138,7 @@ export default function PortalGuide({ step }: { step: GuideStepId | null }) {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-md gap-0 overflow-hidden rounded-2xl border-laps-blue/15 p-0 sm:rounded-2xl">
-          <div className="rounded-t-2xl bg-gradient-to-br from-laps-ghost/70 to-surface px-6 pb-4 pt-6">
+          <div className="rounded-t-md border-b border-laps-navy/15 bg-laps-ghost/60 px-6 pb-4 pt-6">
             <div className="flex items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-laps-accent/15 text-laps-blue">
                 <current.icon className="h-5 w-5" />
@@ -199,7 +199,7 @@ export default function PortalGuide({ step }: { step: GuideStepId | null }) {
             <button
               type="button"
               onClick={showMe}
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-md bg-laps-accent px-4 text-xs font-bold text-white shadow-[0_8px_24px_-10px_rgba(11,78,141,0.7)] transition hover:bg-laps-ink active:scale-[0.98]"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-md bg-laps-cta px-4 text-xs font-semibold text-white transition-colors hover:bg-laps-accent active:translate-y-px"
             >
               {current.cta}
             </button>
@@ -215,7 +215,7 @@ export default function PortalGuide({ step }: { step: GuideStepId | null }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-1.5 rounded-full border border-laps-blue/20 bg-surface/95 px-4 py-2.5 text-xs font-bold text-laps-blue shadow-[0_10px_30px_-10px_rgba(11,78,141,0.5)] backdrop-blur transition hover:bg-laps-ghost active:scale-[0.97]"
+          className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-1.5 rounded-md border border-laps-navy/25 bg-surface px-4 py-2.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-laps-navy transition-colors hover:border-laps-signal hover:text-laps-signal active:translate-y-px"
         >
           <HelpCircle className="h-4 w-4" />
           Preciso de ajuda
@@ -310,7 +310,7 @@ function Spotlight({
       >
         <div className="flex animate-bounce flex-col items-center gap-1 motion-reduce:animate-none">
           {!above && <ArrowUp className="h-6 w-6 text-white drop-shadow" strokeWidth={2.5} />}
-          <span className="max-w-[calc(100vw-2rem)] rounded-full bg-laps-accent px-3.5 py-2 text-xs font-bold text-white shadow-[0_12px_30px_-8px_rgba(0,0,0,0.6)]">
+          <span className="max-w-[calc(100vw-2rem)] rounded-md bg-laps-ink px-3.5 py-2 text-xs font-semibold text-white">
             {label}
           </span>
           {above && <ArrowDown className="h-6 w-6 text-white drop-shadow" strokeWidth={2.5} />}
@@ -322,7 +322,7 @@ function Spotlight({
       <button
         type="button"
         onClick={onDone}
-        className="fixed bottom-5 left-1/2 z-[62] -translate-x-1/2 rounded-full bg-surface/95 px-5 py-2.5 text-xs font-bold text-laps-navy shadow-[0_10px_30px_-8px_rgba(0,0,0,0.5)] backdrop-blur transition hover:bg-surface active:scale-[0.97]"
+        className="fixed bottom-5 left-1/2 z-[62] -translate-x-1/2 rounded-md border border-laps-navy/25 bg-surface px-5 py-2.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-laps-navy transition-colors hover:bg-laps-ghost active:translate-y-px"
       >
         Entendi
       </button>

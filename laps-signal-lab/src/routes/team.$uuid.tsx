@@ -1,12 +1,16 @@
 import { createFileRoute, notFound, useNavigate, Link } from "@tanstack/react-router";
+// Crown / Shield / Briefcase / Microscope went with the per-tier icon chips and
+// ArrowRight with the arrows stapled to link rows. Sparkles is replaced rather
+// than dropped: it was labelling both "projects" and "interests", which is the
+// glyph doing decoration instead of meaning. FlaskConical and Tag say which
+// section you are looking at.
 import {
   Linkedin,
   ExternalLink,
-  Crown,
-  Microscope,
   GraduationCap,
   Users,
-  ArrowRight,
+  FlaskConical,
+  Tag,
   ArrowLeft,
   Mail,
   Github,
@@ -14,15 +18,14 @@ import {
   Calendar,
   Globe,
   Languages,
-  Sparkles,
   FileText,
   Compass,
   UserCheck,
-  Shield,
-  Briefcase,
+  type LucideIcon,
 } from "lucide-react";
 import { useLang } from "@/hooks/use-lang";
 import { type Tier, initials, team as staticTeam } from "@/lib/team-data";
+import { TIER_CONFIG } from "@/lib/tier-visual";
 import { areas as researchAreas, type AreaSlug } from "@/lib/areas-data";
 import { publications, publicationsByMember } from "@/lib/publications-data";
 import {
@@ -46,53 +49,10 @@ import {
 
 type Lang = "pt" | "en" | "fr";
 
-const tierConfig: Record<
-  Tier,
-  { gradient: string; ring: string; chip: string; band: string; Icon: typeof Crown }
-> = {
-  head: {
-    gradient: "from-laps-ink to-laps-blue",
-    band: "from-laps-ink via-laps-blue to-laps-light",
-    ring: "ring-laps-light/40",
-    chip: "bg-gradient-to-r from-laps-ink to-laps-blue text-white",
-    Icon: Crown,
-  },
-  coordinator: {
-    gradient: "from-violet-700 to-violet-400",
-    band: "from-violet-700 via-violet-400 to-violet-200",
-    ring: "ring-violet-200",
-    chip: "bg-violet-50 text-violet-700",
-    Icon: Shield,
-  },
-  manager: {
-    gradient: "from-purple-600 to-purple-300",
-    band: "from-purple-600 via-purple-300 to-purple-100",
-    ring: "ring-purple-200",
-    chip: "bg-purple-50 text-purple-700",
-    Icon: Briefcase,
-  },
-  doctorate: {
-    gradient: "from-laps-blue to-laps-light",
-    band: "from-laps-blue via-laps-light to-blue-200",
-    ring: "ring-laps-blue/30",
-    chip: "bg-laps-ghost text-laps-blue",
-    Icon: Microscope,
-  },
-  master: {
-    gradient: "from-emerald-500 to-emerald-300",
-    band: "from-emerald-500 via-emerald-300 to-emerald-100",
-    ring: "ring-emerald-200",
-    chip: "bg-emerald-50 text-emerald-700",
-    Icon: GraduationCap,
-  },
-  undergrad: {
-    gradient: "from-amber-400 to-amber-200",
-    band: "from-amber-400 via-amber-200 to-amber-50",
-    ring: "ring-amber-200",
-    chip: "bg-amber-50 text-amber-700",
-    Icon: Users,
-  },
-};
+// The tier table lives in lib/tier-visual.ts — shared with /team, /exchange,
+// the network graph, /portal and the console, so a member's role reads the same
+// on every screen that shows it.
+const tierConfig = TIER_CONFIG;
 
 const PUB_TYPE_LABELS: Record<string, { pt: string; en: string; fr: string }> = {
   JOURNAL: { pt: "Periódico", en: "Journal", fr: "Revue" },
@@ -236,7 +196,6 @@ function TeamMemberPage() {
   };
   const tierKey = tierMap[member.currentRole] ?? "undergrad";
   const cfg = tierConfig[tierKey];
-  const { Icon } = cfg;
 
   const seed = staticTeam.find((s) => s.id === member.slug);
   const memberAreas: AreaSlug[] = member.areas
@@ -350,7 +309,7 @@ function TeamMemberPage() {
 
   return (
     <PublicLayout>
-      <section className="bg-gradient-to-b from-laps-ghost/30 via-surface to-surface pb-16">
+      <section className="bg-laps-paper pb-16">
         <div className="mx-auto max-w-6xl px-6 pt-8">
           <Link
             to="/team"
@@ -360,9 +319,9 @@ function TeamMemberPage() {
           </Link>
 
           {/* HERO — cover band + identity */}
-          <div className="relative overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface shadow-[0_20px_60px_-30px_rgba(11,78,141,0.35)]">
+          <div className="relative overflow-hidden rounded-md border border-laps-navy/20 bg-surface">
             <div
-              className={`relative h-40 md:h-48 ${!member.bannerImageUrl ? `bg-gradient-to-r ${cfg.band}` : ""}`}
+              className={`relative h-40 md:h-48 ${!member.bannerImageUrl ? cfg.band : ""}`}
               style={member.bannerImageUrl
                 ? { backgroundImage: `url(${resolveMediaUrl(member.bannerImageUrl)})`, backgroundSize: "cover", backgroundPosition: "center" }
                 : member.bannerColor
@@ -388,7 +347,7 @@ function TeamMemberPage() {
                   fully below the band so nothing ever gets clipped. */}
               <div className="-mt-20 flex justify-start">
                 <div
-                  className={`relative h-36 w-36 shrink-0 rounded-full bg-surface p-1.5 shadow-xl ring-4 ${cfg.ring}`}
+                  className={`relative h-36 w-36 shrink-0 rounded-full bg-surface p-1 ring-2 ${cfg.ring}`}
                 >
                   {member.photoUrl ? (
                     <img
@@ -398,14 +357,11 @@ function TeamMemberPage() {
                     />
                   ) : (
                     <div
-                      className={`flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br ${cfg.gradient} text-4xl font-bold text-white`}
+                      className={`flex h-full w-full items-center justify-center rounded-full ${cfg.fill} text-4xl font-bold text-white`}
                     >
                       {initials(member.fullName)}
                     </div>
                   )}
-                  <div className="absolute -right-1 -top-1 flex h-10 w-10 items-center justify-center rounded-full bg-surface text-laps-blue shadow ring-2 ring-white">
-                    <Icon className="h-5 w-5" />
-                  </div>
                 </div>
               </div>
 
@@ -416,12 +372,12 @@ function TeamMemberPage() {
                   </h1>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider ${cfg.chip}`}
+                      className={`inline-flex items-center rounded-sm border px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] ${cfg.chip}`}
                     >
-                      <Icon className="h-3.5 w-3.5" /> {labels.tier[tierKey as Tier]}
+                      {labels.tier[tierKey as Tier]}
                     </span>
                     {member.exchangeCountry && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/25 bg-laps-ghost/80 px-3 py-1.5 text-xs font-semibold text-laps-navy">
+                      <span className="inline-flex items-center gap-1.5 rounded-sm border border-laps-navy/20 px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/75">
                         <span className="inline-block h-3.5 w-5 shrink-0 overflow-hidden rounded-sm shadow-sm">
                           <DestinationFlag
                             country={member.exchangeCountry}
@@ -476,7 +432,7 @@ function TeamMemberPage() {
                         href={publicLinkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-laps-ink px-3 py-2 text-xs font-semibold text-white transition hover:bg-laps-accent"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-laps-cta px-3 py-2 text-xs font-semibold text-white transition hover:bg-laps-accent"
                       >
                         <Linkedin className="h-3.5 w-3.5" /> LinkedIn
                       </a>
@@ -527,7 +483,7 @@ function TeamMemberPage() {
                   value={memberAreas.length}
                 />
                 <StatCard
-                  icon={Sparkles}
+                  icon={FlaskConical}
                   label={tx.stats.projects}
                   value={memberProjects.length}
                 />
@@ -601,7 +557,7 @@ function TeamMemberPage() {
 
               {/* Tags / interests */}
               {tags.length > 0 && (
-                <PortfolioCard title={tx.sections.interests} icon={Sparkles}>
+                <PortfolioCard title={tx.sections.interests} icon={Tag}>
                   <div className="flex flex-wrap gap-1.5">
                     {tags.map((tag) => (
                       <span
@@ -628,9 +584,9 @@ function TeamMemberPage() {
                         className="group flex items-center gap-2.5 rounded-lg border border-transparent px-1.5 py-1 text-left transition hover:border-laps-blue/15 hover:bg-laps-ghost/40"
                       >
                         <span
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br ${
-                            tierConfig[tierMap[p.currentRole] ?? "undergrad"].gradient
-                          } text-[9px] font-bold text-white`}
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full ${
+                            tierConfig[tierMap[p.currentRole] ?? "undergrad"].fill
+                          } font-mono text-[9px] font-semibold text-white`}
                         >
                           {p.photoUrl ? (
                             <img
@@ -645,7 +601,7 @@ function TeamMemberPage() {
                         <span className="flex-1 truncate text-xs font-medium text-laps-navy/85 group-hover:text-laps-blue">
                           {p.fullName}
                         </span>
-                        <ArrowRight className="h-3 w-3 text-laps-navy/30 transition group-hover:text-laps-blue" />
+                        <span className="h-px w-4 shrink-0 bg-laps-navy/25 transition-all duration-300 group-hover:w-6 group-hover:bg-laps-signal" />
                       </button>
                     ))}
                   </div>
@@ -664,12 +620,12 @@ function TeamMemberPage() {
               )}
 
               {memberProjects.length > 0 && (
-                <PortfolioCard title={tx.sections.projects} icon={Sparkles}>
+                <PortfolioCard title={tx.sections.projects} icon={FlaskConical}>
                   <div className="flex flex-col gap-3">
                     {memberProjects.map((proj) => (
                       <div
                         key={proj.id}
-                        className="rounded-xl border border-laps-blue/15 bg-gradient-to-br from-surface to-laps-ghost/30 p-4 transition hover:border-laps-blue/30 hover:shadow-sm"
+                        className="rounded-md border border-laps-navy/15 bg-surface p-4 transition-colors hover:border-laps-navy/35 hover:bg-laps-ghost/50"
                       >
                         <div className="mb-2 flex items-start justify-between gap-3">
                           <h4 className="text-sm font-bold text-laps-navy">
@@ -817,7 +773,7 @@ function TeamMemberPage() {
                           className="group flex items-center gap-2 rounded-full border border-laps-light/25 bg-surface px-2.5 py-1 text-xs font-medium text-laps-navy/85 transition hover:border-laps-blue/40 hover:text-laps-blue"
                         >
                           <span
-                            className={`flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br ${cv.gradient} text-[8px] font-bold text-white`}
+                            className={`flex h-5 w-5 items-center justify-center overflow-hidden rounded-full ${cv.fill} font-mono text-[8px] font-semibold text-white`}
                           >
                             {c.photoUrl ? (
                               <img
@@ -856,16 +812,14 @@ function PortfolioCard({
   children,
 }: {
   title: string;
-  icon: typeof Crown;
+  icon: LucideIcon;
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-laps-blue/12 bg-surface p-5 shadow-[0_2px_20px_rgba(25,58,89,0.04)]">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-laps-ghost text-laps-blue">
-          <IconComp className="h-4 w-4" />
-        </span>
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-laps-navy/70">
+    <div className="rounded-md border border-laps-navy/15 bg-surface p-5">
+      <div className="mb-4 flex items-center gap-2 border-b border-laps-navy/15 pb-3">
+        <IconComp className="h-3.5 w-3.5 shrink-0 text-laps-navy/45" />
+        <h3 className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-laps-navy/55">
           {title}
         </h3>
       </div>
@@ -879,7 +833,7 @@ function StatCard({
   label,
   value,
 }: {
-  icon: typeof Crown;
+  icon: LucideIcon;
   label: string;
   value: number;
 }) {

@@ -26,9 +26,9 @@ function LangSwitcher({
 
   return (
     <div
-      className={`relative inline-flex w-fit items-center p-0.5 rounded-full transition-all duration-300 ${dark
-        ? "bg-white/5 border border-white/10"
-        : "bg-laps-ink/5 border border-laps-navy/5"
+      className={`relative inline-flex w-fit items-center rounded-md p-0.5 ${dark
+        ? "border border-white/15 bg-white/5"
+        : "border border-laps-navy/15 bg-transparent"
         }`}
     >
       {codes.map((c) => {
@@ -37,15 +37,15 @@ function LangSwitcher({
           <button
             key={c}
             onClick={() => setLang(c)}
-            className="relative flex items-center justify-center h-7 w-9 rounded-full transition-all z-10"
+            className="relative z-10 flex h-7 w-9 items-center justify-center rounded-sm transition-all"
             aria-label={`Switch to ${c.toUpperCase()}`}
           >
             {active && (
               <motion.div
                 layoutId={`active-lang-bg-${idSuffix}`}
-                className={`absolute inset-0 rounded-full shadow-sm ${dark ? "bg-white/15" : "bg-surface"
+                className={`absolute inset-0 rounded-sm ${dark ? "bg-white/15" : "bg-laps-navy/10"
                   }`}
-                transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                transition={{ type: "spring", bounce: 0, duration: 0.35 }}
               />
             )}
             <span
@@ -113,13 +113,18 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-surface text-laps-navy">
+      {/* The blur stays — a bar sitting over scrolling content is the one place
+          layering is real. What goes is the shadow: on a page whose structure is
+          hairline rules, a soft drop shadow under the header reads as a
+          different design system. A 1px rule does the same job in the same
+          language. */}
       <header
-        className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled
-          ? "border-b border-laps-navy/8 bg-surface/75 shadow-[0_2px_20px_rgba(25,58,89,0.06)] backdrop-blur-xl"
+        className={`fixed top-0 z-50 w-full transition-colors duration-300 ${scrolled
+          ? "border-b border-laps-navy/15 bg-surface/85 backdrop-blur-xl"
           : "border-b border-transparent bg-transparent"
           }`}
       >
-        <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-6 py-3 md:grid-cols-[1fr_auto_1fr]">
+        <div className="mx-auto grid max-w-[1600px] grid-cols-[1fr_auto] items-center gap-4 px-6 py-3 md:grid-cols-[1fr_auto_1fr] md:px-10 lg:px-16">
           <Link to="/" className="flex items-center gap-2.5">
             {/* The header background flips with the theme, so the mark has to
                 as well. The white PNG already existed for the dark footer —
@@ -131,37 +136,31 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             />
           </Link>
 
-          <nav
-            className={`relative hidden items-center justify-center gap-0.5 rounded-full p-1 md:flex ${scrolled
-              ? "border border-laps-navy/10 bg-surface/60"
-              : "border border-laps-navy/8 bg-surface/40 backdrop-blur"
-              }`}
-          >
+          {/* A tab rail, not a floating capsule. The rounded-full pill nav with
+              a sliding pill behind the active item is the stock generated
+              header; it also fought the page, which has no other pill shapes on
+              it now. The active item is marked by a 2px rule in the signal
+              colour — the same mark the section headers and the hover states
+              use, so the whole site reads as one idea. */}
+          <nav className="relative hidden items-center justify-center md:flex">
             {navItems.map((it) => {
               const submenuActive = it.submenu?.some((s) => pathname === s.to);
               const active = isActive(it.to, it.matchPrefix) || !!submenuActive;
               const pill = (
                 <>
-                  {active && (
-                    <>
-                      <motion.span
-                        layoutId="nav-pill-outer"
-                        transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                        className="absolute inset-0 -z-10 rounded-full bg-laps-accent/30"
-                      />
-                      <motion.span
-                        layoutId="nav-pill-inner"
-                        transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                        className="absolute inset-[1.5px] -z-10 rounded-full bg-surface"
-                      />
-                    </>
-                  )}
                   <span
-                    className={`relative inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${active ? "text-laps-blue" : "text-laps-navy/70 hover:text-laps-navy"
+                    className={`relative inline-flex items-center px-4 py-2 text-[13px] font-semibold transition-colors ${active ? "text-laps-navy" : "text-laps-navy/60 hover:text-laps-navy"
                       }`}
                   >
                     {it.label}
                   </span>
+                  {active && (
+                    <motion.span
+                      layoutId="nav-marker"
+                      transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                      className="absolute inset-x-2 bottom-0 h-0.5 bg-laps-signal"
+                    />
+                  )}
                 </>
               );
 
@@ -178,18 +177,18 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                       {pill}
                     </Link>
                     <div
-                      className="invisible absolute left-1/2 top-full z-50 mt-1 w-56 -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100"
+                      className="invisible absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100"
                     >
-                      <div className="rounded-2xl border border-laps-navy/10 bg-surface/95 p-1.5 shadow-[0_10px_30px_rgba(11,78,141,0.18)] backdrop-blur-xl">
+                      <div className="rounded-md border border-laps-navy/20 bg-surface p-1">
                         {it.submenu.map((sub) => {
                           const subActive = pathname === sub.to;
                           return (
                             <Link
                               key={sub.to}
                               to={sub.to}
-                              className={`block rounded-xl px-3 py-2 text-sm font-semibold transition ${subActive
-                                ? "bg-laps-accent/10 text-laps-blue"
-                                : "text-laps-navy/80 hover:bg-laps-ghost hover:text-laps-blue"
+                              className={`block border-l-2 px-3 py-2 text-[13px] font-semibold transition-colors ${subActive
+                                ? "border-laps-signal text-laps-navy"
+                                : "border-transparent text-laps-navy/70 hover:border-laps-navy/30 hover:bg-laps-ghost hover:text-laps-navy"
                                 }`}
                             >
                               {sub.label}
@@ -216,12 +215,12 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="hidden items-center justify-end gap-2 md:flex">
-            <ThemeToggle className="h-8 w-8 bg-surface/70 backdrop-blur" />
+            <ThemeToggle className="h-8 w-8 rounded-md border border-laps-navy/20" />
             {auth.isAuthenticated && (
               <Link
                 to={auth.isManager ? "/admin" : "/portal"}
                 title={auth.isManager ? t.nav.admin : t.nav.portal}
-                className="inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-surface/70 px-3 py-1.5 text-xs font-semibold text-laps-navy backdrop-blur transition hover:border-laps-blue/40 hover:text-laps-blue"
+                className="inline-flex items-center gap-1.5 rounded-md border border-laps-navy/20 px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-laps-navy transition-colors hover:border-laps-navy hover:bg-laps-navy hover:text-white"
               >
                 <UserCircle2 className="h-4 w-4" />
                 {auth.isManager ? t.nav.admin : t.nav.portal}
@@ -231,7 +230,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <Link
                 to="/login"
                 title={t.nav.login}
-                className="inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-surface/70 px-3 py-1.5 text-xs font-semibold text-laps-navy backdrop-blur transition hover:border-laps-blue/40 hover:text-laps-blue"
+                className="inline-flex items-center gap-1.5 rounded-md border border-laps-navy/20 px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-laps-navy transition-colors hover:border-laps-navy hover:bg-laps-navy hover:text-white"
               >
                 <UserCircle2 className="h-4 w-4" />
                 {t.nav.login}
@@ -242,7 +241,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
           <button
             type="button"
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-laps-navy/15 bg-surface/60 text-laps-navy backdrop-blur md:hidden"
+            className="ml-auto flex h-10 w-10 items-center justify-center rounded-md border border-laps-navy/20 bg-surface/60 text-laps-navy backdrop-blur md:hidden"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
@@ -253,7 +252,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
         {mobileOpen && (
           <div className="md:hidden">
-            <nav className="mx-auto mt-1 flex max-w-7xl flex-col gap-1 rounded-2xl border border-laps-navy/10 bg-surface/85 px-3 py-3 backdrop-blur-xl">
+            <nav className="mx-auto mt-px flex flex-col border-t border-laps-navy/15 bg-surface/95 px-6 py-2 backdrop-blur-xl">
               {navItems.flatMap((it) => {
                 // Mobile flattens the submenu into siblings so users don't need
                 // to deal with a hover/long-press affordance on touch devices.
@@ -264,9 +263,9 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     <Link
                       key={sub.to}
                       to={sub.to}
-                      className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${active
-                        ? "bg-laps-accent text-white shadow-[0_4px_14px_rgba(11,78,141,0.25)]"
-                        : "text-laps-navy/75 hover:bg-laps-ghost"
+                      className={`border-l-2 px-4 py-3 text-sm font-semibold transition-colors ${active
+                        ? "border-laps-signal text-laps-navy"
+                        : "border-transparent text-laps-navy/70 hover:border-laps-navy/25 hover:text-laps-navy"
                         }`}
                     >
                       {sub.label}
@@ -277,7 +276,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               {auth.isAuthenticated ? (
                 <Link
                   to={auth.isManager ? "/admin" : "/portal"}
-                  className="mx-2 inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-surface px-4 py-2 text-sm font-semibold text-laps-navy"
+                  className="mx-4 mt-2 inline-flex items-center justify-center gap-1.5 rounded-md border border-laps-navy/25 px-4 py-2.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-laps-navy"
                 >
                   <UserCircle2 className="h-4 w-4" />
                   {auth.isManager ? t.nav.admin : t.nav.portal}
@@ -285,7 +284,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               ) : (
                 <Link
                   to="/login"
-                  className="mx-2 inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-surface px-4 py-2 text-sm font-semibold text-laps-navy"
+                  className="mx-4 mt-2 inline-flex items-center justify-center gap-1.5 rounded-md border border-laps-navy/25 px-4 py-2.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] text-laps-navy"
                 >
                   <UserCircle2 className="h-4 w-4" />
                   {t.nav.login}
@@ -304,17 +303,23 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
       <footer className="relative bg-laps-ink text-white">
         <WaveStrip className="absolute left-0 right-0 top-0 h-12 -translate-y-1/2" color1="#0B4E8D" color2="#74B5F2" />
-        <div className="mx-auto max-w-7xl px-6 pt-20 pb-8">
-          <div className="grid gap-12 md:grid-cols-3">
-            <div>
-              <div className="inline-flex items-center justify-center">
-                <img src={lapsLogoWhite} alt="LAPS" className="h-12 w-auto" />
-              </div>
-              <p className="mt-4 text-xs font-light uppercase tracking-[0.2em] text-laps-light">
+        {/* Column headings are mono micro-labels rather than bold letter-spaced
+            caps, and the columns are separated by rules instead of by gap
+            alone — the footer is the last thing on every page, so it is where
+            the grid should be most visible, not least. Content is unchanged:
+            these are the lab's real links, address and inbox, which is why
+            there is no newsletter box and no fourth column of invented links. */}
+        <div className="mx-auto max-w-[1600px] px-6 pb-10 pt-20 md:px-10 lg:px-16">
+          <div className="grid gap-12 border-t border-white/15 pt-10 md:grid-cols-12 md:gap-8">
+            <div className="md:col-span-5">
+              <img src={lapsLogoWhite} alt="LAPS" className="h-11 w-auto" />
+              <p className="mt-5 font-mono text-[10px] font-medium uppercase leading-relaxed tracking-[0.14em] text-laps-light">
                 {t.tagline}
               </p>
-              <p className="mt-5 max-w-xs text-sm text-white/70">{t.footer.desc}</p>
-              <div className="mt-6 flex gap-3">
+              <p className="mt-5 max-w-xs text-sm leading-relaxed text-white/65">
+                {t.footer.desc}
+              </p>
+              <div className="mt-7 flex gap-2">
                 {[
                   {
                     Icon: Linkedin,
@@ -329,7 +334,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     aria-label={social.label}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-white/80 transition hover:border-laps-light hover:text-laps-light"
+                    className="flex h-10 w-10 items-center justify-center rounded-md border border-white/20 text-white/70 transition-colors hover:border-laps-signal-ink hover:text-laps-signal-ink"
                   >
                     <social.Icon className="h-4 w-4" />
                   </a>
@@ -337,14 +342,17 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               </div>
             </div>
 
-            <div>
-              <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-laps-light">
+            <div className="md:col-span-3 md:border-l md:border-white/15 md:pl-8">
+              <h4 className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">
                 {t.footer.navTitle}
               </h4>
-              <ul className="mt-5 space-y-3 text-sm text-white/75">
+              <ul className="mt-6 space-y-3.5 text-sm text-white/75">
                 {navItems.map((it) => (
                   <li key={it.to}>
-                    <Link to={it.to} className="transition hover:text-laps-light">
+                    <Link
+                      to={it.to}
+                      className="transition-colors hover:text-laps-signal-ink"
+                    >
                       {it.label}
                     </Link>
                   </li>
@@ -352,28 +360,34 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               </ul>
             </div>
 
-            <div>
-              <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-laps-light">
+            <div className="md:col-span-4 md:border-l md:border-white/15 md:pl-8">
+              <h4 className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">
                 {t.footer.contactTitle}
               </h4>
-              <ul className="mt-5 space-y-3 text-sm text-white/75">
+              <ul className="mt-6 space-y-3.5 text-sm leading-relaxed text-white/75">
                 <li className="flex gap-3">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-laps-light" />
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-white/40" />
                   {t.footer.address}
                 </li>
                 <li className="flex gap-3">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-laps-light" />
-                  laps&#64;engcomp.uema.br
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-white/40" />
+                  <a
+                    href="mailto:laps@engcomp.uema.br"
+                    className="transition-colors hover:text-laps-signal-ink"
+                  >
+                    laps&#64;engcomp.uema.br
+                  </a>
                 </li>
               </ul>
-              <div className="mt-6">
+              <div className="mt-7">
                 <LangSwitcher lang={lang} setLang={setLang} dark />
               </div>
             </div>
           </div>
 
-          <div className="mt-14 flex flex-col items-center justify-center gap-3 border-t border-white/10 pt-6 text-xs text-white/50 md:flex-row">
+          <div className="mt-16 flex flex-col gap-3 border-t border-white/15 pt-6 font-mono text-[10px] uppercase tracking-[0.12em] text-white/40 md:flex-row md:justify-between">
             <span>{t.footer.rights}</span>
+            <span>UEMA · São Luís · Maranhão</span>
           </div>
         </div>
       </footer>

@@ -4,13 +4,37 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+/* Archivo carries the whole interface at several weights; IBM Plex Mono is the
+   technical layer (labels, numerals, ticks, metadata).
+   The pairing is the design decision, so it is worth naming why:
+     Archivo is a grotesque drawn from American gothic signage — sturdy,
+     institutional, and legible at the 11px label sizes this UI leans on. One
+     grotesque at many weights is the Swiss discipline; a second display face
+     would only dilute it.
+     Plex Mono exists because the lab measures things. Every number, axis tick
+     and field label on this site is a readout, and setting those in mono is
+     what separates "a lab site" from "a SaaS page about a lab".
+   Replaces Space Grotesk + Montserrat, which were the generic pick: Space
+   Grotesk in particular is the single most over-reached-for "tasteful" font in
+   generated frontends, and it gave the lab a startup voice, not a research one. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Stated outright rather than derived as var(--radius) ± 4px. The derived
+     scale only works around a soft base; against a 2px base it computes
+     negative values for -sm. It is also the more honest expression of the
+     decision: this UI has three radii — square, 2px for controls, 3px for
+     panels — and the ramp from 4 to 24px it used to have was carrying no
+     information at all.
+     rounded-2xl / 3xl are pulled down hard for the same reason: ~50 surfaces
+     were wearing a 16-24px radius that made every panel read as the same
+     floating card, which is the shape half of the generic-card look. */
+  --radius-sm: 0px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 3px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -43,14 +67,90 @@
   --color-surface: var(--surface);
   --color-laps-ink: var(--laps-ink);
   --color-laps-accent: var(--laps-accent);
-  --font-sans: 'Montserrat', system-ui, sans-serif;
-  --font-display: 'Space Grotesk', 'Montserrat', system-ui, sans-serif;
+  --color-laps-paper: var(--laps-paper);
+  /* The one emphasis colour: the active nav item, the section tick, the hovered
+     rule, the figure that matters, the focus ring. Used on ~10% of the surface,
+     never as decoration and never for body text — it is a marker, not a palette
+     entry.
+
+     It stays inside the brand's blue, so it is separated from the navy ink by
+     *value and saturation* rather than by hue. That is a narrower gap than a
+     complementary accent would give, and it is the thing to protect when
+     editing: if this drifts down toward --laps-accent (#0B4E8D) it stops
+     reading as emphasis and the page goes back to being blue-on-blue with
+     nothing marked. Keep it visibly brighter and more saturated than both
+     --laps-navy and --laps-accent. */
+  --color-laps-signal: var(--laps-signal);
+  /* The accent as it appears *on* a --laps-ink surface: the auth panels, the
+     CTA bands, the footer. Split for the same reason --laps-accent was split
+     from --laps-blue — a colour tuned for contrast against paper is not the
+     same colour that reads against navy. #0B6FD4 on #193A59 is 2.3:1, which
+     is illegible at the 10-11px label sizes those surfaces use it for.
+     Does not flip between themes: it is always on a dark surface. */
+  --color-laps-signal-ink: var(--laps-signal-ink);
+  /* Primary-button fill. Split out of --laps-ink because the two want opposite
+     things in dark mode: --laps-ink is a *surface* that must stay darker than
+     the page, while a filled button must stay lighter than it or it reads as a
+     hole punched in the background. Using ink for both meant every primary
+     action on the site disappeared in dark mode except its label. */
+  --color-laps-cta: var(--laps-cta);
+  --font-sans: 'Archivo', system-ui, sans-serif;
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
-.font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+/* Display = the same grotesque, pulled tight and optically corrected. Large
+   Archivo at default tracking looks loose; -0.03em is where the headline reads
+   as one object instead of a row of letters. */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+/* ── The instrument readout ────────────────────────────────────────────────
+   The signature detail, defined once so every page inherits the same voice
+   instead of each route inventing its own micro-label.
+
+   .label-tech  the mono tick-label that opens a section or names a field.
+                The leading "/" is drawn by ::before so no route has to
+                remember to type it.
+   .rule-signal a 2px measurement rule in the accent — the mark that says
+                "this one". Replaces the decorative left-border stripes and
+                the icon-in-a-rounded-square chips that were doing this job
+                generically. */
+.label-tech {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--laps-signal);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.label-tech::before {
+  content: "";
+  width: 14px;
+  height: 2px;
+  background: var(--laps-signal);
+  flex: none;
+}
+.label-tech-muted { color: color-mix(in oklab, var(--laps-navy) 55%, transparent); }
+.label-tech-muted::before { background: color-mix(in oklab, var(--laps-navy) 30%, transparent); }
+
+/* Tabular numerals everywhere a figure is a measurement, so columns of numbers
+   align and a counting animation doesn't shift its own layout. */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
 :root {
-  --radius: 0.625rem;
+  /* 2px, not shadcn's stock 0.625rem. An instrument panel has square corners;
+     the soft 10px radius was the single most visible "untouched starter" tell
+     in the old build, applied identically to every surface regardless of role.
+     Structural panels now go fully square via rounded-none, and this base is
+     reserved for controls. */
+  --radius: 0.125rem;
   /* Light is the default theme. Nothing is applied until the user opts in, and
      the .dark class is written by the inline script in __root.tsx before paint. */
   color-scheme: light;
@@ -58,11 +158,22 @@
   --laps-navy: #193A59;
   --laps-blue: #0B4E8D;
   --laps-light: #74B5F2;
-  --laps-ghost: #E0F0FF;
+  /* Cooled and desaturated from #E0F0FF. The old ghost was a pale blue strong
+     enough to read as its own colour, which is what flattened the palette into
+     one even blue wash; as a near-neutral it now does what a secondary surface
+     should — recede, and let navy and the signal accent carry the page. */
+  --laps-ghost: #EEF2F6;
   --laps-white: #FFFFFF;
   --surface: #FFFFFF;
   --laps-ink: #193A59;
   --laps-accent: #0B4E8D;
+  --laps-signal: #0B6FD4;
+  --laps-signal-ink: #6FB6FF;
+  --laps-cta: #193A59;
+  /* Paper, not pure white: #FCFCFB under the full-bleed sections gives the
+     hairline grid something to sit on. A 1px rule on pure white reads as a
+     rendering artefact; on paper it reads as drawn. */
+  --laps-paper: #FBFAF8;
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.25 0.05 250);
@@ -111,6 +222,15 @@
   /* Darker than --laps-blue on purpose: this one carries white label text, and
      the brighter blue that reads well *as* text fails contrast *under* it. */
   --laps-accent: #1D6FC0;
+  /* Lifted well off the light value. #0B6FD4 on a near-black panel reads as a
+     dark, muddy blue at the 11px label sizes this accent is mostly used at —
+     and it would sit too close to --laps-accent (#1D6FC0), which is a *button
+     fill* in dark mode. The marker has to stay clearly brighter than the thing
+     it might be mistaken for. */
+  --laps-signal: #6FB6FF;
+  /* Lighter than the page, not darker — see the note on --color-laps-cta. */
+  --laps-cta: #2C7CD1;
+  --laps-paper: #0E1822;
 
   --background: oklch(0.17 0.02 250);
   --foreground: oklch(0.93 0.02 250);
@@ -187,9 +307,31 @@ html {
   }
 
   html, body {
-    font-family: 'Montserrat', system-ui, sans-serif;
+    font-family: 'Archivo', system-ui, sans-serif;
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  /* One focus treatment for the whole app. The old build styled hover on most
+     controls and left focus to the browser default, which meant keyboard users
+     got a ring that matched nothing and, on the dark navy surfaces, was close
+     to invisible. The accent is the loudest colour here — focus is exactly
+     what it should be spent on. */
+  :focus-visible {
+    outline: 2px solid var(--laps-signal);
+    outline-offset: 2px;
+  }
+}
+
+/* Respect the OS setting. The wave field, the count-ups and the graph
+   simulations are all decorative motion; a user who has asked for less should
+   not have to watch them. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Brain, HeartPulse, Microscope, Activity, Target, Eye } from "lucide-react";
 import { useLang } from "@/hooks/use-lang";
 import { ValuesGraph } from "@/components/ValuesGraph";
+import { AreaIndex } from "@/components/AreaIndex";
 import { PublicLayout } from "@/components/PublicLayout";
 
 export const Route = createFileRoute("/aboutus")({
@@ -16,119 +16,154 @@ export const Route = createFileRoute("/aboutus")({
 
 function AboutPage() {
   const { t } = useLang();
-  const areaIcons = [Brain, HeartPulse, Microscope, Activity];
 
   return (
     <PublicLayout>
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-laps-ghost/40 via-surface to-surface py-20">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <span className="inline-block rounded-full bg-laps-ghost px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-laps-blue">
-            {t.about.chip}
-          </span>
-          <h1 className="font-display mt-6 text-4xl font-bold text-laps-navy md:text-5xl">
-            {t.about.title}
-          </h1>
-          <p className="mt-6 text-base leading-relaxed text-laps-navy/75 md:text-lg">
-            {t.about.body}
-          </p>
-        </div>
-      </section>
-
-      {/* MISSION / VISION */}
-      <section className="bg-surface pb-24">
-        <div className="mx-auto grid max-w-6xl gap-6 px-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-laps-blue/15 bg-surface p-8 shadow-[0_2px_20px_rgba(25,58,89,0.06)] border-l-4 border-l-laps-blue">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-laps-ghost text-laps-blue">
-              <Target className="h-5 w-5" />
+      {/* ── HERO ───────────────────────────────────────────────────────────
+          Flush-left and unadorned. What was here — a centred pill badge over a
+          centred H1 over a centred paragraph, on a soft vertical gradient — is
+          the same template the home page hero used, so the two pages opened
+          identically and neither had a spatial idea of its own. */}
+      <section className="border-b border-laps-navy/15 bg-laps-paper">
+        <div className="mx-auto max-w-[1280px] px-6 py-24 md:px-10 lg:py-32">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-7">
+              <p className="label-tech">{t.about.chip}</p>
+              <h1 className="font-display mt-6 text-[clamp(2.25rem,5vw,4.25rem)] font-extrabold leading-[0.95] text-laps-navy">
+                {t.about.title}
+              </h1>
             </div>
-            <h2 className="mt-5 text-xl font-bold text-laps-navy">{t.about.missionTitle}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-laps-navy/75">{t.about.missionBody}</p>
-          </div>
-          <div
-            className="rounded-2xl border border-laps-blue/15 bg-surface p-8 shadow-[0_2px_20px_rgba(25,58,89,0.06)] border-l-4"
-            style={{ borderLeftColor: "#27AE60" }}
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <Eye className="h-5 w-5" />
-            </div>
-            <h2 className="mt-5 text-xl font-bold text-laps-navy">{t.about.visionTitle}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-laps-navy/75">{t.about.visionBody}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* RESEARCH AREAS */}
-      <section className="relative bg-laps-ghost/30 py-24">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="grid gap-10 md:grid-cols-[1fr_2fr] md:items-end">
-            <div>
-              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.25em] text-laps-blue">
-                / research.areas
-              </span>
-              <h2 className="font-display mt-4 text-3xl font-bold leading-tight text-laps-navy md:text-4xl lg:text-5xl">
-                {t.areas.title}
-              </h2>
-            </div>
-            <p className="text-base leading-relaxed text-laps-navy/70 md:text-lg">
+            <p className="text-base leading-relaxed text-laps-navy/70 lg:col-span-5 lg:pt-3 lg:text-lg">
               {t.about.body}
             </p>
           </div>
+        </div>
+      </section>
 
-          <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-laps-light/40 bg-laps-light/40 md:grid-cols-2 lg:grid-cols-4">
-            {t.areas.items.map((item, i) => {
-              const Icon = areaIcons[i];
-              return (
-                <div
-                  key={i}
-                  className="group relative flex flex-col bg-surface p-8 transition-colors hover:bg-laps-ghost/40"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-laps-ghost text-laps-blue transition group-hover:bg-laps-accent group-hover:text-white">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <span className="font-mono text-[11px] font-semibold text-laps-navy/40">
-                      0{i + 1}
-                    </span>
-                  </div>
-                  <h3 className="font-display mt-6 text-lg font-bold leading-tight text-laps-navy">
-                    {item.t}
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-laps-navy/65">{item.d}</p>
-                  <div className="mt-6 h-px w-8 bg-laps-accent/30 transition-all group-hover:w-16 group-hover:bg-laps-accent" />
-                </div>
-              );
-            })}
+      {/* ── MISSION / VISION ───────────────────────────────────────────────
+          Two ruled columns rather than two cards.
+
+          The old treatment is the clearest single tell the site had: each was a
+          16px-radius card with a soft shadow and a 4px coloured left border —
+          blue on one, a hard-coded green on the other — topped with a Lucide
+          glyph in a tinted rounded square. The stripe carried no information
+          (the two are peers, not statuses), the green belonged to no palette on
+          this site, and a target and an eye are the stock icons for exactly
+          these two words.
+          Set as a ruled pair with mono labels, the same two paragraphs read as
+          what they are: the lab's two statements of intent. */}
+      <section className="border-b border-laps-navy/15 bg-surface">
+        <div className="mx-auto max-w-[1280px] px-6 py-24 md:px-10">
+          <div className="grid gap-12 border-t border-laps-navy/15 md:grid-cols-2 md:gap-0">
+            <div className="pt-8 md:pr-14">
+              <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-laps-navy/45">
+                01
+              </p>
+              <h2 className="font-display mt-4 text-2xl font-bold text-laps-navy md:text-3xl">
+                {t.about.missionTitle}
+              </h2>
+              <p className="mt-5 max-w-[42ch] text-base leading-relaxed text-laps-navy/70">
+                {t.about.missionBody}
+              </p>
+            </div>
+            <div className="border-t border-laps-navy/15 pt-8 md:border-l md:border-t-0 md:pl-14">
+              <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-laps-navy/45">
+                02
+              </p>
+              <h2 className="font-display mt-4 text-2xl font-bold text-laps-navy md:text-3xl">
+                {t.about.visionTitle}
+              </h2>
+              <p className="mt-5 max-w-[42ch] text-base leading-relaxed text-laps-navy/70">
+                {t.about.visionBody}
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* VALUES */}
-      <section className="bg-laps-ghost py-24">
-        <div className="mx-auto max-w-6xl px-6">
-          <h2 className="font-display text-center text-3xl font-bold text-laps-navy md:text-5xl">
-            {t.values.title}
+      {/* ── RESEARCH AREAS ─────────────────────────────────────────────────
+          The supporting paragraph that sat beside this heading was a verbatim
+          copy of the hero paragraph three sections above. Repeating it did not
+          make the section read as fuller, only as unedited — the heading and
+          the four areas say it. */}
+      <section className="border-b border-laps-navy/15 bg-laps-paper">
+        <div className="mx-auto max-w-[1280px] px-6 py-24 md:px-10">
+          <p className="label-tech">03 / research.areas</p>
+          <h2 className="font-display mt-6 max-w-[16ch] text-[clamp(2rem,4vw,3.25rem)] font-extrabold leading-[0.98] text-laps-navy">
+            {t.areas.title}
           </h2>
-          <div className="relative mx-auto mt-12 h-[420px] w-full max-w-4xl">
-            <ValuesGraph labels={t.values.items} />
+          <div className="mt-16">
+            <AreaIndex items={t.areas.items} />
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-surface py-20">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-laps-ink to-laps-blue p-10 text-center text-white md:p-14">
-            <h2 className="font-display text-2xl font-bold md:text-3xl">{t.team.title}</h2>
-            <p className="mx-auto mt-4 max-w-xl text-sm text-white/80 md:text-base">
-              {t.structure.body}
-            </p>
-            <Link
-              to="/team"
-              className="mt-7 inline-flex items-center gap-2 rounded-lg bg-surface px-6 py-3 text-sm font-semibold text-laps-navy shadow-lg transition hover:bg-laps-light hover:text-white"
-            >
-              {t.team.cta} <ArrowRight className="h-4 w-4" />
-            </Link>
+      {/* ── VALUES ─────────────────────────────────────────────────────────
+          The force-directed graph is one of the few genuinely custom things on
+          this site, so it gets the room and the frame it deserves instead of
+          floating in a pale-blue band under a centred heading. The mono caption
+          rail beneath it labels it the way a figure in a paper would. */}
+      <section className="border-b border-laps-navy/15 bg-surface">
+        <div className="mx-auto max-w-[1280px] px-6 py-24 md:px-10">
+          <div className="grid gap-10 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <p className="label-tech">04 / {t.values.title}</p>
+              <h2 className="font-display mt-6 text-[clamp(2rem,4vw,3.25rem)] font-extrabold leading-[0.98] text-laps-navy">
+                {t.values.title}
+              </h2>
+              <ul className="mt-8 border-t border-laps-navy/15">
+                {t.values.items.map((v, i) => (
+                  <li
+                    key={v}
+                    className="flex items-baseline gap-4 border-b border-laps-navy/15 py-3"
+                  >
+                    <span className="tnum font-mono text-[11px] text-laps-navy/40">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-sm font-semibold text-laps-navy">{v}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="lg:col-span-8">
+              <div className="relative h-[420px] w-full border border-laps-navy/15 bg-laps-paper">
+                <ValuesGraph labels={t.values.items} />
+              </div>
+              <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.12em] text-laps-navy/40">
+                Fig. 01 — {t.values.title}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TEAM CTA ───────────────────────────────────────────────────────
+          A full-bleed ink band, flush-left, rather than a 24px-radius gradient
+          panel with centred text and a white pill CTA. The band is the last
+          thing before the footer and is the only heavy surface on the page —
+          which is what makes it read as the page's one call to action. */}
+      <section className="bg-laps-ink text-white">
+        <div className="mx-auto max-w-[1280px] px-6 py-20 md:px-10">
+          <div className="grid gap-10 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-7">
+              <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-laps-signal-ink">
+                {t.structure.chip}
+              </p>
+              <h2 className="font-display mt-5 text-[clamp(1.75rem,3.2vw,2.75rem)] font-extrabold leading-[1] text-white">
+                {t.team.title}
+              </h2>
+              <p className="mt-5 max-w-[52ch] text-sm leading-relaxed text-white/70 md:text-base">
+                {t.structure.body}
+              </p>
+            </div>
+            <div className="lg:col-span-5 lg:justify-self-end">
+              <Link
+                to="/team"
+                className="inline-flex h-12 items-center rounded-md bg-white px-7 text-sm font-semibold text-laps-ink transition-colors duration-150 hover:bg-laps-signal hover:text-white active:translate-y-px"
+              >
+                {t.team.cta}
+              </Link>
+            </div>
           </div>
         </div>
       </section>

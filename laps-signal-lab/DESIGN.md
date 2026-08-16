@@ -4,7 +4,10 @@ colors:
   laps-navy: "#193A59"
   laps-blue: "#0B4E8D"
   laps-light: "#74B5F2"
-  laps-ghost: "#E0F0FF"
+  laps-ghost: "#EEF2F6"
+  laps-paper: "#FBFAF8"
+  laps-signal: "#0B6FD4"
+  laps-cta: "#193A59"
   laps-white: "#FFFFFF"
   border: "oklch(0.9 0.02 240)"
   background: "oklch(1 0 0)"
@@ -22,65 +25,102 @@ colors:
   ring: "oklch(0.5 0.1 250)"
 typography:
   sans:
-    fontFamily: "'Montserrat', system-ui, sans-serif"
-    weights: [300, 400, 500, 600, 700, 800]
+    fontFamily: "'Archivo', system-ui, sans-serif"
+    weights: [400, 500, 600, 700, 800]
   display:
-    fontFamily: "'Space Grotesk', 'Montserrat', system-ui, sans-serif"
-    letterSpacing: "-0.02em"
-    weights: [400, 500, 600, 700]
+    fontFamily: "'Archivo', system-ui, sans-serif"
+    letterSpacing: "-0.03em"
+    weight: 700
+  mono:
+    fontFamily: "'IBM Plex Mono', ui-monospace, monospace"
+    weights: [400, 500, 600]
 radii:
-  sm: "calc(0.625rem - 4px)"
-  md: "calc(0.625rem - 2px)"
-  DEFAULT: "0.625rem"
-  lg: "0.625rem"
-  xl: "calc(0.625rem + 4px)"
-  2xl: "1rem"
-  3xl: "1.5rem"
+  sm: "0"
+  md: "2px"
+  lg: "3px"
+  xl: "3px"
+  2xl: "4px"
+  3xl: "4px"
   full: "9999px"
 spacing:
-  container: "max-w-7xl"
-  section: "py-24"
-  gap-md: "1rem"
-  gap-lg: "1.5rem"
+  container-wide: "max-w-[1600px]"
+  container-read: "max-w-[1280px]"
+  section: "py-20 / py-24"
 motion:
   wave-flow: "18s linear infinite"
-  float-soft: "float -6px up, 50% timing"
-  transition: "all gently with hover lifting (-translate-y-1)"
-shadows:
-  ambient: "0 2px 20px rgba(25, 58, 89, 0.08)"
-  soft: "0 12px 40px rgba(11, 78, 141, 0.12)"
-  elevated: "0 20px 60px -20px rgba(11, 78, 141, 0.4)"
+  transition: "transition-colors duration-150; active:translate-y-px on press"
 ---
 
 ## Brand & Style
-The LAPS (Laboratório de Aquisição e Processamento de Sinais) design system is built to convey a rigorous academic and technological presence while remaining approachable, modern, and high-tech. The aesthetic is definitively "Modern Scientific," merging organic data visualizations with crisp, corporate reliability.
 
-The interface leverages significant whitespace to reduce cognitive load, utilizing subtle tinted borders and shadows to establish a deep sense of quality and precision.
+**Direction: Swiss × instrument.** LAPS measures signals, so the interface is
+built like something you would read a measurement off: a strict grid, one
+grotesque at several weights, a mono technical layer, hairline rules instead of
+shadows, and one emphasis colour spent sparingly.
+
+The aim is that the page looks like a research instrument's panel rather than a
+product page about research. Restraint is the point — nothing here floats,
+glows, or lifts.
 
 ## Colors
-The palette is deeply rooted in oceanic and scientific hues, prioritizing trust (Navy) and technological energy (Light Blue). It leans heavily into a monochromatic blue scale to maintain a serene, rational environment.
 
-- **Primary Colors:** `laps-navy` (#193A59) grounds the application, serving as the core text and structural color. `laps-blue` (#0B4E8D) and `laps-light` (#74B5F2) drive actions and energetic highlights.
-- **Backgrounds:** `laps-ghost` (#E0F0FF) provides a highly aerated, low-contrast canvas for elevated components, allowing standard `white` cards to pop gently.
-- **Accents:** Vivid, highly-saturated but soft gradients (often from Laps Blue to Laps Light) are used strategically to guide the eye or represent data flow.
+Navy ink on paper carries everything; a single bright signal blue marks emphasis.
+The discipline is 60/30/10: navy dominant, paper/ghost secondary, signal at
+roughly a tenth of the surface and never as body text.
+
+- **Ink:** `laps-navy` (#193A59) is the text and structural colour.
+- **Ground:** `laps-paper` (#FBFAF8) under full-bleed sections — a 1px rule on
+  pure white reads as an artefact, on paper it reads as drawn. `laps-ghost`
+  (#EEF2F6) is the recessive secondary surface.
+- **Signal:** `laps-signal` (#0B6FD4) is the *only* emphasis colour: the active
+  nav marker, the section tick, the hovered rule, the focus ring, the `head`
+  tier, a required state. It is a marker, not a palette entry.
+  It sits inside the brand blue, so it is separated from the ink by brightness
+  and saturation rather than hue — keep it visibly brighter than both
+  `laps-navy` and `laps-accent` or the page goes back to blue-on-blue with
+  nothing marked.
+- **CTA:** `laps-cta` is split from `laps-ink` because a filled button must stay
+  *lighter* than the page in dark mode while an ink surface must stay darker.
+- **Tiers:** the academic hierarchy is one navy ramp (dark → light, senior →
+  junior) plus the accent for `head`. Defined once in `src/lib/tier-visual.ts`
+  and shared by the roster, the graph, `/exchange`, `/portal` and `/admin`.
 
 ## Typography
-The system employs a dual-typeface strategy to balance academic tradition with computational modernity.
 
-- **Display (Headings):** **Space Grotesk** is utilized for primary headings and prominent data points (like numbers in statistics). Its geometric, slightly brutalist proportions give the system a distinctly "engineering" and "machine learning" flair.
-- **Sans (Body & Labels):** **Montserrat** provides exceptional legibility and geometric balance for body copy, buttons, and metadata. It remains highly readable at smaller scales.
+- **Archivo** everywhere, at several weights. One grotesque at many weights is
+  the Swiss discipline; a second display face would dilute it. Headings use
+  `.font-display` (-0.03em, weight 700) — large Archivo at default tracking
+  reads loose.
+- **IBM Plex Mono** is the technical layer: labels, numerals, ticks, metadata,
+  status, field names. Every figure on this site is a readout, and setting them
+  in mono is what separates a lab site from a SaaS page about a lab.
+- `.label-tech` is the section opener (mono, uppercase, 0.14em, signal-coloured,
+  with a 14px rule drawn by `::before`). `.tnum` gives tabular numerals wherever
+  a figure is a measurement.
 
 ## Layout & Spacing
-The layout relies on a structured, responsive grid (typically 4-column mobile, 12-column desktop up to a `max-w-7xl` container). 
 
-- **Breathing Room:** Generous internal padding (p-6, p-8) and massive section margins (`py-24` or `py-28`) define the experience. Elements are never crowded.
-- **Alignment:** Content is often logically clustered within "containers" utilizing left-aligned typography but centered overarching section headers to define rhythm.
+Width is a hierarchy tool, not a constant. The hero runs to `1600px`; reading
+sections sit at `1280px`. Content is flush-left on a 12-column grid, and on the
+home hero the four-column grid is *drawn* as hairlines — the grid is the design.
 
-## Elevation & Depth (Shadows)
-Elevation is achieved using deeply tinted, ambient shadows rather than stark grays or blacks.
-- **Tinted Shadows:** Shadows use the `laps-blue` and `laps-navy` colors as their base (e.g., `rgba(11, 78, 141, 0.12)` or `rgba(25, 58, 89, 0.08)`). This prevents the UI from looking "dirty" and instead gives it a luminous, glowing dimensionality.
-- **Hover Lifts:** Interactive cards and elements "lift" gently (`-translate-y-1`) while increasing shadow spread and opacity to simulate tactile physical response.
+Content is separated by 1px rules rather than gaps alone, so a row of peers
+reads as one table rather than as floating cards.
+
+## Elevation & Depth
+
+**Hairlines, not shadows.** Surfaces are separated by `border-laps-navy/15`.
+There are no drop shadows on cards, no hover lifts, and no coloured glows — a
+soft shadow on a page built from 1px rules reads as a different design system
+bolted on. Depth comes from rules, weight and position.
 
 ## Shapes & Motion
-- **Radii:** The shape language is universally "soft technical." Most background panels and cards use a `rounded-2xl` (16px) or `rounded-3xl` (24px) radius, while the base components use `0.625rem` (10px). Inner elements typically match with concentric radii to maintain geometric harmony.
-- **Data as Motion:** The system incorporates generative backgrounds (like the `NeuralMesh` or `WaveStrip` and `ValuesGraph`) that are constantly in stochastic or fluid movement. This actively illustrates "signals" and "processing" in the background, reinforcing the lab's core thesis without cluttering the foreground UI.
+
+- **Radii:** three values only — square (0), 2px for controls, 3–4px for panels.
+  `--radius` is 2px, stated outright rather than derived, because a derived
+  scale computes negative values against a sharp base.
+- **Motion is near-none and functional.** `transition-colors duration-150`,
+  `active:translate-y-px` on press. The exceptions are deliberate: the
+  `WaveBackground` signal trace and the force-directed `TeamGraph`/`ValuesGraph`
+  are data-as-motion and on-thesis. `prefers-reduced-motion` disables all of it.
+- **Focus** is one global treatment: a 2px signal outline at 2px offset.

@@ -90,7 +90,7 @@ export function ValuesGraph({ labels }: { labels: readonly string[] }) {
       }
 
       // nodes + labels
-      g.font = "700 13px Montserrat, sans-serif";
+      g.font = "500 12px 'IBM Plex Mono', ui-monospace, monospace";
       g.textAlign = "center";
       for (const n of nodes) {
         const a = n.activation;

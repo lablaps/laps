@@ -2,7 +2,7 @@ import { useState, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import {
   User, Mail, Lock, Eye, EyeOff, Linkedin, Github, BookOpen,
-  Camera, ArrowRight, Loader2, AlertCircle,
+  Camera, Loader2, AlertCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api, ApiError, type MemberRole } from "@/lib/api";
@@ -270,36 +270,33 @@ function JoinPage() {
 
   return (
     <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
-      {/* Left — branded panel */}
-      <aside
-        className="relative flex flex-col justify-between overflow-hidden px-10 py-14 text-white lg:px-16 lg:py-20"
-        style={{
-          background:
-            "radial-gradient(circle at 20% 20%, #0B4E8D 0%, #193A59 55%, #0F2A42 100%)",
-        }}
-      >
-        <div className="absolute inset-0 opacity-[0.07] [background:radial-gradient(circle_at_1px_1px,#74B5F2_1px,transparent_0)_0_0/22px_22px]" />
-        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-laps-light/10 blur-3xl" />
-        <div className="absolute -bottom-40 -right-24 h-[28rem] w-[28rem] rounded-full bg-laps-accent/30 blur-3xl" />
+      {/* Left — branded panel. Matches /login exactly: flat ink and a dot grid
+          rather than a radial gradient with two blurred colour orbs. The two
+          screens are the same moment in the product and should not look like
+          two different products. */}
+      <aside className="relative flex flex-col justify-between overflow-hidden bg-laps-ink px-10 py-14 text-white lg:px-16 lg:py-20">
+        <div className="absolute inset-0 opacity-[0.09] [background:radial-gradient(circle_at_1px_1px,#74B5F2_1px,transparent_0)_0_0/22px_22px]" />
 
-        <div className="relative flex items-center gap-3">
-          <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-laps-light">
+        {/* Centred, matching /login exactly — the two screens are the same
+            moment in the product and should not differ in composition. */}
+        <div className="relative flex items-center justify-center gap-4">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-laps-signal-ink">
             Convite · LAPS
-          </span>
+          </p>
           <JoinLangSwitcher lang={lang} setLang={setLang} />
         </div>
 
         <div className="relative mx-auto flex w-full max-w-md flex-col items-center text-center">
-          <div className="flex w-full items-center justify-center">
-            <LapsLogoMono />
-          </div>
-          <h1 className="font-display mt-10 text-center text-3xl font-bold leading-tight md:text-4xl">
+          <LapsLogoMono />
+          <h1 className="font-display mt-10 text-3xl font-extrabold leading-[1.05] text-balance md:text-4xl">
             {c.headline}
           </h1>
-          <p className="mt-4 text-center text-sm text-white/65">{c.sub}</p>
+          <p className="mt-5 max-w-[46ch] text-sm leading-relaxed text-pretty text-white/60">
+            {c.sub}
+          </p>
         </div>
 
-        <div className="relative text-[11px] uppercase tracking-[0.24em] text-white/45">
+        <div className="relative border-t border-white/15 pt-5 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-white/45">
           Laboratório para Aquisição e Processamento de Sinais · UEMA
         </div>
       </aside>
@@ -532,7 +529,7 @@ function JoinPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-laps-accent px-4 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(11,78,141,0.55)] transition hover:bg-laps-ink disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-laps-cta px-4 text-sm font-semibold text-white transition-colors duration-150 hover:bg-laps-accent active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting ? (
                   <>
@@ -540,10 +537,7 @@ function JoinPage() {
                     {c.submitting}
                   </>
                 ) : (
-                  <>
-                    {c.submit}
-                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                  </>
+                  c.submit
                 )}
               </button>
             </form>
