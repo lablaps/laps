@@ -57,6 +57,7 @@ import { Input } from "@/components/ui/input";
 import { initials } from "@/lib/team-data";
 import lapsLogo from "@/assets/laps-logo2.png";
 import LapsLogoMono from "@/components/LapsLogoMono";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -175,8 +176,8 @@ function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-laps-ghost/30 via-white to-white text-laps-navy">
-      <header className="sticky top-0 z-30 border-b border-laps-navy/10 bg-white/80 backdrop-blur-xl">
+    <div className="min-h-screen bg-gradient-to-b from-laps-ghost/30 via-surface to-surface text-laps-navy">
+      <header className="sticky top-0 z-30 border-b border-laps-navy/10 bg-surface/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-6 py-3">
           <img src={lapsLogo} alt="LAPS" className="h-8 w-auto" />
           <span className="rounded-full bg-laps-ghost px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-laps-blue">
@@ -188,7 +189,7 @@ function AdminPage() {
                 they pass through rather than a terminus. */}
             <Link
               to="/portal"
-              className="inline-flex items-center gap-1.5 rounded-md border border-laps-blue/25 bg-laps-ghost px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-blue/10"
+              className="inline-flex items-center gap-1.5 rounded-md border border-laps-blue/25 bg-laps-ghost px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-accent/10"
             >
               <UserCircle className="h-3.5 w-3.5" /> Meu portfólio
             </Link>
@@ -223,6 +224,11 @@ function AdminPage() {
         }}
       >
         <div className="absolute inset-0 opacity-[0.07] [background:radial-gradient(circle_at_1px_1px,#74B5F2_1px,transparent_0)_0_0/22px_22px]" />
+        {/* onDark: this banner keeps its dark treatment in both themes, so the
+            toggle needs light-on-dark styling regardless of the active theme. */}
+        <div className="absolute right-5 top-5 z-10">
+          <ThemeToggle variant="onDark" />
+        </div>
         <div className="relative mx-auto flex max-w-4xl flex-col items-center justify-center gap-6 px-6 md:flex-row md:gap-10">
           <div className="flex w-full max-w-[260px] shrink-0 items-center justify-center md:max-w-[280px]">
             <LapsLogoMono />
@@ -257,7 +263,7 @@ function AdminPage() {
             return (
               <div
                 key={role}
-                className="rounded-2xl border border-laps-light/25 bg-white p-5 shadow-[0_2px_20px_rgba(25,58,89,0.05)]"
+                className="rounded-2xl border border-laps-light/25 bg-surface p-5 shadow-[0_2px_20px_rgba(25,58,89,0.05)]"
               >
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-laps-navy/55">
                   <meta.Icon className={`h-4 w-4 ${meta.accent}`} /> {meta.label}
@@ -280,16 +286,16 @@ function AdminPage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Buscar por nome, slug ou email…"
-                  className="h-11 border-laps-navy/15 bg-white pl-10 text-sm focus-visible:ring-laps-blue"
+                  className="h-11 border-laps-navy/15 bg-surface pl-10 text-sm focus-visible:ring-laps-blue"
                 />
               </div>
-              <div className="flex flex-wrap gap-1.5 rounded-md border border-laps-navy/10 bg-white p-1 text-xs font-semibold">
+              <div className="flex flex-wrap gap-1.5 rounded-md border border-laps-navy/10 bg-surface p-1 text-xs font-semibold">
                 {(["ALL", ...ROLE_ORDER] as const).map((opt) => (
                   <button
                     key={opt}
                     onClick={() => setTierFilter(opt as MemberRole | "ALL")}
                     className={`rounded px-3 py-1.5 transition ${tierFilter === opt
-                        ? "bg-laps-blue text-white shadow-sm"
+                        ? "bg-laps-accent text-white shadow-sm"
                         : "text-laps-navy/65 hover:bg-laps-ghost/60"
                       }`}
                   >
@@ -302,14 +308,14 @@ function AdminPage() {
               <button
                 type="button"
                 onClick={() => setInviting(true)}
-                className="inline-flex items-center gap-2 rounded-md border border-laps-blue/30 bg-laps-ghost px-4 py-2.5 text-xs font-bold text-laps-blue transition hover:bg-laps-blue/10"
+                className="inline-flex items-center gap-2 rounded-md border border-laps-blue/30 bg-laps-ghost px-4 py-2.5 text-xs font-bold text-laps-blue transition hover:bg-laps-accent/10"
               >
                 <Link2 className="h-4 w-4" /> Gerar convite
               </button>
               <button
                 type="button"
                 onClick={() => setCreating(true)}
-                className="inline-flex items-center gap-2 rounded-md bg-laps-blue px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-laps-navy"
+                className="inline-flex items-center gap-2 rounded-md bg-laps-accent px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-laps-ink"
               >
                 <Plus className="h-4 w-4" /> Novo membro
               </button>
@@ -330,7 +336,7 @@ function AdminPage() {
                 </div>
               )}
               {!membersQuery.isLoading && filtered.length === 0 && (
-                <div className="rounded-lg border border-laps-navy/10 bg-white p-10 text-center text-sm text-laps-navy/55">
+                <div className="rounded-lg border border-laps-navy/10 bg-surface p-10 text-center text-sm text-laps-navy/55">
                   Nenhum membro corresponde ao filtro atual.
                 </div>
               )}
@@ -425,7 +431,7 @@ function CreateMemberDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md overflow-hidden rounded-2xl border border-laps-blue/15 bg-white p-0">
+      <DialogContent className="max-w-md overflow-hidden rounded-2xl border border-laps-blue/15 bg-surface p-0">
         <DialogTitle className="sr-only">Novo membro</DialogTitle>
 
         {!result ? (
@@ -463,7 +469,7 @@ function CreateMemberDialog({
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="ex: João da Silva"
                 autoFocus
-                className="h-10 border-laps-navy/15 bg-white text-sm"
+                className="h-10 border-laps-navy/15 bg-surface text-sm"
               />
               {slug && (
                 <p className="mt-1.5 text-[11px] text-laps-navy/60">
@@ -485,8 +491,8 @@ function CreateMemberDialog({
                       type="button"
                       onClick={() => setRole(r)}
                       className={`inline-flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-semibold transition ${role === r
-                          ? "border-laps-blue bg-laps-blue text-white"
-                          : "border-laps-navy/10 bg-white text-laps-navy/70 hover:border-laps-blue/30"
+                          ? "border-laps-blue bg-laps-accent text-white"
+                          : "border-laps-navy/10 bg-surface text-laps-navy/70 hover:border-laps-blue/30"
                         }`}
                     >
                       <meta.Icon className="h-3.5 w-3.5" />
@@ -505,14 +511,14 @@ function CreateMemberDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-md border border-laps-navy/15 bg-white px-4 py-2 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
+                className="rounded-md border border-laps-navy/15 bg-surface px-4 py-2 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={mutation.isPending}
-                className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-laps-navy disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-laps-ink disabled:opacity-60"
               >
                 {mutation.isPending ? "Criando…" : "Criar membro"}
               </button>
@@ -561,7 +567,7 @@ function CreateMemberDialog({
             <button
               type="button"
               onClick={onClose}
-              className="self-end rounded-md bg-laps-blue px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-laps-navy"
+              className="self-end rounded-md bg-laps-accent px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-laps-ink"
             >
               Concluído
             </button>
@@ -589,7 +595,7 @@ function CredRow({
         {label}
       </span>
       <div className="flex items-center gap-1">
-        <code className="rounded bg-white px-2 py-1 font-mono text-[11px] text-laps-navy">
+        <code className="rounded bg-surface px-2 py-1 font-mono text-[11px] text-laps-navy">
           {value}
         </code>
         <button
@@ -639,7 +645,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl border border-laps-navy/10 bg-white p-6 shadow-[0_8px_40px_rgba(25,58,89,0.15)]">
+      <div className="w-full max-w-md rounded-2xl border border-laps-navy/10 bg-surface p-6 shadow-[0_8px_40px_rgba(25,58,89,0.15)]">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="font-display text-lg font-bold text-laps-navy">Gerar link de convite</h2>
           <button
@@ -665,7 +671,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
                     onClick={() => setRole(r.value)}
                     className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${
                       role === r.value
-                        ? "border-laps-blue bg-laps-blue text-white"
+                        ? "border-laps-blue bg-laps-accent text-white"
                         : "border-laps-navy/15 text-laps-navy/65 hover:border-laps-blue/40 hover:text-laps-blue"
                     }`}
                   >
@@ -687,7 +693,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
                     onClick={() => setValidityDays(d)}
                     className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
                       validityDays === d
-                        ? "border-laps-blue bg-laps-blue text-white"
+                        ? "border-laps-blue bg-laps-accent text-white"
                         : "border-laps-navy/15 text-laps-navy/65 hover:border-laps-blue/40 hover:text-laps-blue"
                     }`}
                   >
@@ -701,7 +707,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
               type="button"
               onClick={() => mutation.mutate()}
               disabled={mutation.isPending}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-laps-blue px-4 py-2.5 text-sm font-bold text-white transition hover:bg-laps-navy disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-laps-accent px-4 py-2.5 text-sm font-bold text-white transition hover:bg-laps-ink disabled:opacity-60"
             >
               {mutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -725,7 +731,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
               <button
                 type="button"
                 onClick={copyLink}
-                className="shrink-0 rounded p-1 text-laps-navy/55 transition hover:bg-white hover:text-laps-blue"
+                className="shrink-0 rounded p-1 text-laps-navy/55 transition hover:bg-surface hover:text-laps-blue"
                 aria-label="Copiar link"
               >
                 {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
@@ -745,7 +751,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-lg bg-laps-blue px-3 py-2 text-xs font-bold text-white transition hover:bg-laps-navy"
+                className="flex-1 rounded-lg bg-laps-accent px-3 py-2 text-xs font-bold text-white transition hover:bg-laps-ink"
               >
                 Fechar
               </button>
@@ -791,9 +797,9 @@ function MemberCard({
   const status = STATUS_META[member.status];
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-laps-light/20 bg-white shadow-[0_2px_20px_rgba(25,58,89,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_40px_-12px_rgba(11,78,141,0.18)]">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-laps-light/20 bg-surface shadow-[0_2px_20px_rgba(25,58,89,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_40px_-12px_rgba(11,78,141,0.18)]">
       {/* Header band */}
-      <div className="flex items-start justify-between gap-3 border-b border-laps-light/15 bg-gradient-to-b from-laps-ghost/40 to-white px-4 py-3">
+      <div className="flex items-start justify-between gap-3 border-b border-laps-light/15 bg-gradient-to-b from-laps-ghost/40 to-surface px-4 py-3">
         <div className="min-w-0">
           <div className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] ${meta.chip}`}>
             <meta.Icon className="h-3 w-3" /> {meta.label}
@@ -918,7 +924,7 @@ function CredentialsPanel({
   const emailVerified = !!authStatus?.emailVerified;
 
   return (
-    <div className="border-t border-laps-light/15 bg-white px-4 py-2.5 text-[11px]">
+    <div className="border-t border-laps-light/15 bg-surface px-4 py-2.5 text-[11px]">
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${rotated
@@ -980,7 +986,7 @@ function CredentialsPanel({
             <dd className="flex items-center gap-1">
               {resetMutation.data ? (
                 <>
-                  <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] text-amber-900">
+                  <code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[10px] text-amber-900">
                     {resetMutation.data.tempPassword}
                   </code>
                   <CopyBtn
@@ -993,7 +999,7 @@ function CredentialsPanel({
                   type="button"
                   onClick={() => resetMutation.mutate()}
                   disabled={resetMutation.isPending}
-                  className="rounded-md border border-amber-300 bg-white px-2 py-1 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 disabled:opacity-60"
+                  className="rounded-md border border-amber-300 bg-surface px-2 py-1 text-[10px] font-semibold text-amber-900 transition hover:bg-amber-100 disabled:opacity-60"
                 >
                   {resetMutation.isPending ? "Gerando…" : "Redefinir senha"}
                 </button>
@@ -1065,7 +1071,7 @@ function ActionButton({
       disabled={disabled || loading}
       className={`inline-flex items-center justify-center gap-1 rounded-md px-2 py-1.5 transition disabled:cursor-not-allowed disabled:opacity-40 ${isDanger
           ? "text-rose-600 hover:bg-rose-50"
-          : "text-laps-navy/70 hover:bg-white hover:text-laps-blue"
+          : "text-laps-navy/70 hover:bg-surface hover:text-laps-blue"
         }`}
     >
       {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : icon}
@@ -1080,9 +1086,9 @@ const tierConfig: Record<
   { gradient: string; ring: string; chip: string; Icon: typeof Crown }
 > = {
   HEAD: {
-    gradient: "from-laps-navy to-laps-blue",
+    gradient: "from-laps-ink to-laps-blue",
     ring: "ring-laps-light/40",
-    chip: "bg-gradient-to-r from-laps-navy to-laps-blue text-white",
+    chip: "bg-gradient-to-r from-laps-ink to-laps-blue text-white",
     Icon: Crown,
   },
   COORDINATOR: {
@@ -1242,7 +1248,7 @@ function EditPanel({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-white p-0 shadow-[0_20px_60px_-20px_rgba(11,78,141,0.45)] w-[95vw] max-w-5xl">
+      <DialogContent className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface p-0 shadow-[0_20px_60px_-20px_rgba(11,78,141,0.45)] w-[95vw] max-w-5xl">
         <DialogTitle className="sr-only">Editando {member.fullName}</DialogTitle>
 
         <div className="flex flex-col md:h-[85vh] md:max-h-[800px] md:flex-row">
@@ -1267,7 +1273,7 @@ function EditPanel({
             </div>
 
             <div className="-mt-14 md:-mt-16 flex flex-col items-center px-6 pb-8 text-center md:px-8">
-              <div className={`relative h-28 w-28 md:h-32 md:w-32 shrink-0 rounded-full bg-white p-1.5 shadow-xl ring-4 ${cfg.ring}`}>
+              <div className={`relative h-28 w-28 md:h-32 md:w-32 shrink-0 rounded-full bg-surface p-1.5 shadow-xl ring-4 ${cfg.ring}`}>
                 {photoUrl ? (
                   <img src={resolveMediaUrl(photoUrl)} alt={fullName} className="h-full w-full rounded-full object-cover" />
                 ) : (
@@ -1275,7 +1281,7 @@ function EditPanel({
                     {initials(fullName)}
                   </div>
                 )}
-                <div className="absolute -right-1 -top-1 flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full bg-white text-laps-blue shadow ring-2 ring-white">
+                <div className="absolute -right-1 -top-1 flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full bg-surface text-laps-blue shadow ring-2 ring-white">
                   <Icon className="h-4 w-4" />
                 </div>
               </div>
@@ -1316,7 +1322,7 @@ function EditPanel({
                     <select
                       value={status}
                       onChange={(e) => setStatus(e.target.value as MemberStatusEnum)}
-                      className="h-10 w-full rounded-md border border-laps-navy/15 bg-white px-3 text-sm text-laps-navy focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
+                      className="h-10 w-full rounded-md border border-laps-navy/15 bg-surface px-3 text-sm text-laps-navy focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
                     >
                       <option value="ACTIVE">Ativo (visível na equipe)</option>
                       <option value="COMPLETED">Concluído (alumni)</option>
@@ -1328,7 +1334,7 @@ function EditPanel({
                     <select
                       value={toRole}
                       onChange={(e) => setToRole(e.target.value as MemberRole)}
-                      className="h-10 w-full rounded-md border border-laps-navy/15 bg-white px-3 text-sm text-laps-navy focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
+                      className="h-10 w-full rounded-md border border-laps-navy/15 bg-surface px-3 text-sm text-laps-navy focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
                     >
                       {ROLE_ORDER.map((r) => (
                         <option key={r} value={r}>
@@ -1424,8 +1430,8 @@ function EditPanel({
                         <div
                           key={p.id}
                           className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border transition ${isLinked
-                              ? "border-laps-blue/40 bg-white shadow-sm"
-                              : "border-laps-light/30 bg-white/40 hover:bg-white"
+                              ? "border-laps-blue/40 bg-surface shadow-sm"
+                              : "border-laps-light/30 bg-surface/40 hover:bg-surface"
                             }`}
                         >
                           <label className="flex items-start gap-3 flex-1 overflow-hidden cursor-pointer">
@@ -1454,7 +1460,7 @@ function EditPanel({
                                   prev.map((lp) => (lp.projectId === p.id ? { ...lp, role: e.target.value } : lp))
                                 )
                               }
-                              className="h-9 rounded-md border border-laps-blue/20 bg-laps-blue/5 px-2 text-xs font-semibold text-laps-blue focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
+                              className="h-9 rounded-md border border-laps-blue/20 bg-laps-accent/5 px-2 text-xs font-semibold text-laps-blue focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
                             >
                               <option value="LEAD">Orientador</option>
                               <option value="CO_LEAD">Co-orientador</option>
@@ -1470,7 +1476,7 @@ function EditPanel({
             </div>
 
             {/* ACTION BAR */}
-            <div className="mt-auto border-t border-laps-blue/10 bg-white/95 backdrop-blur-md p-4 flex items-center justify-end gap-3 shrink-0">
+            <div className="mt-auto border-t border-laps-blue/10 bg-surface/95 backdrop-blur-md p-4 flex items-center justify-end gap-3 shrink-0">
               {save.isError && (
                 <span className="text-xs text-rose-600 mr-auto">
                   {save.error instanceof ApiError && (save.error.status === 401 || save.error.status === 403)
@@ -1489,7 +1495,7 @@ function EditPanel({
               <button
                 onClick={() => save.mutate()}
                 disabled={save.isPending}
-                className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-laps-navy to-laps-blue px-6 py-2 text-sm font-bold text-white shadow-md shadow-laps-blue/25 transition hover:shadow-laps-blue/40 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-laps-ink to-laps-blue px-6 py-2 text-sm font-bold text-white shadow-md shadow-laps-blue/25 transition hover:shadow-laps-blue/40 disabled:opacity-60"
               >
                 {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Salvar perfil
@@ -1533,7 +1539,7 @@ function FormField({
         type={type}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className={`h-9 bg-white border-laps-navy/15 focus-visible:ring-laps-blue ${className ?? "text-sm"}`}
+        className={`h-9 bg-surface border-laps-navy/15 focus-visible:ring-laps-blue ${className ?? "text-sm"}`}
       />
     </label>
   );
@@ -1568,7 +1574,7 @@ function BioField({
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
         maxLength={maxLength}
-        className="w-full rounded-md border border-laps-navy/15 bg-white px-3 py-2 text-sm text-laps-navy focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
+        className="w-full rounded-md border border-laps-navy/15 bg-surface px-3 py-2 text-sm text-laps-navy focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
       />
     </label>
   );
@@ -1592,7 +1598,7 @@ function PhotoUploader({
       <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-laps-navy/55">
         Foto
       </span>
-      <div className="flex items-center gap-3 rounded-md border border-dashed border-laps-navy/20 bg-white p-2">
+      <div className="flex items-center gap-3 rounded-md border border-dashed border-laps-navy/20 bg-surface p-2">
         {photoUrl ? (
           <img
             src={resolveMediaUrl(photoUrl)}
@@ -1608,7 +1614,7 @@ function PhotoUploader({
           <label
             className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold cursor-pointer transition ${uploading
                 ? "bg-laps-ghost text-laps-navy/40 cursor-wait"
-                : "bg-laps-blue/10 text-laps-blue hover:bg-laps-blue/15"
+                : "bg-laps-accent/10 text-laps-blue hover:bg-laps-accent/15"
               }`}
           >
             {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
@@ -1654,7 +1660,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function FieldCard({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-white p-4 rounded-lg border border-laps-light/30 shadow-sm">
+    <div className="bg-surface p-4 rounded-lg border border-laps-light/30 shadow-sm">
       <label className="block text-[10px] font-bold uppercase tracking-[0.14em] text-laps-navy/60 mb-2">
         {label}
       </label>
@@ -1717,7 +1723,7 @@ function PublicationApprovalSection() {
 
       <div className="space-y-3">
         {pending.map(({ publication: p, submitterName }) => (
-          <div key={p.id} className="rounded-lg border border-amber-200/80 bg-white p-3">
+          <div key={p.id} className="rounded-lg border border-amber-200/80 bg-surface p-3">
             <div className="mb-1 font-bold leading-snug text-laps-navy">{p.title}</div>
             <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-laps-navy/45">
               {p.venue} · {p.year} · {p.type}
@@ -1738,7 +1744,7 @@ function PublicationApprovalSection() {
                 type="button"
                 disabled={busy}
                 onClick={() => approveMutation.mutate(p.id)}
-                className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-laps-navy disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-laps-ink disabled:opacity-50"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar
               </button>
@@ -1754,7 +1760,7 @@ function PublicationApprovalSection() {
                   if (note === null) return;
                   rejectMutation.mutate({ id: p.id, note: note.trim() || undefined });
                 }}
-                className="inline-flex items-center gap-1.5 rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-md border border-rose-200 bg-surface px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
               >
                 <X className="h-3.5 w-3.5" /> Recusar
               </button>
@@ -1784,7 +1790,7 @@ function ProjectSection() {
   const projects = projectsQuery.data ?? [];
 
   return (
-    <div className="sticky top-24 flex flex-col max-h-[calc(100vh-8rem)] rounded-2xl border border-laps-light/25 bg-white p-5 shadow-[0_2px_20px_rgba(25,58,89,0.05)]">
+    <div className="sticky top-24 flex flex-col max-h-[calc(100vh-8rem)] rounded-2xl border border-laps-light/25 bg-surface p-5 shadow-[0_2px_20px_rgba(25,58,89,0.05)]">
       <div className="flex items-center justify-between mb-4 shrink-0">
         <h3 className="font-display text-lg font-bold text-laps-navy flex items-center gap-2">
           <Folder className="h-5 w-5 text-laps-blue" />
@@ -1792,7 +1798,7 @@ function ProjectSection() {
         </h3>
         <button
           onClick={() => setEditing("new")}
-          className="inline-flex items-center gap-1 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-laps-navy"
+          className="inline-flex items-center gap-1 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-laps-ink"
         >
           <Plus className="h-3.5 w-3.5" /> Novo
         </button>
@@ -1945,13 +1951,13 @@ function ProjectEditPanel({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-white p-0 shadow-[0_20px_60px_-20px_rgba(11,78,141,0.45)] w-[95vw] max-w-5xl">
+      <DialogContent className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface p-0 shadow-[0_20px_60px_-20px_rgba(11,78,141,0.45)] w-[95vw] max-w-5xl">
         <DialogTitle className="sr-only">{isNew ? "Novo projeto" : `Editando ${titleEn || titlePt}`}</DialogTitle>
 
         <div className="flex flex-col md:h-[88vh] md:max-h-[820px] md:flex-row">
           {/* LEFT — identity */}
           <div className="relative flex flex-col md:w-5/12 overflow-y-auto border-b md:border-b-0 md:border-r border-laps-blue/10">
-            <div className="relative h-24 shrink-0 bg-gradient-to-r from-laps-navy to-laps-blue">
+            <div className="relative h-24 shrink-0 bg-gradient-to-r from-laps-ink to-laps-blue">
               <div className="absolute right-5 top-4 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
                 {isNew ? "Novo projeto" : "Editando projeto"}
               </div>
@@ -1969,7 +1975,7 @@ function ProjectEditPanel({
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-                  className="h-10 w-full rounded-md border border-laps-navy/15 bg-white px-3 text-sm text-laps-navy focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
+                  className="h-10 w-full rounded-md border border-laps-navy/15 bg-surface px-3 text-sm text-laps-navy focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
                 >
                   <option value="ACTIVE">Ativo</option>
                   <option value="COMPLETED">Concluído</option>
@@ -2038,7 +2044,7 @@ function ProjectEditPanel({
               </Section>
             </div>
 
-            <div className="mt-auto border-t border-laps-blue/10 bg-white/95 backdrop-blur-md p-4 flex items-center justify-end gap-3 shrink-0">
+            <div className="mt-auto border-t border-laps-blue/10 bg-surface/95 backdrop-blur-md p-4 flex items-center justify-end gap-3 shrink-0">
               {saveErrorMessage && (
                 <span className="text-xs text-rose-600 mr-auto">{saveErrorMessage}</span>
               )}
@@ -2048,7 +2054,7 @@ function ProjectEditPanel({
               <button
                 onClick={() => save.mutate()}
                 disabled={save.isPending || !slug || !(titleEn || titlePt)}
-                className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-laps-navy to-laps-blue px-6 py-2 text-sm font-bold text-white shadow-md shadow-laps-blue/25 transition hover:shadow-laps-blue/40 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-laps-ink to-laps-blue px-6 py-2 text-sm font-bold text-white shadow-md shadow-laps-blue/25 transition hover:shadow-laps-blue/40 disabled:opacity-60"
               >
                 {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {isNew ? "Criar projeto" : "Salvar projeto"}
@@ -2099,10 +2105,10 @@ function ResearcherPicker({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar por nome, slug ou iniciais (ex: ES → Ewaldo Santana)"
-          className="h-10 pl-10 bg-white border-laps-navy/15 focus-visible:ring-laps-blue"
+          className="h-10 pl-10 bg-surface border-laps-navy/15 focus-visible:ring-laps-blue"
         />
         {results.length > 0 && (
-          <div className="absolute left-0 right-0 top-11 z-20 rounded-lg border border-laps-light/40 bg-white shadow-xl max-h-64 overflow-y-auto">
+          <div className="absolute left-0 right-0 top-11 z-20 rounded-lg border border-laps-light/40 bg-surface shadow-xl max-h-64 overflow-y-auto">
             {results.map(({ member }) => (
               <button
                 key={member.id}
@@ -2142,7 +2148,7 @@ function ResearcherPicker({
           {leaders.map((l) => {
             const m = byId[l.memberId];
             return (
-              <div key={l.memberId} className="flex items-center gap-3 rounded-lg border border-laps-light/30 bg-white p-2.5">
+              <div key={l.memberId} className="flex items-center gap-3 rounded-lg border border-laps-light/30 bg-surface p-2.5">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-laps-ghost text-[10px] font-bold text-laps-blue">
                   {m?.photoUrl ? (
                     <img src={resolveMediaUrl(m.photoUrl)} alt="" className="h-full w-full object-cover" />
@@ -2165,7 +2171,7 @@ function ResearcherPicker({
                   onChange={(e) =>
                     onChange(leaders.map((x) => (x.memberId === l.memberId ? { ...x, role: e.target.value } : x)))
                   }
-                  className="h-8 rounded-md border border-laps-blue/20 bg-laps-blue/5 px-2 text-xs font-semibold text-laps-blue focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
+                  className="h-8 rounded-md border border-laps-blue/20 bg-laps-accent/5 px-2 text-xs font-semibold text-laps-blue focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
                 >
                   <option value="LEAD">Orientador</option>
                   <option value="CO_LEAD">Co-orientador</option>

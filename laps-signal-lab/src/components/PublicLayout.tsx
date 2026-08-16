@@ -6,6 +6,8 @@ import { useLang } from "@/hooks/use-lang";
 import { type Lang } from "@/lib/i18n";
 import { LANG_FLAGS } from "@/lib/lang-flags";
 import { useAuth } from "@/hooks/use-auth";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "@/hooks/use-theme";
 import { WaveStrip } from "@/components/WaveStrip";
 import lapsLogoColor from "@/assets/laps-logo.png";
 import lapsLogoWhite from "@/assets/laps-logo1.png";
@@ -26,7 +28,7 @@ function LangSwitcher({
     <div
       className={`relative inline-flex w-fit items-center p-0.5 rounded-full transition-all duration-300 ${dark
         ? "bg-white/5 border border-white/10"
-        : "bg-laps-navy/5 border border-laps-navy/5"
+        : "bg-laps-ink/5 border border-laps-navy/5"
         }`}
     >
       {codes.map((c) => {
@@ -41,7 +43,7 @@ function LangSwitcher({
             {active && (
               <motion.div
                 layoutId={`active-lang-bg-${idSuffix}`}
-                className={`absolute inset-0 rounded-full shadow-sm ${dark ? "bg-white/15" : "bg-white"
+                className={`absolute inset-0 rounded-full shadow-sm ${dark ? "bg-white/15" : "bg-surface"
                   }`}
                 transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
               />
@@ -65,6 +67,7 @@ function LangSwitcher({
 export function PublicLayout({ children }: { children: ReactNode }) {
   const { lang, setLang, t } = useLang();
   const auth = useAuth();
+  const { isDark } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { pathname } = useLocation();
@@ -109,22 +112,29 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-white text-laps-navy">
+    <div className="min-h-screen bg-surface text-laps-navy">
       <header
         className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled
-          ? "border-b border-laps-navy/8 bg-white/75 shadow-[0_2px_20px_rgba(25,58,89,0.06)] backdrop-blur-xl"
+          ? "border-b border-laps-navy/8 bg-surface/75 shadow-[0_2px_20px_rgba(25,58,89,0.06)] backdrop-blur-xl"
           : "border-b border-transparent bg-transparent"
           }`}
       >
         <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-6 py-3 md:grid-cols-[1fr_auto_1fr]">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src={lapsLogoColor} alt="LAPS" className="h-14 w-auto" />
+            {/* The header background flips with the theme, so the mark has to
+                as well. The white PNG already existed for the dark footer —
+                dark mode just gives it a second home. */}
+            <img
+              src={isDark ? lapsLogoWhite : lapsLogoColor}
+              alt="LAPS"
+              className="h-14 w-auto"
+            />
           </Link>
 
           <nav
             className={`relative hidden items-center justify-center gap-0.5 rounded-full p-1 md:flex ${scrolled
-              ? "border border-laps-navy/10 bg-white/60"
-              : "border border-laps-navy/8 bg-white/40 backdrop-blur"
+              ? "border border-laps-navy/10 bg-surface/60"
+              : "border border-laps-navy/8 bg-surface/40 backdrop-blur"
               }`}
           >
             {navItems.map((it) => {
@@ -137,12 +147,12 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                       <motion.span
                         layoutId="nav-pill-outer"
                         transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                        className="absolute inset-0 -z-10 rounded-full bg-laps-blue/30"
+                        className="absolute inset-0 -z-10 rounded-full bg-laps-accent/30"
                       />
                       <motion.span
                         layoutId="nav-pill-inner"
                         transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                        className="absolute inset-[1.5px] -z-10 rounded-full bg-white"
+                        className="absolute inset-[1.5px] -z-10 rounded-full bg-surface"
                       />
                     </>
                   )}
@@ -170,7 +180,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     <div
                       className="invisible absolute left-1/2 top-full z-50 mt-1 w-56 -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100"
                     >
-                      <div className="rounded-2xl border border-laps-navy/10 bg-white/95 p-1.5 shadow-[0_10px_30px_rgba(11,78,141,0.18)] backdrop-blur-xl">
+                      <div className="rounded-2xl border border-laps-navy/10 bg-surface/95 p-1.5 shadow-[0_10px_30px_rgba(11,78,141,0.18)] backdrop-blur-xl">
                         {it.submenu.map((sub) => {
                           const subActive = pathname === sub.to;
                           return (
@@ -178,7 +188,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                               key={sub.to}
                               to={sub.to}
                               className={`block rounded-xl px-3 py-2 text-sm font-semibold transition ${subActive
-                                ? "bg-laps-blue/10 text-laps-blue"
+                                ? "bg-laps-accent/10 text-laps-blue"
                                 : "text-laps-navy/80 hover:bg-laps-ghost hover:text-laps-blue"
                                 }`}
                             >
@@ -206,11 +216,12 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="hidden items-center justify-end gap-2 md:flex">
+            <ThemeToggle className="h-8 w-8 bg-surface/70 backdrop-blur" />
             {auth.isAuthenticated && (
               <Link
                 to={auth.isManager ? "/admin" : "/portal"}
                 title={auth.isManager ? t.nav.admin : t.nav.portal}
-                className="inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-white/70 px-3 py-1.5 text-xs font-semibold text-laps-navy backdrop-blur transition hover:border-laps-blue/40 hover:text-laps-blue"
+                className="inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-surface/70 px-3 py-1.5 text-xs font-semibold text-laps-navy backdrop-blur transition hover:border-laps-blue/40 hover:text-laps-blue"
               >
                 <UserCircle2 className="h-4 w-4" />
                 {auth.isManager ? t.nav.admin : t.nav.portal}
@@ -220,7 +231,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <Link
                 to="/login"
                 title={t.nav.login}
-                className="inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-white/70 px-3 py-1.5 text-xs font-semibold text-laps-navy backdrop-blur transition hover:border-laps-blue/40 hover:text-laps-blue"
+                className="inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-surface/70 px-3 py-1.5 text-xs font-semibold text-laps-navy backdrop-blur transition hover:border-laps-blue/40 hover:text-laps-blue"
               >
                 <UserCircle2 className="h-4 w-4" />
                 {t.nav.login}
@@ -231,7 +242,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
           <button
             type="button"
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-laps-navy/15 bg-white/60 text-laps-navy backdrop-blur md:hidden"
+            className="ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-laps-navy/15 bg-surface/60 text-laps-navy backdrop-blur md:hidden"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
@@ -242,7 +253,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
         {mobileOpen && (
           <div className="md:hidden">
-            <nav className="mx-auto mt-1 flex max-w-7xl flex-col gap-1 rounded-2xl border border-laps-navy/10 bg-white/85 px-3 py-3 backdrop-blur-xl">
+            <nav className="mx-auto mt-1 flex max-w-7xl flex-col gap-1 rounded-2xl border border-laps-navy/10 bg-surface/85 px-3 py-3 backdrop-blur-xl">
               {navItems.flatMap((it) => {
                 // Mobile flattens the submenu into siblings so users don't need
                 // to deal with a hover/long-press affordance on touch devices.
@@ -254,7 +265,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                       key={sub.to}
                       to={sub.to}
                       className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${active
-                        ? "bg-laps-blue text-white shadow-[0_4px_14px_rgba(11,78,141,0.25)]"
+                        ? "bg-laps-accent text-white shadow-[0_4px_14px_rgba(11,78,141,0.25)]"
                         : "text-laps-navy/75 hover:bg-laps-ghost"
                         }`}
                     >
@@ -266,7 +277,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               {auth.isAuthenticated ? (
                 <Link
                   to={auth.isManager ? "/admin" : "/portal"}
-                  className="mx-2 inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-white px-4 py-2 text-sm font-semibold text-laps-navy"
+                  className="mx-2 inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-surface px-4 py-2 text-sm font-semibold text-laps-navy"
                 >
                   <UserCircle2 className="h-4 w-4" />
                   {auth.isManager ? t.nav.admin : t.nav.portal}
@@ -274,14 +285,15 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               ) : (
                 <Link
                   to="/login"
-                  className="mx-2 inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-white px-4 py-2 text-sm font-semibold text-laps-navy"
+                  className="mx-2 inline-flex items-center gap-1.5 rounded-full border border-laps-navy/15 bg-surface px-4 py-2 text-sm font-semibold text-laps-navy"
                 >
                   <UserCircle2 className="h-4 w-4" />
                   {t.nav.login}
                 </Link>
               )}
-              <div className="px-2 pt-2">
+              <div className="flex items-center gap-2 px-2 pt-2">
                 <LangSwitcher lang={lang} setLang={setLang} />
+                <ThemeToggle />
               </div>
             </nav>
           </div>
@@ -290,7 +302,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
       <main className="pt-[68px]">{children}</main>
 
-      <footer className="relative bg-laps-navy text-white">
+      <footer className="relative bg-laps-ink text-white">
         <WaveStrip className="absolute left-0 right-0 top-0 h-12 -translate-y-1/2" color1="#0B4E8D" color2="#74B5F2" />
         <div className="mx-auto max-w-7xl px-6 pt-20 pb-8">
           <div className="grid gap-12 md:grid-cols-3">

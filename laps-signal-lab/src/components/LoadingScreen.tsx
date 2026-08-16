@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import LapsLogoAnimation from "./LapsLogoAnimation";
+import LapsLogoAnimated from "./LapsLogoAnimated";
 
 export function LoadingScreen() {
   return (
@@ -9,10 +9,13 @@ export function LoadingScreen() {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.18 }}
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
-      style={{ background: "#f8fafc" }}
+      // Was a literal #f8fafc, which in dark mode is a full-screen white flash
+      // on every route change — the loading screen covers the viewport, so it
+      // is the one surface that cannot afford to ignore the theme.
+      style={{ background: "var(--laps-ghost)" }}
     >
       <div className="flex w-full max-w-xs flex-col items-center gap-6 px-8">
-        <LapsLogoAnimation loop />
+        <LapsLogoAnimated loop />
         <Dots />
       </div>
     </motion.div>
@@ -25,7 +28,7 @@ function Dots() {
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="h-1.5 w-1.5 rounded-full bg-laps-blue"
+          className="h-1.5 w-1.5 rounded-full bg-laps-accent"
           style={{
             animation: `laps-dot-bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
           }}

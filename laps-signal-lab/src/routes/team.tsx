@@ -41,7 +41,7 @@ const TIER_VISUAL: Record<
   { gradient: string; ring: string; icon: typeof Crown; chipBg: string; chipText: string }
 > = {
   head: {
-    gradient: "from-laps-navy to-laps-blue",
+    gradient: "from-laps-ink to-laps-blue",
     ring: "ring-laps-light/40",
     icon: Crown,
     chipBg: "bg-laps-ghost",
@@ -134,7 +134,7 @@ function TeamPage() {
   return (
     <PublicLayout>
       {/* HERO */}
-      <section className="relative bg-gradient-to-b from-laps-ghost/40 via-white to-white py-16">
+      <section className="relative bg-gradient-to-b from-laps-ghost/40 via-surface to-surface py-16">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <span className="inline-block rounded-full bg-laps-ghost px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-laps-blue">
             {t.structure.chip}
@@ -161,7 +161,7 @@ function TeamPage() {
             return (
               <div
                 key={tier.label}
-                className="group rounded-2xl border border-laps-light/25 bg-white p-5 shadow-[0_2px_20px_rgba(25,58,89,0.05)] transition hover:-translate-y-1 hover:shadow-[0_14px_40px_-12px_rgba(11,78,141,0.18)]"
+                className="group rounded-2xl border border-laps-light/25 bg-surface p-5 shadow-[0_2px_20px_rgba(25,58,89,0.05)] transition hover:-translate-y-1 hover:shadow-[0_14px_40px_-12px_rgba(11,78,141,0.18)]"
               >
                 <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${v.chipBg} ring-4 ring-${tier.tier === "head" ? "laps-blue/20" : "transparent"}`}>
                   <Icon className={`h-5 w-5 ${v.chipText}`} />
@@ -177,7 +177,7 @@ function TeamPage() {
       </section>
 
       {/* TEAM PHOTO — the first impression, and the hand-off into the graph */}
-      <section className="relative bg-white pt-10">
+      <section className="relative bg-surface pt-10">
         <div className="mx-auto max-w-6xl px-6">
           <figure className="group relative overflow-hidden rounded-3xl shadow-[0_24px_70px_-32px_rgba(11,78,141,0.55)]">
             <img
@@ -195,11 +195,11 @@ function TeamPage() {
             {/* Scrim only exists where the caption overlays the photo (md+).
                 Sized to the text block rather than the whole frame, which would
                 mute the faces this section exists to show. */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-2/3 bg-gradient-to-t from-laps-navy/95 via-laps-navy/60 to-transparent md:block" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-2/3 bg-gradient-to-t from-laps-ink/95 via-laps-ink/60 to-transparent md:block" />
 
             {/* Below the photo on phones — overlaying it would cover the people.
                 Overlaid from md up, where there's room to do both. */}
-            <figcaption className="bg-laps-navy p-6 md:absolute md:inset-x-0 md:bottom-0 md:bg-transparent md:p-8">
+            <figcaption className="bg-laps-ink p-6 md:absolute md:inset-x-0 md:bottom-0 md:bg-transparent md:p-8">
               <div className="max-w-2xl">
                 <h2 className="font-display text-2xl font-bold text-balance text-white md:text-3xl">
                   {t.structure.teamPhoto.title}
@@ -210,7 +210,7 @@ function TeamPage() {
                 <button
                   type="button"
                   onClick={goToNetwork}
-                  className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-laps-navy shadow-lg transition-[transform,background-color] duration-200 hover:bg-laps-ghost active:scale-[0.96]"
+                  className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-surface px-5 py-2.5 text-sm font-semibold text-laps-navy shadow-lg transition-[transform,background-color] duration-200 hover:bg-laps-ghost active:scale-[0.96]"
                 >
                   <Network className="h-4 w-4 text-laps-blue" />
                   {t.structure.teamPhoto.cta}
@@ -223,10 +223,10 @@ function TeamPage() {
       </section>
 
       {/* VIEW TABS */}
-      <section ref={networkRef} className="relative scroll-mt-24 bg-white pt-4">
+      <section ref={networkRef} className="relative scroll-mt-24 bg-surface pt-4">
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex justify-center">
-            <div className="relative inline-flex items-center gap-0.5 rounded-full border border-laps-navy/10 bg-white/80 p-1 shadow-sm backdrop-blur">
+            <div className="relative inline-flex items-center gap-0.5 rounded-full border border-laps-navy/10 bg-surface/80 p-1 shadow-sm backdrop-blur">
               {(Object.keys(VIEW_ICON) as View[]).map((v) => {
                 const Icon = VIEW_ICON[v];
                 const active = view === v;
@@ -243,12 +243,12 @@ function TeamPage() {
                         <motion.span
                           layoutId="view-pill-outer"
                           transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                          className="absolute inset-0 -z-10 rounded-full bg-laps-blue shadow-[0_4px_14px_rgba(11,78,141,0.25)]"
+                          className="absolute inset-0 -z-10 rounded-full bg-laps-accent shadow-[0_4px_14px_rgba(11,78,141,0.25)]"
                         />
                         <motion.span
                           layoutId="view-pill-inner"
                           transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                          className="absolute inset-[3px] -z-10 rounded-full bg-white"
+                          className="absolute inset-[3px] -z-10 rounded-full bg-surface"
                         />
                       </>
                     )}
@@ -269,7 +269,7 @@ function TeamPage() {
       </section>
 
       {/* VIEW CONTENT */}
-      <section className="relative bg-white pb-24 pt-8">
+      <section className="relative bg-surface pb-24 pt-8">
         <div className="mx-auto max-w-6xl px-6">
           {view === "mesh" && <TeamGraph labels={labels} lang={lang} />}
           {view === "pyramid" && <PyramidView members={members} labels={labels} />}
@@ -413,7 +413,7 @@ function ListView({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={labels.views.search}
-            className="w-full rounded-full border border-laps-navy/10 bg-white py-3 pl-11 pr-4 text-sm text-laps-navy shadow-sm placeholder:text-laps-navy/40 focus:border-laps-blue/40 focus:outline-none focus:ring-2 focus:ring-laps-blue/15"
+            className="w-full rounded-full border border-laps-navy/10 bg-surface py-3 pl-11 pr-4 text-sm text-laps-navy shadow-sm placeholder:text-laps-navy/40 focus:border-laps-blue/40 focus:outline-none focus:ring-2 focus:ring-laps-blue/15"
           />
         </div>
         <button
@@ -421,14 +421,14 @@ function ListView({
           onClick={() => setFiltersOpen((v) => !v)}
           className={`inline-flex items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition ${
             filtersOpen || hasActiveFilters
-              ? "border-laps-blue bg-laps-blue text-white shadow-sm"
-              : "border-laps-navy/10 bg-white text-laps-navy/75 hover:border-laps-blue/30 hover:text-laps-blue"
+              ? "border-laps-blue bg-laps-accent text-white shadow-sm"
+              : "border-laps-navy/10 bg-surface text-laps-navy/75 hover:border-laps-blue/30 hover:text-laps-blue"
           }`}
         >
           <Filter className="h-4 w-4" />
           {labels.views.filterByRole} / {labels.views.filterByProject}
           {hasActiveFilters && (
-            <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-bold text-laps-blue">
+            <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-surface text-[10px] font-bold text-laps-blue">
               {(roleFilter !== "all" ? 1 : 0) + (projectFilter !== "all" ? 1 : 0)}
             </span>
           )}
@@ -491,7 +491,7 @@ function ListView({
                 setRoleFilter("all");
                 setProjectFilter("all");
               }}
-              className="md:col-span-2 inline-flex items-center justify-center gap-1.5 self-end rounded-full border border-laps-blue/20 bg-white px-4 py-2 text-xs font-semibold text-laps-blue transition hover:bg-laps-ghost"
+              className="md:col-span-2 inline-flex items-center justify-center gap-1.5 self-end rounded-full border border-laps-blue/20 bg-surface px-4 py-2 text-xs font-semibold text-laps-blue transition hover:bg-laps-ghost"
             >
               <X className="h-3.5 w-3.5" /> {labels.views.clearFilters}
             </button>
@@ -514,7 +514,7 @@ function ListView({
                 key={m.id}
                 to="/team/$uuid"
                 params={{ uuid: m.uuid ?? m.id }}
-                className="group flex items-center gap-4 rounded-2xl border border-laps-navy/8 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-laps-blue/25 hover:shadow-md"
+                className="group flex items-center gap-4 rounded-2xl border border-laps-navy/8 bg-surface p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-laps-blue/25 hover:shadow-md"
               >
                 <div
                   className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-full bg-gradient-to-br ${v.gradient} p-0.5 ring-2 ring-white`}
@@ -565,8 +565,8 @@ function FilterChip({
       onClick={onClick}
       className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
         active
-          ? "bg-laps-blue text-white shadow-sm"
-          : "border border-laps-navy/10 bg-white text-laps-navy/75 hover:border-laps-blue/25 hover:text-laps-blue"
+          ? "bg-laps-accent text-white shadow-sm"
+          : "border border-laps-navy/10 bg-surface text-laps-navy/75 hover:border-laps-blue/25 hover:text-laps-blue"
       }`}
     >
       {children}

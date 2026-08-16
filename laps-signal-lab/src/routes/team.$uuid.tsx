@@ -51,10 +51,10 @@ const tierConfig: Record<
   { gradient: string; ring: string; chip: string; band: string; Icon: typeof Crown }
 > = {
   head: {
-    gradient: "from-laps-navy to-laps-blue",
-    band: "from-laps-navy via-laps-blue to-laps-light",
+    gradient: "from-laps-ink to-laps-blue",
+    band: "from-laps-ink via-laps-blue to-laps-light",
     ring: "ring-laps-light/40",
-    chip: "bg-gradient-to-r from-laps-navy to-laps-blue text-white",
+    chip: "bg-gradient-to-r from-laps-ink to-laps-blue text-white",
     Icon: Crown,
   },
   coordinator: {
@@ -328,7 +328,7 @@ function TeamMemberPage() {
 
   return (
     <PublicLayout>
-      <section className="bg-gradient-to-b from-laps-ghost/30 via-white to-white pb-16">
+      <section className="bg-gradient-to-b from-laps-ghost/30 via-surface to-surface pb-16">
         <div className="mx-auto max-w-6xl px-6 pt-8">
           <Link
             to="/team"
@@ -338,7 +338,7 @@ function TeamMemberPage() {
           </Link>
 
           {/* HERO — cover band + identity */}
-          <div className="relative overflow-hidden rounded-3xl border border-laps-blue/15 bg-white shadow-[0_20px_60px_-30px_rgba(11,78,141,0.35)]">
+          <div className="relative overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface shadow-[0_20px_60px_-30px_rgba(11,78,141,0.35)]">
             <div
               className={`relative h-40 md:h-48 ${!member.bannerImageUrl ? `bg-gradient-to-r ${cfg.band}` : ""}`}
               style={member.bannerImageUrl
@@ -366,7 +366,7 @@ function TeamMemberPage() {
                   fully below the band so nothing ever gets clipped. */}
               <div className="-mt-20 flex justify-start">
                 <div
-                  className={`relative h-36 w-36 shrink-0 rounded-full bg-white p-1.5 shadow-xl ring-4 ${cfg.ring}`}
+                  className={`relative h-36 w-36 shrink-0 rounded-full bg-surface p-1.5 shadow-xl ring-4 ${cfg.ring}`}
                 >
                   {member.photoUrl ? (
                     <img
@@ -381,7 +381,7 @@ function TeamMemberPage() {
                       {initials(member.fullName)}
                     </div>
                   )}
-                  <div className="absolute -right-1 -top-1 flex h-10 w-10 items-center justify-center rounded-full bg-white text-laps-blue shadow ring-2 ring-white">
+                  <div className="absolute -right-1 -top-1 flex h-10 w-10 items-center justify-center rounded-full bg-surface text-laps-blue shadow ring-2 ring-white">
                     <Icon className="h-5 w-5" />
                   </div>
                 </div>
@@ -415,7 +415,7 @@ function TeamMemberPage() {
                       </span>
                     )}
                     {programMeta && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/20 bg-white px-3 py-1.5 text-xs font-semibold text-laps-navy">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-laps-blue/20 bg-surface px-3 py-1.5 text-xs font-semibold text-laps-navy">
                         <GraduationCap className="h-3.5 w-3.5 text-laps-blue" />
                         {programMeta.short[L]}
                       </span>
@@ -443,7 +443,7 @@ function TeamMemberPage() {
                     {primaryContact && (
                       <a
                         href={`mailto:${primaryContact}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-white px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-surface px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
                         title={primaryContact}
                       >
                         <Mail className="h-3.5 w-3.5" /> {tx.contact.email}
@@ -454,7 +454,7 @@ function TeamMemberPage() {
                         href={member.linkedinUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-laps-navy px-3 py-2 text-xs font-semibold text-white transition hover:bg-laps-blue"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-laps-ink px-3 py-2 text-xs font-semibold text-white transition hover:bg-laps-accent"
                       >
                         <Linkedin className="h-3.5 w-3.5" /> LinkedIn
                       </a>
@@ -464,7 +464,7 @@ function TeamMemberPage() {
                         href={member.lattesUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-white px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-surface px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
                       >
                         <Globe className="h-3.5 w-3.5" /> Lattes
                       </a>
@@ -474,7 +474,7 @@ function TeamMemberPage() {
                         href={member.githubUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-white px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-surface px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
                       >
                         <Github className="h-3.5 w-3.5" /> GitHub
                       </a>
@@ -484,7 +484,7 @@ function TeamMemberPage() {
                         href={member.customUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-white px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-surface px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
                         title={member.customUrl}
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
@@ -534,7 +534,7 @@ function TeamMemberPage() {
                       return (
                         <span
                           key={slug}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-laps-light/40 bg-white px-2.5 py-1 text-[11px] font-medium text-laps-navy/80"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-laps-light/40 bg-surface px-2.5 py-1 text-[11px] font-medium text-laps-navy/80"
                         >
                           <span
                             className="inline-block h-2 w-2 rounded-full"
@@ -647,7 +647,7 @@ function TeamMemberPage() {
                     {memberProjects.map((proj) => (
                       <div
                         key={proj.id}
-                        className="rounded-xl border border-laps-blue/15 bg-gradient-to-br from-white to-laps-ghost/30 p-4 transition hover:border-laps-blue/30 hover:shadow-sm"
+                        className="rounded-xl border border-laps-blue/15 bg-gradient-to-br from-surface to-laps-ghost/30 p-4 transition hover:border-laps-blue/30 hover:shadow-sm"
                       >
                         <div className="mb-2 flex items-start justify-between gap-3">
                           <h4 className="text-sm font-bold text-laps-navy">
@@ -657,8 +657,8 @@ function TeamMemberPage() {
                             <span
                               className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
                                 proj.status === "ACTIVE"
-                                  ? "bg-laps-blue/10 text-laps-blue"
-                                  : "bg-laps-navy/10 text-laps-navy"
+                                  ? "bg-laps-accent/10 text-laps-blue"
+                                  : "bg-laps-ink/10 text-laps-navy"
                               }`}
                             >
                               {proj.status === "ACTIVE"
@@ -682,7 +682,7 @@ function TeamMemberPage() {
                             {proj.tags.map((tag: string) => (
                               <span
                                 key={tag}
-                                className="rounded border border-laps-light/40 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-laps-navy/70"
+                                className="rounded border border-laps-light/40 bg-surface px-1.5 py-0.5 text-[9px] font-semibold text-laps-navy/70"
                               >
                                 {tag}
                               </span>
@@ -718,13 +718,13 @@ function TeamMemberPage() {
                       return (
                         <div
                           key={pub.id}
-                          className="rounded-xl border border-laps-light/30 bg-white p-4 transition hover:border-laps-light/60 hover:shadow-sm"
+                          className="rounded-xl border border-laps-light/30 bg-surface p-4 transition hover:border-laps-light/60 hover:shadow-sm"
                         >
                           <div className="mb-2 flex items-start justify-between gap-3">
                             <h4 className="text-sm font-semibold leading-tight text-laps-navy">
                               {pub.title}
                             </h4>
-                            <span className="shrink-0 rounded-full bg-laps-blue/8 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-laps-blue">
+                            <span className="shrink-0 rounded-full bg-laps-accent/8 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-laps-blue">
                               {typeLabel}
                             </span>
                           </div>
@@ -792,7 +792,7 @@ function TeamMemberPage() {
                         <button
                           key={c.id}
                           onClick={() => navigate({ to: "/team/$uuid", params: { uuid: c.id } })}
-                          className="group flex items-center gap-2 rounded-full border border-laps-light/25 bg-white px-2.5 py-1 text-xs font-medium text-laps-navy/85 transition hover:border-laps-blue/40 hover:text-laps-blue"
+                          className="group flex items-center gap-2 rounded-full border border-laps-light/25 bg-surface px-2.5 py-1 text-xs font-medium text-laps-navy/85 transition hover:border-laps-blue/40 hover:text-laps-blue"
                         >
                           <span
                             className={`flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br ${cv.gradient} text-[8px] font-bold text-white`}
@@ -838,7 +838,7 @@ function PortfolioCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-laps-blue/12 bg-white p-5 shadow-[0_2px_20px_rgba(25,58,89,0.04)]">
+    <div className="rounded-2xl border border-laps-blue/12 bg-surface p-5 shadow-[0_2px_20px_rgba(25,58,89,0.04)]">
       <div className="mb-3 flex items-center gap-2">
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-laps-ghost text-laps-blue">
           <IconComp className="h-4 w-4" />
@@ -862,7 +862,7 @@ function StatCard({
   value: number;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-laps-blue/12 bg-white p-4">
+    <div className="flex items-center gap-3 rounded-2xl border border-laps-blue/12 bg-surface p-4">
       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-laps-ghost text-laps-blue">
         <IconComp className="h-5 w-5" />
       </span>

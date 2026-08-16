@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import svgRaw from "@/assets/file.svg?raw";
 
 // The source SVG is auto-traced (~78 sub-paths in shades of white/grey) sitting on
@@ -10,14 +10,25 @@ import svgRaw from "@/assets/file.svg?raw";
 
 const TOTAL_DURATION_MS = 1800;
 const PATH_FADE_MS = 480;
+const LOOP_PAUSE_MS = 600;
 
 interface Props {
   /** Max width of the rendered SVG (px). The aspect ratio is preserved. */
   maxWidth?: number;
+  /** Replay continuously. Matches the prop on {@link LapsLogoAnimation} so the
+   *  loading screen behaves the same in either theme. */
+  loop?: boolean;
 }
 
-export default function LapsLogoAnimationWhite({ maxWidth = 480 }: Props) {
+export default function LapsLogoAnimationWhite({ maxWidth = 480, loop = false }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [runKey, setRunKey] = useState(0);
+
+  useEffect(() => {
+    if (!loop) return;
+    const id = setTimeout(() => setRunKey((k) => k + 1), TOTAL_DURATION_MS + LOOP_PAUSE_MS);
+    return () => clearTimeout(id);
+  }, [loop, runKey]);
 
   useEffect(() => {
     const root = containerRef.current;
@@ -38,7 +49,11 @@ export default function LapsLogoAnimationWhite({ maxWidth = 480 }: Props) {
     const items: Item[] = paths
       .map((el) => {
         let x = 0;
-        try { x = el.getBBox().x; } catch { x = 0; }
+        try {
+          x = el.getBBox().x;
+        } catch {
+          x = 0;
+        }
         return { el, x };
       })
       .sort((a, b) => a.x - b.x);
@@ -50,15 +65,23 @@ export default function LapsLogoAnimationWhite({ maxWidth = 480 }: Props) {
 
     for (const { el, x } of items) {
       const delay = ((x - minX) / span) * staggerMs;
+      // Transition cleared first so a looped replay snaps back to invisible
+      // instead of fading out over PATH_FADE_MS on its way to the next run.
+      el.style.transition = "none";
       el.style.opacity = "0";
-      el.style.transition = `opacity ${PATH_FADE_MS}ms cubic-bezier(0.4,0,0.2,1) ${delay}ms`;
     }
 
     void svg.getBoundingClientRect();
+
+    for (const { el, x } of items) {
+      const delay = ((x - minX) / span) * staggerMs;
+      el.style.transition = `opacity ${PATH_FADE_MS}ms cubic-bezier(0.4,0,0.2,1) ${delay}ms`;
+    }
+
     requestAnimationFrame(() => {
       for (const { el } of items) el.style.opacity = "1";
     });
-  }, []);
+  }, [runKey]);
 
   return (
     <div

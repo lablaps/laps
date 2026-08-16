@@ -72,7 +72,7 @@ function LoginPage() {
       >
         <div className="absolute inset-0 opacity-[0.07] [background:radial-gradient(circle_at_1px_1px,#74B5F2_1px,transparent_0)_0_0/22px_22px]" />
         <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-laps-light/10 blur-3xl" />
-        <div className="absolute -bottom-40 -right-24 h-[28rem] w-[28rem] rounded-full bg-laps-blue/30 blur-3xl" />
+        <div className="absolute -bottom-40 -right-24 h-[28rem] w-[28rem] rounded-full bg-laps-accent/30 blur-3xl" />
 
         <div className="relative flex items-center gap-3">
           <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-laps-light">
@@ -101,7 +101,7 @@ function LoginPage() {
       </aside>
 
       {/* Right — login form */}
-      <section className="flex items-center justify-center bg-white px-6 py-14 lg:px-12">
+      <section className="flex items-center justify-center bg-surface px-6 py-14 lg:px-12">
         <div className="w-full max-w-sm">
           <div className="mb-10 space-y-2">
             <span className="inline-block rounded-full bg-laps-ghost px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-laps-blue">
@@ -130,7 +130,7 @@ function LoginPage() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
-                className="h-11 border-laps-navy/15 bg-white pl-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+                className="h-11 border-laps-navy/15 bg-surface pl-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
               />
             </Field>
 
@@ -158,14 +158,14 @@ function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="h-11 border-laps-navy/15 bg-white pl-10 pr-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+                className="h-11 border-laps-navy/15 bg-surface pl-10 pr-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
               />
             </Field>
 
             <button
               type="submit"
               disabled={submitting}
-              className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-laps-blue px-4 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(11,78,141,0.55)] transition hover:bg-laps-navy disabled:cursor-not-allowed disabled:opacity-60"
+              className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-laps-accent px-4 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(11,78,141,0.55)] transition hover:bg-laps-ink disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Entrando…" : "Entrar"}
               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />

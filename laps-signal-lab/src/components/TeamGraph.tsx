@@ -696,7 +696,7 @@ export function TeamGraph({ labels }: Props) {
 
             {/* Zoom controls */}
             <div className="pointer-events-auto absolute right-3 top-3 flex flex-col items-end gap-1.5">
-              <div className="flex items-center gap-1 rounded-full border border-laps-light/40 bg-white/90 px-1 py-0.5 text-[10px] font-semibold text-laps-navy/70 shadow-sm backdrop-blur">
+              <div className="flex items-center gap-1 rounded-full border border-laps-light/40 bg-surface/90 px-1 py-0.5 text-[10px] font-semibold text-laps-navy/70 shadow-sm backdrop-blur">
                 <button
                   type="button"
                   onClick={() => zoomBy(1 / 1.2)}
@@ -723,7 +723,7 @@ export function TeamGraph({ labels }: Props) {
                   ⟲
                 </button>
               </div>
-              <span className="rounded-full bg-white/85 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-laps-navy/50 shadow-sm backdrop-blur">
+              <span className="rounded-full bg-surface/85 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-laps-navy/50 shadow-sm backdrop-blur">
                 arraste · zoom · F para ajustar · ESC para sair
               </span>
             </div>
@@ -732,7 +732,7 @@ export function TeamGraph({ labels }: Props) {
             <button
               type="button"
               onClick={() => setRailOpen((v) => !v)}
-              className="pointer-events-auto absolute left-3 top-3 flex items-center gap-1.5 rounded-full border border-laps-light/40 bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-laps-navy/70 shadow-sm backdrop-blur transition hover:bg-laps-ghost"
+              className="pointer-events-auto absolute left-3 top-3 flex items-center gap-1.5 rounded-full border border-laps-light/40 bg-surface/90 px-3 py-1.5 text-[11px] font-semibold text-laps-navy/70 shadow-sm backdrop-blur transition hover:bg-laps-ghost"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               {railOpen ? "Ocultar" : "Filtros"}
@@ -811,7 +811,7 @@ function LeftRail({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -16 }}
       transition={{ duration: 0.22, ease: EASE_OUT }}
-      className="w-52 shrink-0 self-start rounded-2xl border border-laps-light/20 bg-white/95 p-4 shadow-lg backdrop-blur flex flex-col gap-4"
+      className="w-52 shrink-0 self-start rounded-2xl border border-laps-light/20 bg-surface/95 p-4 shadow-lg backdrop-blur flex flex-col gap-4"
     >
       {/* Search */}
       <div className="relative">
@@ -820,7 +820,7 @@ function LeftRail({
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           placeholder="Buscar pesquisador…"
-          className="w-full rounded-full border border-laps-navy/10 bg-white py-2 pl-9 pr-8 text-xs text-laps-navy placeholder:text-laps-navy/40 focus:border-laps-blue/40 focus:outline-none focus:ring-2 focus:ring-laps-blue/15"
+          className="w-full rounded-full border border-laps-navy/10 bg-surface py-2 pl-9 pr-8 text-xs text-laps-navy placeholder:text-laps-navy/40 focus:border-laps-blue/40 focus:outline-none focus:ring-2 focus:ring-laps-blue/15"
         />
         {search && (
           <button
@@ -862,7 +862,7 @@ function LeftRail({
                 </span>
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold shrink-0 ${
-                    active ? "bg-white text-laps-navy/55" : "text-laps-navy/25"
+                    active ? "bg-surface text-laps-navy/55" : "text-laps-navy/25"
                   }`}
                 >
                   {roleCounts[tier]}
@@ -900,7 +900,7 @@ function LeftRail({
         <button
           type="button"
           onClick={onReset}
-          className="flex items-center gap-2 rounded-full border border-laps-navy/10 bg-white px-3 py-1.5 text-[11px] font-semibold text-laps-navy/65 transition hover:bg-laps-ghost hover:text-laps-navy"
+          className="flex items-center gap-2 rounded-full border border-laps-navy/10 bg-surface px-3 py-1.5 text-[11px] font-semibold text-laps-navy/65 transition hover:bg-laps-ghost hover:text-laps-navy"
         >
           <RotateCcw className="h-3 w-3" />
           Resetar vista
@@ -950,7 +950,7 @@ function HoverCard({
         zIndex: 60,
         pointerEvents: isSelected ? "auto" : "none",
       }}
-      className="rounded-2xl border border-laps-light/30 bg-white/97 p-4 shadow-xl backdrop-blur"
+      className="rounded-2xl border border-laps-light/30 bg-surface/97 p-4 shadow-xl backdrop-blur"
     >
       {isSelected && (
         <button

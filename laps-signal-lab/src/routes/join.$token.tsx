@@ -280,7 +280,7 @@ function JoinPage() {
       >
         <div className="absolute inset-0 opacity-[0.07] [background:radial-gradient(circle_at_1px_1px,#74B5F2_1px,transparent_0)_0_0/22px_22px]" />
         <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-laps-light/10 blur-3xl" />
-        <div className="absolute -bottom-40 -right-24 h-[28rem] w-[28rem] rounded-full bg-laps-blue/30 blur-3xl" />
+        <div className="absolute -bottom-40 -right-24 h-[28rem] w-[28rem] rounded-full bg-laps-accent/30 blur-3xl" />
 
         <div className="relative flex items-center gap-3">
           <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-laps-light">
@@ -305,7 +305,7 @@ function JoinPage() {
       </aside>
 
       {/* Right — form */}
-      <section className="flex items-start justify-center overflow-y-auto bg-white px-6 py-10 lg:px-12">
+      <section className="flex items-start justify-center overflow-y-auto bg-surface px-6 py-10 lg:px-12">
         <div className="w-full max-w-sm">
           {inviteState === "loading" && (
             <div className="flex flex-col items-center justify-center py-24 gap-3 text-laps-navy/60">
@@ -371,7 +371,7 @@ function JoinPage() {
                   required
                   autoComplete="name"
                   placeholder="Maria Silva"
-                  className="h-11 border-laps-navy/15 bg-white pl-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+                  className="h-11 border-laps-navy/15 bg-surface pl-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
                 />
               </FormField>
 
@@ -385,7 +385,7 @@ function JoinPage() {
                   required
                   autoComplete="email"
                   placeholder="maria@uema.br"
-                  className="h-11 border-laps-navy/15 bg-white pl-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+                  className="h-11 border-laps-navy/15 bg-surface pl-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
                 />
               </FormField>
 
@@ -414,7 +414,7 @@ function JoinPage() {
                   minLength={8}
                   autoComplete="new-password"
                   placeholder="••••••••"
-                  className="h-11 border-laps-navy/15 bg-white pl-10 pr-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+                  className="h-11 border-laps-navy/15 bg-surface pl-10 pr-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
                 />
               </FormField>
 
@@ -442,7 +442,7 @@ function JoinPage() {
                   required
                   autoComplete="new-password"
                   placeholder="••••••••"
-                  className="h-11 border-laps-navy/15 bg-white pl-10 pr-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+                  className="h-11 border-laps-navy/15 bg-surface pl-10 pr-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
                 />
               </FormField>
 
@@ -454,7 +454,7 @@ function JoinPage() {
                   </label>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-laps-navy/45">{c.bioHint}</span>
-                    <div className="relative inline-flex items-center p-0.5 rounded-full bg-laps-navy/5 border border-laps-navy/5">
+                    <div className="relative inline-flex items-center p-0.5 rounded-full bg-laps-ink/5 border border-laps-navy/5">
                       {(["pt", "en", "fr"] as JoinLang[]).map((bl) => (
                         <button
                           key={bl}
@@ -465,7 +465,7 @@ function JoinPage() {
                           {bioLang === bl && (
                             <motion.div
                               layoutId="join-bio-lang"
-                              className="absolute inset-0 rounded-full bg-white shadow-sm"
+                              className="absolute inset-0 rounded-full bg-surface shadow-sm"
                               transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
                             />
                           )}
@@ -488,7 +488,7 @@ function JoinPage() {
                   onChange={(e) => setBio(e.target.value)}
                   placeholder={JOIN_COPY[bioLang].bioPlaceholder}
                   rows={4}
-                  className="w-full rounded-md border border-laps-navy/15 bg-white px-3 py-2 text-sm text-laps-navy placeholder:text-laps-navy/35 focus:outline-none focus:ring-2 focus:ring-laps-blue resize-none"
+                  className="w-full rounded-md border border-laps-navy/15 bg-surface px-3 py-2 text-sm text-laps-navy placeholder:text-laps-navy/35 focus:outline-none focus:ring-2 focus:ring-laps-blue resize-none"
                 />
               </div>
 
@@ -504,7 +504,7 @@ function JoinPage() {
                     value={linkedinUrl}
                     onChange={(e) => setLinkedinUrl(e.target.value)}
                     placeholder="https://linkedin.com/in/…"
-                    className="h-11 border-laps-navy/15 bg-white pl-10 text-sm text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+                    className="h-11 border-laps-navy/15 bg-surface pl-10 text-sm text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
                   />
                 </FormField>
                 <FormField label="Lattes" icon={<BookOpen className="h-4 w-4" />} htmlFor="lattes">
@@ -514,7 +514,7 @@ function JoinPage() {
                     value={lattesUrl}
                     onChange={(e) => setLattesUrl(e.target.value)}
                     placeholder="http://lattes.cnpq.br/…"
-                    className="h-11 border-laps-navy/15 bg-white pl-10 text-sm text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+                    className="h-11 border-laps-navy/15 bg-surface pl-10 text-sm text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
                   />
                 </FormField>
                 <FormField label={c.github} icon={<Github className="h-4 w-4" />} htmlFor="github">
@@ -524,7 +524,7 @@ function JoinPage() {
                     value={githubUrl}
                     onChange={(e) => setGithubUrl(e.target.value)}
                     placeholder="https://github.com/…"
-                    className="h-11 border-laps-navy/15 bg-white pl-10 text-sm text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+                    className="h-11 border-laps-navy/15 bg-surface pl-10 text-sm text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
                   />
                 </FormField>
               </div>
@@ -532,7 +532,7 @@ function JoinPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-laps-blue px-4 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(11,78,141,0.55)] transition hover:bg-laps-navy disabled:cursor-not-allowed disabled:opacity-60"
+                className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-laps-accent px-4 text-sm font-semibold text-white shadow-[0_8px_24px_-8px_rgba(11,78,141,0.55)] transition hover:bg-laps-ink disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? (
                   <>

@@ -95,7 +95,7 @@ export function EmailVerificationDialog({ me }: { me: MyProfile }) {
         type="button"
         onClick={() => requestCode.mutate()}
         disabled={requestCode.isPending}
-        className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-amber-300 bg-white px-4 py-2 text-xs font-semibold text-amber-800 transition-colors duration-150 hover:border-amber-500 hover:text-amber-900 active:scale-[0.98] disabled:opacity-60"
+        className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-amber-300 bg-surface px-4 py-2 text-xs font-semibold text-amber-800 transition-colors duration-150 hover:border-amber-500 hover:text-amber-900 active:scale-[0.98] disabled:opacity-60"
       >
         {requestCode.isPending && !open ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -135,10 +135,10 @@ export function EmailVerificationDialog({ me }: { me: MyProfile }) {
                 <p className="font-semibold">Nenhum provedor de email configurado.</p>
                 <p className="mt-0.5 text-amber-900/80">
                   Nada foi enviado. Use o código abaixo — e configure{" "}
-                  <code className="rounded bg-white/70 px-1 font-mono">LAPS_EMAIL_PROVIDER</code> no
+                  <code className="rounded bg-surface/70 px-1 font-mono">LAPS_EMAIL_PROVIDER</code> no
                   servidor para que a verificação signifique alguma coisa.
                 </p>
-                <code className="mt-2 block rounded bg-white px-2 py-1 text-center font-mono text-base font-bold tracking-[0.3em] text-amber-900">
+                <code className="mt-2 block rounded bg-surface px-2 py-1 text-center font-mono text-base font-bold tracking-[0.3em] text-amber-900">
                   {issued.code}
                 </code>
               </div>

@@ -55,7 +55,7 @@ function ContactPage() {
   return (
     <PublicLayout>
       {/* HERO */}
-      <section className="relative bg-gradient-to-b from-laps-ghost/40 via-white to-white py-20">
+      <section className="relative bg-gradient-to-b from-laps-ghost/40 via-surface to-surface py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <span className="inline-block rounded-full bg-laps-ghost px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-laps-blue">
             {t.nav.contato}
@@ -70,10 +70,10 @@ function ContactPage() {
       </section>
 
       {/* INFO + MAP */}
-      <section className="bg-white pb-24">
+      <section className="bg-surface pb-24">
         <div className="mx-auto grid max-w-7xl gap-8 px-6 lg:grid-cols-[1fr_1.8fr]">
           {/* Info */}
-          <div className="rounded-3xl bg-gradient-to-br from-laps-navy to-laps-blue p-8 text-white shadow-[0_8px_30px_rgba(11,78,141,0.18)] md:p-10">
+          <div className="rounded-3xl bg-gradient-to-br from-laps-ink to-laps-blue p-8 text-white shadow-[0_8px_30px_rgba(11,78,141,0.18)] md:p-10">
             <h3 className="font-display text-xl font-bold">{labels.infoTitle}</h3>
             <ul className="mt-6 space-y-5 text-sm">
               <InfoRow Icon={MapPin} label={labels.addrLabel} value={t.footer.address} />
@@ -113,7 +113,7 @@ function ContactPage() {
           </div>
 
           {/* Map */}
-          <div className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-white p-2 shadow-[0_2px_20px_rgba(25,58,89,0.06)]">
+          <div className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface p-2 shadow-[0_2px_20px_rgba(25,58,89,0.06)]">
             <iframe
               title="LAPS — Laboratório de Aquisição e Processamento de Sinais"
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3985.760580136095!2d-44.20991709999999!3d-2.5842826!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7f69b74faebfacf%3A0x7b51d3fd663371da!2sLAPS%20-%20Laborat%C3%B3rio%20de%20Aquisi%C3%A7%C3%A3o%20e%20Processamento%20de%20Sinais!5e0!3m2!1sen!2sbr!4v1786840299388!5m2!1sen!2sbr"

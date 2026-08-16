@@ -4,7 +4,7 @@ import { useLang } from "@/hooks/use-lang";
 import { stats } from "@/lib/i18n";
 import { WaveBackground } from "@/components/WaveBackground";
 import { CountUp } from "@/components/CountUp";
-import LapsLogoAnimation from "@/components/LapsLogoAnimation";
+import LapsLogoAnimated from "@/components/LapsLogoAnimated";
 import { PublicLayout } from "@/components/PublicLayout";
 
 import { motion } from "framer-motion";
@@ -27,20 +27,20 @@ function Index() {
   return (
     <PublicLayout>
       {/* HERO — full viewport */}
-      <section className="relative isolate -mt-[68px] flex min-h-[100svh] flex-col overflow-hidden bg-gradient-to-b from-white via-laps-ghost/30 to-white pt-[68px]">
+      <section className="relative isolate -mt-[68px] flex min-h-[100svh] flex-col overflow-hidden bg-gradient-to-b from-surface via-laps-ghost/30 to-surface pt-[68px]">
         <div className="absolute inset-0 z-0">
           <WaveBackground />
         </div>
 
         <div className="pointer-events-none relative z-20 mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-6 text-center">
           <div className="pointer-events-auto">
-            <span className="inline-block rounded-full border border-laps-blue/20 bg-white/80 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-laps-blue backdrop-blur">
+            <span className="inline-block rounded-full border border-laps-blue/20 bg-surface/80 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-laps-blue backdrop-blur">
               {t.hero.label}
             </span>
           </div>
 
           <div className="pointer-events-auto mt-8 w-full max-w-2xl">
-            <LapsLogoAnimation />
+            <LapsLogoAnimated />
           </div>
 
           <p
@@ -53,13 +53,13 @@ function Index() {
           <div className="pointer-events-auto mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/projects"
-              className="inline-flex items-center gap-2 rounded-lg bg-laps-navy px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-laps-navy/20 transition hover:bg-laps-blue hover:shadow-laps-blue/30"
+              className="inline-flex items-center gap-2 rounded-lg bg-laps-ink px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-laps-navy/20 transition hover:bg-laps-accent hover:shadow-laps-blue/30"
             >
               {t.hero.cta1} <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               to="/aboutus"
-              className="inline-flex items-center gap-2 rounded-lg border-2 border-laps-navy bg-white/40 px-6 py-3 text-sm font-semibold text-laps-navy backdrop-blur transition hover:bg-laps-navy hover:text-white"
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-laps-navy bg-surface/40 px-6 py-3 text-sm font-semibold text-laps-navy backdrop-blur transition hover:bg-laps-ink hover:text-white"
             >
               {t.hero.cta2}
             </Link>
@@ -82,16 +82,16 @@ function Index() {
             {t.hero.scrollHint}
           </span>
           <span className="flex h-9 w-6 items-start justify-center rounded-full border border-laps-navy/30 p-1 transition-colors duration-300 group-hover:border-laps-blue">
-            <span className="animate-scroll-dot block h-2 w-1 rounded-full bg-laps-blue" />
+            <span className="animate-scroll-dot block h-2 w-1 rounded-full bg-laps-accent" />
           </span>
           <ChevronDown className="h-4 w-4" />
         </motion.button>
       </section>
 
       {/* STATS — below the fold */}
-      <section id="discover" className="relative bg-white py-20">
+      <section id="discover" className="relative bg-surface py-20">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="grid grid-cols-2 gap-6 rounded-2xl border border-laps-blue/10 bg-gradient-to-br from-white to-laps-ghost/30 px-6 py-10 shadow-sm md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-6 rounded-2xl border border-laps-blue/10 bg-gradient-to-br from-surface to-laps-ghost/30 px-6 py-10 shadow-sm md:grid-cols-4">
             {stats.map((s) => (
               <div key={s.key} className="text-center">
                 <div className="font-display text-3xl font-bold text-laps-blue md:text-4xl">
@@ -107,7 +107,7 @@ function Index() {
       </section>
 
       {/* RESEARCH AREAS */}
-      <section className="relative bg-white pb-24">
+      <section className="relative bg-surface pb-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid gap-10 md:grid-cols-[1fr_2fr] md:items-end">
             <div>
@@ -129,10 +129,10 @@ function Index() {
               return (
                 <div
                   key={i}
-                  className="group relative flex flex-col bg-white p-8 transition-colors hover:bg-laps-ghost/30"
+                  className="group relative flex flex-col bg-surface p-8 transition-colors hover:bg-laps-ghost/30"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-laps-ghost text-laps-blue transition group-hover:bg-laps-blue group-hover:text-white">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-laps-ghost text-laps-blue transition group-hover:bg-laps-accent group-hover:text-white">
                       <Icon className="h-5 w-5" />
                     </div>
                     <span className="font-mono text-[11px] font-semibold text-laps-navy/40">
@@ -143,7 +143,7 @@ function Index() {
                     {item.t}
                   </h3>
                   <p className="mt-3 text-sm leading-relaxed text-laps-navy/65">{item.d}</p>
-                  <div className="mt-6 h-px w-8 bg-laps-blue/30 transition-all group-hover:w-16 group-hover:bg-laps-blue" />
+                  <div className="mt-6 h-px w-8 bg-laps-accent/30 transition-all group-hover:w-16 group-hover:bg-laps-accent" />
                 </div>
               );
             })}

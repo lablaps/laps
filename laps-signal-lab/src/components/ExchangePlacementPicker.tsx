@@ -84,7 +84,7 @@ export function ExchangePlacementPicker({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar país…"
-          className="h-9 w-full rounded-md border border-laps-navy/15 bg-white pl-9 pr-8 text-sm text-laps-navy placeholder:text-laps-navy/35 focus:border-laps-blue/40 focus:outline-none"
+          className="h-9 w-full rounded-md border border-laps-navy/15 bg-surface pl-9 pr-8 text-sm text-laps-navy placeholder:text-laps-navy/35 focus:border-laps-blue/40 focus:outline-none"
         />
         {query && (
           <button
@@ -139,7 +139,7 @@ export function ExchangePlacementPicker({
             <select
               value={value.state}
               onChange={(e) => onChange({ country: BRAZIL, state: e.target.value })}
-              className="h-9 w-full rounded-md border border-laps-navy/15 bg-white px-2 text-sm text-laps-navy focus:border-laps-blue/40 focus:outline-none"
+              className="h-9 w-full rounded-md border border-laps-navy/15 bg-surface px-2 text-sm text-laps-navy focus:border-laps-blue/40 focus:outline-none"
             >
               <option value="">— Estado não informado —</option>
               {REGION_ORDER.map((region) => (
@@ -189,7 +189,7 @@ function PickerRow({
     >
       <span
         className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-          selected ? "border-laps-blue bg-laps-blue text-white" : "border-laps-navy/25"
+          selected ? "border-laps-blue bg-laps-accent text-white" : "border-laps-navy/25"
         }`}
       >
         {selected && <Check className="h-2.5 w-2.5" strokeWidth={3.5} />}

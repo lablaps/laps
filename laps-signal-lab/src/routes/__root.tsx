@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { CookieConsent } from "@/components/CookieConsent";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { Toaster } from "@/components/ui/sonner";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 import faviconUrl from "../assets/laps-logo.png?url";
@@ -114,6 +115,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/* Applies the stored theme before the first paint. This must be a
+            blocking inline script in <head>: the alternative is rendering
+            light, hydrating, and then flipping — a white flash on every load
+            for anyone using dark mode. dangerouslySetInnerHTML is the only way
+            to emit an inline script from JSX, and the content is a build-time
+            constant with no interpolated input. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
         {children}

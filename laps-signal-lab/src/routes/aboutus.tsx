@@ -21,7 +21,7 @@ function AboutPage() {
   return (
     <PublicLayout>
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-laps-ghost/40 via-white to-white py-20">
+      <section className="relative overflow-hidden bg-gradient-to-b from-laps-ghost/40 via-surface to-surface py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <span className="inline-block rounded-full bg-laps-ghost px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-laps-blue">
             {t.about.chip}
@@ -36,9 +36,9 @@ function AboutPage() {
       </section>
 
       {/* MISSION / VISION */}
-      <section className="bg-white pb-24">
+      <section className="bg-surface pb-24">
         <div className="mx-auto grid max-w-6xl gap-6 px-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-laps-blue/15 bg-white p-8 shadow-[0_2px_20px_rgba(25,58,89,0.06)] border-l-4 border-l-laps-blue">
+          <div className="rounded-2xl border border-laps-blue/15 bg-surface p-8 shadow-[0_2px_20px_rgba(25,58,89,0.06)] border-l-4 border-l-laps-blue">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-laps-ghost text-laps-blue">
               <Target className="h-5 w-5" />
             </div>
@@ -46,7 +46,7 @@ function AboutPage() {
             <p className="mt-3 text-sm leading-relaxed text-laps-navy/75">{t.about.missionBody}</p>
           </div>
           <div
-            className="rounded-2xl border border-laps-blue/15 bg-white p-8 shadow-[0_2px_20px_rgba(25,58,89,0.06)] border-l-4"
+            className="rounded-2xl border border-laps-blue/15 bg-surface p-8 shadow-[0_2px_20px_rgba(25,58,89,0.06)] border-l-4"
             style={{ borderLeftColor: "#27AE60" }}
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -81,10 +81,10 @@ function AboutPage() {
               return (
                 <div
                   key={i}
-                  className="group relative flex flex-col bg-white p-8 transition-colors hover:bg-laps-ghost/40"
+                  className="group relative flex flex-col bg-surface p-8 transition-colors hover:bg-laps-ghost/40"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-laps-ghost text-laps-blue transition group-hover:bg-laps-blue group-hover:text-white">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-laps-ghost text-laps-blue transition group-hover:bg-laps-accent group-hover:text-white">
                       <Icon className="h-5 w-5" />
                     </div>
                     <span className="font-mono text-[11px] font-semibold text-laps-navy/40">
@@ -95,7 +95,7 @@ function AboutPage() {
                     {item.t}
                   </h3>
                   <p className="mt-3 text-sm leading-relaxed text-laps-navy/65">{item.d}</p>
-                  <div className="mt-6 h-px w-8 bg-laps-blue/30 transition-all group-hover:w-16 group-hover:bg-laps-blue" />
+                  <div className="mt-6 h-px w-8 bg-laps-accent/30 transition-all group-hover:w-16 group-hover:bg-laps-accent" />
                 </div>
               );
             })}
@@ -116,16 +116,16 @@ function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-white py-20">
+      <section className="bg-surface py-20">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-laps-navy to-laps-blue p-10 text-center text-white md:p-14">
+          <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-laps-ink to-laps-blue p-10 text-center text-white md:p-14">
             <h2 className="font-display text-2xl font-bold md:text-3xl">{t.team.title}</h2>
             <p className="mx-auto mt-4 max-w-xl text-sm text-white/80 md:text-base">
               {t.structure.body}
             </p>
             <Link
               to="/team"
-              className="mt-7 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-laps-navy shadow-lg transition hover:bg-laps-light hover:text-white"
+              className="mt-7 inline-flex items-center gap-2 rounded-lg bg-surface px-6 py-3 text-sm font-semibold text-laps-navy shadow-lg transition hover:bg-laps-light hover:text-white"
             >
               {t.team.cta} <ArrowRight className="h-4 w-4" />
             </Link>

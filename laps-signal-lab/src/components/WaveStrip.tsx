@@ -1,4 +1,17 @@
-export function WaveStrip({ className = "", color1 = "#193A59", color2 = "#74B5F2" }: { className?: string; color1?: string; color2?: string }) {
+// Defaults are CSS variables, not hexes, so the strip follows the theme: SVG
+// stroke resolves var() natively. --laps-navy inverts to a pale tone in dark
+// mode, which is exactly what a hairline over a dark page needs; --laps-light
+// already reads on both. Callers that pass explicit colours (the dark footer)
+// are unaffected.
+export function WaveStrip({
+  className = "",
+  color1 = "var(--laps-navy)",
+  color2 = "var(--laps-light)",
+}: {
+  className?: string;
+  color1?: string;
+  color2?: string;
+}) {
   return (
     <div className={`pointer-events-none overflow-hidden ${className}`}>
       <div className="wave-strip flex w-[200%]">

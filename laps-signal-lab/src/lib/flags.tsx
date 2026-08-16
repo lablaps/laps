@@ -59,7 +59,7 @@ interface FlagProps {
 function FlagFallback({ code, className }: { code: string; className?: string }) {
   return (
     <span
-      className={`flex h-full w-full items-center justify-center bg-laps-navy/8 text-[9px] font-bold tracking-wider text-laps-navy/50 ${className ?? ""}`}
+      className={`flex h-full w-full items-center justify-center bg-laps-ink/8 text-[9px] font-bold tracking-wider text-laps-navy/50 ${className ?? ""}`}
       aria-hidden
     >
       {code.toUpperCase()}

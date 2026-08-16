@@ -30,6 +30,19 @@
   --color-laps-light: var(--laps-light);
   --color-laps-ghost: var(--laps-ghost);
   --color-laps-white: var(--laps-white);
+  /* Added for dark mode. Every utility below compiles to var(--token), including
+     its /opacity variants via color-mix — which is what lets the whole app flip
+     by redefining values under .dark instead of annotating ~1,500 class names.
+       --surface     card/panel background. Replaces literal bg-white.
+       --laps-ink    a surface that stays dark in BOTH themes (footer, hero).
+                     Split out of --laps-navy, which had to invert to stay
+                     legible as the primary text colour.
+       --laps-accent filled-button background. Split out of --laps-blue for
+                     contrast: text on dark wants a brighter blue than white
+                     text on a button does. */
+  --color-surface: var(--surface);
+  --color-laps-ink: var(--laps-ink);
+  --color-laps-accent: var(--laps-accent);
   --font-sans: 'Montserrat', system-ui, sans-serif;
   --font-display: 'Space Grotesk', 'Montserrat', system-ui, sans-serif;
 }
@@ -38,12 +51,18 @@
 
 :root {
   --radius: 0.625rem;
+  /* Light is the default theme. Nothing is applied until the user opts in, and
+     the .dark class is written by the inline script in __root.tsx before paint. */
+  color-scheme: light;
 
   --laps-navy: #193A59;
   --laps-blue: #0B4E8D;
   --laps-light: #74B5F2;
   --laps-ghost: #E0F0FF;
   --laps-white: #FFFFFF;
+  --surface: #FFFFFF;
+  --laps-ink: #193A59;
+  --laps-accent: #0B4E8D;
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.25 0.05 250);
@@ -60,6 +79,97 @@
   --border: oklch(0.9 0.02 240);
   --input: oklch(0.9 0.02 240);
   --ring: oklch(0.5 0.1 250);
+}
+
+/* ── Dark theme ────────────────────────────────────────────────────────────
+   Values, not class names. The app's ~1,500 colour utilities all resolve to
+   the variables above, so redefining them here re-themes every page, including
+   the /opacity variants Tailwind builds with color-mix.
+
+   The inversions that carry the most weight:
+     --laps-navy   #193A59 → pale.  446 of its 618 uses are text-*, so it is the
+                             primary text colour and has to flip. The 60-odd
+                             places that used it as a dark *surface* were moved
+                             to --laps-ink, which does not flip.
+     --laps-ghost  pale → dark.  130 of 148 uses are bg-*: the subtle surface.
+     --surface     white → near-black. Stands in for literal bg-white.
+
+   text-white is deliberately untouched: it sits on filled buttons and on
+   --laps-ink surfaces, both of which stay dark here, so it stays white. */
+.dark {
+  color-scheme: dark;
+
+  --laps-navy: #DCE8F5;
+  --laps-blue: #5AA9E6;
+  --laps-light: #8FC5F7;
+  --laps-ghost: #1A2632;
+  --laps-white: #121B26;
+  --surface: #121B26;
+  /* Slightly lifted off --background so a hero or footer still separates from
+     the page instead of merging into it. */
+  --laps-ink: #0E1822;
+  /* Darker than --laps-blue on purpose: this one carries white label text, and
+     the brighter blue that reads well *as* text fails contrast *under* it. */
+  --laps-accent: #1D6FC0;
+
+  --background: oklch(0.17 0.02 250);
+  --foreground: oklch(0.93 0.02 250);
+  --card: oklch(0.21 0.02 250);
+  --card-foreground: oklch(0.93 0.02 250);
+  --primary: oklch(0.62 0.13 250);
+  --primary-foreground: oklch(0.15 0.02 250);
+  --secondary: oklch(0.26 0.02 250);
+  --secondary-foreground: oklch(0.93 0.02 250);
+  --muted: oklch(0.26 0.02 250);
+  --muted-foreground: oklch(0.70 0.03 250);
+  --accent: oklch(0.32 0.05 250);
+  --accent-foreground: oklch(0.93 0.02 250);
+  --border: oklch(0.30 0.02 250);
+  --input: oklch(0.30 0.02 250);
+  --ring: oklch(0.55 0.10 250);
+
+  /* Status palettes — warning (amber), success (emerald), error (red) and the
+     violet/purple role badges. ~146 uses across the app, all following the same
+     shape: a -50/-100 tint as the panel, -200/-300 as its border, -600..-900 as
+     the text on it.
+
+     Tailwind's own palette entries are variables too, so the ramp is redefined
+     rather than annotated. Note it is also *inverted*: in light mode -900 is the
+     darkest (most contrast against a pale panel), so on a dark panel the same
+     class has to become the lightest. Leaving these alone was not an option —
+     bg-amber-50 is a near-white card, and eleven of them glowing on a dark page
+     is the single most obvious way a retrofitted dark mode looks unfinished. */
+  --color-amber-50: oklch(0.24 0.04 75);
+  --color-amber-100: oklch(0.28 0.05 75);
+  --color-amber-200: oklch(0.42 0.07 75);
+  --color-amber-300: oklch(0.50 0.09 75);
+  --color-amber-600: oklch(0.80 0.12 80);
+  --color-amber-700: oklch(0.85 0.10 82);
+  --color-amber-800: oklch(0.89 0.07 84);
+  --color-amber-900: oklch(0.93 0.05 86);
+
+  --color-emerald-50: oklch(0.24 0.04 165);
+  --color-emerald-100: oklch(0.28 0.05 165);
+  --color-emerald-200: oklch(0.42 0.07 165);
+  --color-emerald-600: oklch(0.80 0.13 165);
+  --color-emerald-700: oklch(0.86 0.11 165);
+
+  --color-red-50: oklch(0.24 0.05 20);
+  --color-red-100: oklch(0.28 0.06 20);
+  --color-red-200: oklch(0.42 0.09 20);
+  --color-red-600: oklch(0.75 0.15 20);
+  --color-red-700: oklch(0.82 0.12 20);
+
+  --color-violet-50: oklch(0.25 0.05 300);
+  --color-violet-200: oklch(0.42 0.08 300);
+  --color-violet-700: oklch(0.83 0.11 300);
+
+  --color-purple-50: oklch(0.25 0.05 315);
+  --color-purple-200: oklch(0.42 0.08 315);
+  --color-purple-700: oklch(0.84 0.11 315);
+
+  --color-slate-100: oklch(0.26 0.02 250);
+  --color-slate-200: oklch(0.32 0.02 250);
 }
 
 html {

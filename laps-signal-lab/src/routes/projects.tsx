@@ -35,7 +35,7 @@ function ProjectsPage() {
   return (
     <PublicLayout>
       {/* HERO */}
-      <section className="relative bg-gradient-to-b from-laps-ghost/40 via-white to-white py-20">
+      <section className="relative bg-gradient-to-b from-laps-ghost/40 via-surface to-surface py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <span className="inline-block rounded-full bg-laps-ghost px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-laps-blue">
             {t.projects.title}
@@ -50,7 +50,7 @@ function ProjectsPage() {
       </section>
 
       {/* PROJECT CARDS */}
-      <section className="bg-white pb-24">
+      <section className="bg-surface pb-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid gap-6 md:grid-cols-3">
             {projects.map((p, i) => {
@@ -61,7 +61,7 @@ function ProjectsPage() {
                 <article
                   key={p.id}
                   onClick={() => setOpenProject(p)}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-laps-light/25 bg-white shadow-[0_2px_20px_rgba(25,58,89,0.06)] transition hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(11,78,141,0.16)] cursor-pointer"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-laps-light/25 bg-surface shadow-[0_2px_20px_rgba(25,58,89,0.06)] transition hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(11,78,141,0.16)] cursor-pointer"
                 >
                   <div className="h-1.5 shrink-0" style={{ background: projectAccents[i % projectAccents.length] }} />
                   <div className="flex flex-col flex-1 p-7">
@@ -77,7 +77,7 @@ function ProjectsPage() {
                         )}
                         <span
                           className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                            p.status === "ACTIVE" ? "bg-laps-blue/10 text-laps-blue" : "bg-laps-ghost text-laps-navy/60"
+                            p.status === "ACTIVE" ? "bg-laps-accent/10 text-laps-blue" : "bg-laps-ghost text-laps-navy/60"
                           }`}
                         >
                           {p.status === "ACTIVE" ? t.projects.status.active : t.projects.status.done}
@@ -163,7 +163,7 @@ function ProjectsPage() {
       {/* COLLABORATION CTA */}
       <section className="bg-laps-ghost/40 py-20">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-laps-navy to-laps-blue p-10 text-center text-white md:p-14">
+          <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-laps-ink to-laps-blue p-10 text-center text-white md:p-14">
             <span className="inline-block rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-laps-light backdrop-blur">
               {t.nav.contato}
             </span>
@@ -175,7 +175,7 @@ function ProjectsPage() {
             </p>
             <Link
               to="/contact"
-              className="mt-7 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-laps-navy shadow-lg transition hover:bg-laps-light hover:text-white"
+              className="mt-7 inline-flex items-center gap-2 rounded-lg bg-surface px-6 py-3 text-sm font-semibold text-laps-navy shadow-lg transition hover:bg-laps-light hover:text-white"
             >
               {t.nav.contato} <ArrowRight className="h-4 w-4" />
             </Link>
@@ -231,17 +231,17 @@ function ProjectDetailDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-white p-0 shadow-[0_20px_60px_-20px_rgba(11,78,141,0.45)] w-[95vw] max-w-5xl">
+      <DialogContent className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface p-0 shadow-[0_20px_60px_-20px_rgba(11,78,141,0.45)] w-[95vw] max-w-5xl">
         <DialogTitle className="sr-only">{title}</DialogTitle>
 
         <div className="flex flex-col md:h-[82vh] md:max-h-[760px] md:flex-row">
           {/* LEFT — project info */}
           <div className="relative flex flex-col md:w-7/12 overflow-y-auto border-b md:border-b-0 md:border-r border-laps-blue/10">
-            <div className="relative h-2 shrink-0 bg-gradient-to-r from-laps-navy to-laps-blue" />
+            <div className="relative h-2 shrink-0 bg-gradient-to-r from-laps-ink to-laps-blue" />
 
             <div className="flex flex-col gap-5 p-8">
               <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
-                <span className={`rounded-full px-2.5 py-1 ${project.status === "ACTIVE" ? "bg-laps-blue/10 text-laps-blue" : "bg-laps-ghost text-laps-navy/60"}`}>
+                <span className={`rounded-full px-2.5 py-1 ${project.status === "ACTIVE" ? "bg-laps-accent/10 text-laps-blue" : "bg-laps-ghost text-laps-navy/60"}`}>
                   {project.status === "ACTIVE" ? t.projects.status.active : t.projects.status.done}
                 </span>
                 {project.year && (
@@ -272,7 +272,7 @@ function ProjectDetailDialog({
                   href={project.articleUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-2 self-start rounded-lg bg-laps-navy px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-laps-blue"
+                  className="mt-2 inline-flex items-center gap-2 self-start rounded-lg bg-laps-ink px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-laps-accent"
                 >
                   {lang === "pt" ? "Acessar publicação" : lang === "fr" ? "Accéder à la publication" : "Open publication"}
                   <ExternalLink className="h-4 w-4" />
@@ -302,7 +302,7 @@ function ProjectDetailDialog({
                     to="/team/$uuid"
                     params={{ uuid: l.member.id }}
                     onClick={onClose}
-                    className="flex items-center gap-3 rounded-xl border border-laps-light/40 bg-white p-3 transition hover:border-laps-blue/30 hover:shadow-sm"
+                    className="flex items-center gap-3 rounded-xl border border-laps-light/40 bg-surface p-3 transition hover:border-laps-blue/30 hover:shadow-sm"
                   >
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-laps-ghost text-xs font-bold text-laps-blue">
                       {l.member.photoUrl ? (

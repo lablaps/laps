@@ -45,7 +45,7 @@ const ROLE_TO_TIER: Record<string, Tier> = {
 // Visual styling per tier — mirrors the palette used on /team and /team/$uuid
 // so an exchange researcher's card reads like a peer-card you'd see elsewhere.
 const TIER_VISUAL: Record<Tier, { gradient: string; ring: string }> = {
-  head: { gradient: "from-laps-navy to-laps-blue", ring: "ring-laps-light/40" },
+  head: { gradient: "from-laps-ink to-laps-blue", ring: "ring-laps-light/40" },
   coordinator: { gradient: "from-violet-700 to-violet-400", ring: "ring-violet-200" },
   manager: { gradient: "from-purple-600 to-purple-300", ring: "ring-purple-200" },
   doctorate: { gradient: "from-laps-blue to-laps-light", ring: "ring-laps-blue/30" },
@@ -134,7 +134,7 @@ function ExchangePage() {
   return (
     <PublicLayout>
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-laps-ghost/40 via-white to-white py-20">
+      <section className="relative overflow-hidden bg-gradient-to-b from-laps-ghost/40 via-surface to-surface py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <span className="inline-block rounded-full bg-laps-ghost px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-laps-blue">
             {tx.chip}
@@ -164,7 +164,7 @@ function ExchangePage() {
       </section>
 
       {/* COUNTRY SECTIONS */}
-      <section className="bg-white pb-20">
+      <section className="bg-surface pb-20">
         <div className="mx-auto max-w-6xl space-y-12 px-6">
           {isLoading && (
             <div className="flex items-center justify-center gap-2 py-16 text-sm text-laps-navy/55">
@@ -181,7 +181,7 @@ function ExchangePage() {
             return (
               <div
                 key={group.code}
-                className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-white shadow-[0_2px_20px_rgba(25,58,89,0.06)]"
+                className="overflow-hidden rounded-3xl border border-laps-blue/15 bg-surface shadow-[0_2px_20px_rgba(25,58,89,0.06)]"
               >
                 {/* Country header — flag + name + count */}
                 <div className="flex flex-col gap-4 border-b border-laps-blue/10 bg-laps-ghost/30 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
@@ -253,11 +253,11 @@ function ExchangePage() {
       {/* CULTURAL IMMERSION + LAB OPPORTUNITY */}
       <section className="bg-laps-ghost/30 py-20">
         <div className="mx-auto grid max-w-6xl gap-6 px-6 md:grid-cols-2">
-          <article className="rounded-2xl border border-laps-blue/15 bg-white p-7 shadow-[0_2px_20px_rgba(25,58,89,0.06)]">
+          <article className="rounded-2xl border border-laps-blue/15 bg-surface p-7 shadow-[0_2px_20px_rgba(25,58,89,0.06)]">
             <h3 className="font-display text-xl font-bold text-laps-navy">{tx.reality.title}</h3>
             <p className="mt-4 text-sm leading-relaxed text-laps-navy/80">{tx.reality.body}</p>
           </article>
-          <article className="overflow-hidden rounded-2xl bg-gradient-to-br from-laps-navy to-laps-blue p-7 text-white shadow-lg">
+          <article className="overflow-hidden rounded-2xl bg-gradient-to-br from-laps-ink to-laps-blue p-7 text-white shadow-lg">
             <h3 className="font-display text-xl font-bold">{tx.opportunity.title}</h3>
             <p className="mt-4 text-sm leading-relaxed text-white/90">{tx.opportunity.body}</p>
           </article>
@@ -277,7 +277,7 @@ function SummaryCard({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-laps-blue/12 bg-white p-4 text-left">
+    <div className="flex items-center gap-3 rounded-2xl border border-laps-blue/12 bg-surface p-4 text-left">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-laps-ghost text-laps-blue">
         <IconComp className="h-5 w-5" />
       </span>
@@ -305,11 +305,11 @@ function ExchangeCard({ member }: { member: ApiMember }) {
     <Link
       to="/team/$uuid"
       params={{ uuid: member.id }}
-      className="group flex flex-col gap-3 rounded-2xl border border-laps-light/30 bg-white p-5 transition hover:-translate-y-0.5 hover:border-laps-blue/40 hover:shadow-[0_10px_30px_rgba(11,78,141,0.12)]"
+      className="group flex flex-col gap-3 rounded-2xl border border-laps-light/30 bg-surface p-5 transition hover:-translate-y-0.5 hover:border-laps-blue/40 hover:shadow-[0_10px_30px_rgba(11,78,141,0.12)]"
     >
       <div className="flex items-start gap-4">
         <span
-          className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 shadow-md ring-2 ${visual.ring}`}
+          className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface p-1 shadow-md ring-2 ${visual.ring}`}
         >
           {photo ? (
             <img
