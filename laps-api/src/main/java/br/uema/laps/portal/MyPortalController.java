@@ -1,5 +1,6 @@
 package br.uema.laps.portal;
 
+import br.uema.laps.email.EmailService;
 import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
 import br.uema.laps.member.MemberRole;
@@ -16,7 +17,6 @@ import br.uema.laps.publication.PublicationStatus;
 import br.uema.laps.publication.PublicationType;
 import br.uema.laps.security.AuthenticatedMember;
 import br.uema.laps.security.RateLimitGuard;
-import br.uema.laps.security.TokenHashing;
 import br.uema.laps.translate.TranslationService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +27,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,10 +39,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
 import java.text.Normalizer;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,12 +52,29 @@ import java.util.UUID;
 @RequestMapping("/api/v1/me")
 public class MyPortalController {
 
+    private static final Logger log = LoggerFactory.getLogger(MyPortalController.class);
+
     private static final SecureRandom RNG = new SecureRandom();
 
     /** The only role a member may obtain for themselves. Anything above it is a manager action. */
     private static final String SELF_SERVICE_ROLE = "RESEARCHER";
 
     private static final int MAX_PARTICIPANTS = 50;
+
+    /**
+     * How long a verification code lives. Fifteen minutes, not the 24 hours the
+     * old link token had: a code short enough to retype is short enough to
+     * guess, so its window has to be measured in the time it takes to read an
+     * email rather than the time it takes to notice one.
+     */
+    private static final Duration EMAIL_CODE_TTL = Duration.ofMinutes(15);
+
+    /** Wrong entries before the code is discarded. Five is generous for six digits typed by hand. */
+    private static final int MAX_EMAIL_CODE_ATTEMPTS = 5;
+
+    // Fully qualified: the class already imports jakarta.validation's Pattern.
+    private static final java.util.regex.Pattern CODE_PATTERN =
+            java.util.regex.Pattern.compile("\\d{6}");
 
     private final MemberRepository memberRepository;
     private final MemberProjectRepository memberProjectRepository;
@@ -65,6 +83,7 @@ public class MyPortalController {
     private final PasswordEncoder passwordEncoder;
     private final TranslationService translationService;
     private final RateLimitGuard rateLimitGuard;
+    private final EmailService emailService;
 
     public MyPortalController(
             MemberRepository memberRepository,
@@ -73,7 +92,8 @@ public class MyPortalController {
             PublicationRepository publicationRepository,
             PasswordEncoder passwordEncoder,
             TranslationService translationService,
-            RateLimitGuard rateLimitGuard) {
+            RateLimitGuard rateLimitGuard,
+            EmailService emailService) {
         this.memberRepository = memberRepository;
         this.memberProjectRepository = memberProjectRepository;
         this.projectRepository = projectRepository;
@@ -81,6 +101,7 @@ public class MyPortalController {
         this.passwordEncoder = passwordEncoder;
         this.translationService = translationService;
         this.rateLimitGuard = rateLimitGuard;
+        this.emailService = emailService;
     }
 
     @GetMapping
@@ -189,14 +210,24 @@ public class MyPortalController {
     }
 
     /**
-     * Generates a verification token for the member's current email and
-     * returns it. In a real deployment this would be sent by email; for now
-     * we surface it directly so the coordinator can copy it to the user
-     * out-of-band. The token is consumed by `POST /me/email/verify`.
+     * Issues a 6-digit verification code and emails it to the address on the
+     * member's profile. The code is consumed by `POST /me/email/verify`.
+     *
+     * <p>The response deliberately does <em>not</em> carry the code when a mail
+     * provider is configured. Returning it — which is what this endpoint used to
+     * do with a 256-bit token — makes the whole flow decorative: a member could
+     * complete verification without ever opening the inbox, so "verified" proved
+     * nothing about who controls the address. The code now only exists in the
+     * message the provider delivers.
+     *
+     * <p>The one exception is a deployment with no provider configured, where
+     * the code comes back in the response so the flow still terminates. That is
+     * the old (weak) behaviour, kept as a fallback and flagged to the SPA via
+     * {@code channel} so it can say so out loud instead of pretending.
      */
     @PostMapping("/email/request-verification")
     @Transactional
-    public ResponseEntity<Map<String, Object>> requestEmailVerification() {
+    public ResponseEntity<Map<String, Object>> requestEmailVerification(HttpServletRequest request) {
         Member me = loadMe();
         if (me.getEmail() == null || me.getEmail().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Set an email on your profile first");
@@ -204,40 +235,103 @@ public class MyPortalController {
         if (me.isEmailVerified()) {
             return ResponseEntity.ok(Map.of("message", "Email already verified", "alreadyVerified", true));
         }
-        String token = randomToken();
-        // Only the digest is persisted: a database read must not yield a token
-        // that can be presented to verify someone else's address.
-        me.setEmailVerificationTokenHash(TokenHashing.hash(token));
-        me.setEmailVerificationTokenExpiresAt(Instant.now().plus(24, ChronoUnit.HOURS));
+        // Metered per account: unmetered, this is a button that mails an
+        // attacker-triggered message into a real inbox as fast as it can be
+        // clicked, and it drains a free-tier daily quota in seconds.
+        rateLimitGuard.enforce(request, "emailcode:" + me.getId());
+
+        String code = randomCode();
+        // BCrypt, not the SHA-256 that invite tokens use: six digits is a
+        // million-entry dictionary, and a fast digest of one is reversible by
+        // anyone who can read the column. The cost factor is what makes the
+        // stored value useless without the email.
+        me.setEmailVerificationTokenHash(passwordEncoder.encode(code));
+        me.setEmailVerificationTokenExpiresAt(Instant.now().plus(EMAIL_CODE_TTL));
+        me.setEmailVerificationAttempts((short) 0);
         memberRepository.save(me);
-        // The token is sensitive — only return it to the requester (the member
-        // themselves).
-        return ResponseEntity.ok(Map.of(
-                "message", "Verification token issued. Use it within 24h.",
-                "token", token,
-                "expiresAt", me.getEmailVerificationTokenExpiresAt()));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("email", me.getEmail());
+        body.put("expiresAt", me.getEmailVerificationTokenExpiresAt());
+        switch (emailService.sendVerificationCode(me.getEmail(), me.getFullName(), code, EMAIL_CODE_TTL)) {
+            case SENT -> {
+                body.put("channel", "EMAIL");
+                body.put("message", "Verification code sent. Check your inbox and spam folder.");
+            }
+            case NOT_CONFIGURED -> {
+                log.warn("No mail provider configured (laps.email.provider) — returning the verification "
+                        + "code in the response for member {}. Email verification proves nothing in this mode.",
+                        me.getId());
+                body.put("channel", "MANUAL");
+                body.put("code", code);
+                body.put("message", "No mail provider configured. Use the code below.");
+            }
+            // Throwing rolls the transaction back, which is the point: the code
+            // that nobody received never becomes the account's pending code, so
+            // a retry is a clean new code rather than a second live one.
+            case FAILED -> throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY, "Could not send the verification email. Try again in a moment.");
+        }
+        return ResponseEntity.ok(body);
     }
 
+    /**
+     * Consumes the 6-digit code.
+     *
+     * <p>{@code noRollbackFor} is load-bearing. Every rejection below is a
+     * {@link ResponseStatusException}, and the default rollback rule would undo
+     * the attempt counter written on the way out — leaving a 1-in-a-million
+     * guess that can be retried a million times. The only writes this method
+     * performs on a failure path are that counter and the discarding of a spent
+     * code, both of which have to survive.
+     */
     @PostMapping("/email/verify")
-    @Transactional
-    public ResponseEntity<Map<String, String>> verifyEmail(@RequestBody VerifyEmailRequest req) {
+    @Transactional(noRollbackFor = ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> verifyEmail(
+            @Valid @RequestBody VerifyEmailRequest req, HttpServletRequest request) {
         Member me = loadMe();
         if (me.isEmailVerified()) {
             return ResponseEntity.ok(Map.of("message", "Already verified"));
         }
-        if (me.getEmailVerificationTokenHash() == null
-                || !TokenHashing.matches(req.token(), me.getEmailVerificationTokenHash())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid verification token");
+        rateLimitGuard.enforce(request, "emailcode:" + me.getId());
+
+        String code = req.code() == null ? "" : req.code().trim();
+        if (me.getEmailVerificationTokenHash() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request a verification code first");
         }
         if (me.getEmailVerificationTokenExpiresAt() == null
                 || me.getEmailVerificationTokenExpiresAt().isBefore(Instant.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification token expired");
+            clearVerificationCode(me);
+            memberRepository.save(me);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification code expired");
+        }
+        // A malformed entry cannot match a six-digit code, so it is a typo
+        // rather than a guess and does not spend an attempt.
+        if (!CODE_PATTERN.matcher(code).matches()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enter the 6-digit code from the email");
+        }
+        if (!passwordEncoder.matches(code, me.getEmailVerificationTokenHash())) {
+            short attempts = (short) (me.getEmailVerificationAttempts() + 1);
+            me.setEmailVerificationAttempts(attempts);
+            boolean burned = attempts >= MAX_EMAIL_CODE_ATTEMPTS;
+            if (burned) clearVerificationCode(me);
+            memberRepository.save(me);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    burned
+                            ? "Too many incorrect codes. Request a new one."
+                            : "Incorrect code. " + (MAX_EMAIL_CODE_ATTEMPTS - attempts) + " attempts left.");
         }
         me.setEmailVerified(true);
-        me.setEmailVerificationTokenHash(null);
-        me.setEmailVerificationTokenExpiresAt(null);
+        clearVerificationCode(me);
         memberRepository.save(me);
         return ResponseEntity.ok(Map.of("message", "Email verified"));
+    }
+
+    private static void clearVerificationCode(Member me) {
+        me.setEmailVerificationTokenHash(null);
+        me.setEmailVerificationTokenExpiresAt(null);
+        me.setEmailVerificationAttempts((short) 0);
     }
 
     /**
@@ -593,10 +687,14 @@ public class MyPortalController {
         }
     }
 
-    private static String randomToken() {
-        byte[] buf = new byte[32];
-        RNG.nextBytes(buf);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
+    /**
+     * A zero-padded 6-digit code. {@code nextInt(bound)} rather than
+     * {@code nextInt() % 1_000_000}, which is biased toward low codes — a
+     * skewed distribution is exactly the kind of thing that makes a small
+     * keyspace smaller.
+     */
+    private static String randomCode() {
+        return "%06d".formatted(RNG.nextInt(1_000_000));
     }
 
     private static String toSlug(String text) {
@@ -649,7 +747,8 @@ public class MyPortalController {
             @NotBlank String newPassword) {
     }
 
-    public record VerifyEmailRequest(@NotBlank String token) {
+    /** The 6 digits from the email. Validated for shape in the handler, so the error is readable. */
+    public record VerifyEmailRequest(@NotBlank String code) {
     }
 
     public record MyProjectLink(

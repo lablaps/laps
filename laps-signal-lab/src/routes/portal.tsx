@@ -27,7 +27,6 @@ import {
   Plus,
   Save,
   Shield,
-  ShieldCheck,
   Sparkles,
   Upload,
   UserCheck,
@@ -38,6 +37,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import PortalGuide, { type GuideStepId } from "@/components/PortalGuide";
+import { EmailVerificationDialog } from "@/components/EmailVerificationDialog";
 import {
   ExchangePlacementPicker,
   type Placement,
@@ -2940,7 +2940,7 @@ function FirstLoginBanner({ hasEmail }: { hasEmail: boolean }) {
             <li className={hasEmail ? "line-through opacity-60" : ""}>
               Depois, cadastre seu email em <em>Contato &amp; Links</em>.
             </li>
-            <li>Solicite o token de verificação e confirme.</li>
+            <li>Peça o código de 6 dígitos e confirme com o que chegar no email.</li>
           </ol>
           <p className="mt-2 rounded-lg bg-white/70 px-2.5 py-1.5 text-[11px] leading-relaxed text-laps-navy/60">
             O email só pode ser salvo <strong>depois</strong> da troca de senha — até lá o perfil
@@ -2953,36 +2953,6 @@ function FirstLoginBanner({ hasEmail }: { hasEmail: boolean }) {
 }
 
 function EmailVerificationBanner({ me }: { me: MyProfile }) {
-  const [tokenIssued, setTokenIssued] = useState<{ token: string; expiresAt: string } | null>(null);
-  const [verifyToken, setVerifyToken] = useState("");
-  const qc = useQueryClient();
-
-  const requestMutation = useMutation({
-    mutationFn: () => api.meRequestEmailVerification(),
-    onSuccess: (res) => {
-      if (res.token && res.expiresAt) {
-        setTokenIssued({ token: res.token, expiresAt: res.expiresAt });
-        toast.info("Token de verificação gerado. Cole-o abaixo.");
-      } else {
-        toast.success("Email já verificado.");
-      }
-    },
-    onError: (err) =>
-      toast.error(err instanceof ApiError ? err.message : "Falha ao solicitar verificação."),
-  });
-
-  const verifyMutation = useMutation({
-    mutationFn: (token: string) => api.meVerifyEmail(token),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["me"] });
-      setTokenIssued(null);
-      setVerifyToken("");
-      toast.success("Email verificado com sucesso!");
-    },
-    onError: (err) =>
-      toast.error(err instanceof ApiError ? err.message : "Token inválido ou expirado."),
-  });
-
   return (
     <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm">
       <div className="flex items-start gap-3">
@@ -3002,51 +2972,13 @@ function EmailVerificationBanner({ me }: { me: MyProfile }) {
           </h2>
           <p className="mt-1 text-xs text-amber-900/70">
             {me.mustChangePassword
-              ? "Comece pela seção «Trocar senha». Só depois disso o perfil é liberado para salvar o email e pedir o token."
+              ? "Comece pela seção «Trocar senha». Só depois disso o perfil é liberado para salvar o email e pedir o código."
               : me.email
-                ? "Solicite o token, copie-o e cole abaixo para confirmar."
-                : "Cadastre um email no formulário de perfil e salve antes de solicitar o token."}
+                ? "Enviamos um código de 6 dígitos para o seu email — é só digitá-lo para confirmar."
+                : "Cadastre um email no formulário de perfil e salve antes de solicitar o código."}
           </p>
 
-          {me.email && !tokenIssued && (
-            <button
-              type="button"
-              onClick={() => requestMutation.mutate()}
-              disabled={requestMutation.isPending}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-800 transition hover:border-amber-500 hover:text-amber-900 disabled:opacity-60"
-            >
-              <ShieldCheck className="h-3.5 w-3.5" />
-              {requestMutation.isPending ? "Gerando token…" : `Verificar ${me.email}`}
-            </button>
-          )}
-
-          {tokenIssued && (
-            <div className="mt-3 space-y-2 rounded-lg border border-amber-300 bg-amber-100/40 p-3 text-xs">
-              <p className="font-semibold text-amber-900">
-                Token gerado (válido por 24h). Cole abaixo para confirmar.
-              </p>
-              <code className="block break-all rounded bg-white px-2 py-1 font-mono text-[11px] text-amber-900">
-                {tokenIssued.token}
-              </code>
-              <div className="flex gap-2">
-                <Input
-                  value={verifyToken}
-                  onChange={(e) => setVerifyToken(e.target.value)}
-                  placeholder="Cole o token"
-                  className="h-8 flex-1 text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={() => verifyMutation.mutate(verifyToken)}
-                  disabled={verifyMutation.isPending || !verifyToken}
-                  className="rounded-md bg-amber-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-800 disabled:opacity-60"
-                >
-                  Verificar
-                </button>
-              </div>
-            </div>
-          )}
-
+          {me.email && <EmailVerificationDialog me={me} />}
         </div>
       </div>
     </section>

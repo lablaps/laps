@@ -1,5 +1,6 @@
 package br.uema.laps.portal;
 
+import br.uema.laps.email.EmailService;
 import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
 import br.uema.laps.member.MemberRole;
@@ -67,7 +68,8 @@ class MyPortalPublicationTest {
                 publicationRepository,
                 mock(PasswordEncoder.class),
                 mock(TranslationService.class),
-                mock(RateLimitGuard.class));
+                mock(RateLimitGuard.class),
+                mock(EmailService.class));
 
         me = new Member();
         me.setId(ME);

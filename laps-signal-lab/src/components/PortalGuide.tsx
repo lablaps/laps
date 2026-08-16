@@ -62,7 +62,7 @@ const STEPS: GuideStep[] = [
     target: "verify",
     icon: ShieldCheck,
     title: "Por último, verifique o email",
-    body: "Peça o token de verificação, copie o código que aparecer e confirme. Com o email verificado sua conta fica completa e você pode trocar a senha quando quiser, sem depender da coordenação.",
+    body: "Enviamos um código de 6 dígitos para o seu email — digite-o para confirmar (olhe também no spam). Com o email verificado sua conta fica completa e você pode trocar a senha quando quiser, sem depender da coordenação.",
     cta: "Mostrar a verificação",
     pin: "Confirme seu email aqui",
   },

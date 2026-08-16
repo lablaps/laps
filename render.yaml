@@ -6,7 +6,8 @@
 #
 # The Postgres credentials are wired into the app via `fromDatabase`, so the
 # only secrets you still need to set in the Render dashboard are the ones
-# marked `sync: false` below (JWT secret, bootstrap admin, CORS origins).
+# marked `sync: false` below (JWT secret, bootstrap admin, CORS origins, and
+# the transactional-email provider that delivers verification codes).
 
 databases:
   - name: laps-db
@@ -69,6 +70,21 @@ services:
         sync: false
       - key: LAPS_BOOTSTRAP_PASSWORD
         sync: false
+
+      # --- Transactional email (verification codes) ---
+      # Set these in the dashboard. Leaving the provider blank does not break
+      # anything, but it downgrades email verification to "the portal shows you
+      # a code" — which confirms nothing about the address. `brevo` needs only
+      # a sender address authorised by clicking a link; `resend` needs DNS
+      # records on the sending domain. HTTP APIs, so no SMTP port is involved.
+      - key: LAPS_EMAIL_PROVIDER
+        sync: false
+      - key: LAPS_EMAIL_API_KEY
+        sync: false
+      - key: LAPS_EMAIL_FROM
+        sync: false
+      - key: LAPS_EMAIL_FROM_NAME
+        value: LAPS
 
       # --- Translation provider ---
       - key: LAPS_TRANSLATE_PROVIDER

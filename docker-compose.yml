@@ -77,6 +77,12 @@ services:
       LAPS_BOOTSTRAP_PASSWORD: ${LAPS_BOOTSTRAP_PASSWORD:-}
       # CORS — same-origin in the monolith. Override only if you split hosts.
       LAPS_CORS_ALLOWED_ORIGINS: ${LAPS_CORS_ALLOWED_ORIGINS:-http://localhost:*}
+      # Transactional email. Blank provider = verification codes are shown in
+      # the portal instead of being delivered — see .env.example.
+      LAPS_EMAIL_PROVIDER: ${LAPS_EMAIL_PROVIDER:-}
+      LAPS_EMAIL_API_KEY: ${LAPS_EMAIL_API_KEY:-}
+      LAPS_EMAIL_FROM: ${LAPS_EMAIL_FROM:-}
+      LAPS_EMAIL_FROM_NAME: ${LAPS_EMAIL_FROM_NAME:-LAPS}
       # Translation provider.
       LAPS_TRANSLATE_PROVIDER: ${LAPS_TRANSLATE_PROVIDER:-mymemory}
       LAPS_TRANSLATE_BASE_URL: ${LAPS_TRANSLATE_BASE_URL:-}

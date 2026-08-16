@@ -8,16 +8,16 @@ import java.util.HexFormat;
 /**
  * Digests bearer tokens for storage.
  *
- * <p>Invite tokens and email-verification tokens are credentials: presenting one
- * is sufficient to create an account or prove control of an address. Both used
- * to be stored verbatim, so read access to the database — a backup, a replica,
- * a support session, a SELECT-only injection — was enough to redeem them. What
- * is stored now cannot be presented.
+ * <p>Invite tokens are credentials: presenting one is sufficient to create an
+ * account. They used to be stored verbatim, so read access to the database — a
+ * backup, a replica, a support session, a SELECT-only injection — was enough to
+ * redeem them. What is stored now cannot be presented.
  *
- * <p>Plain SHA-256, deliberately: these are 122- and 256-bit random values, so
- * there is no dictionary to defend against and nothing for a slow KDF to buy.
- * That reasoning does not transfer to passwords, which are low-entropy and human
- * -chosen — those stay on BCrypt.
+ * <p>Plain SHA-256, deliberately: these are 122-bit random values, so there is
+ * no dictionary to defend against and nothing for a slow KDF to buy. That
+ * reasoning does not transfer to low-entropy secrets, which stay on BCrypt:
+ * passwords, and — since V28 — the 6-digit email-verification code, whose entire
+ * keyspace is a million digests wide.
  */
 public final class TokenHashing {
 

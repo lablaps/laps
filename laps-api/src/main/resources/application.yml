@@ -82,6 +82,20 @@ laps:
     cloudinary-api-key: ${CLOUDINARY_API_KEY:}
     cloudinary-api-secret: ${CLOUDINARY_API_SECRET:}
     cloudinary-folder: ${CLOUDINARY_FOLDER:laps}
+  email:
+    # Transactional email (the verification code). Unset provider = nothing is
+    # sent and the portal falls back to showing the code on screen, which is
+    # the old behaviour and proves nothing about who owns the address.
+    #
+    #   brevo  — free 300/day. A single sender address is authorised by clicking
+    #            a link Brevo mails to it, so this works without DNS access.
+    #   resend — free 3000/month, but only delivers to arbitrary recipients from
+    #            a domain verified via DNS records.
+    provider: ${LAPS_EMAIL_PROVIDER:}
+    api-key: ${LAPS_EMAIL_API_KEY:}
+    # Must be an address the provider has authorised, or every send 4xxs.
+    from-address: ${LAPS_EMAIL_FROM:}
+    from-name: ${LAPS_EMAIL_FROM_NAME:LAPS}
   translate:
     provider: ${LAPS_TRANSLATE_PROVIDER:mymemory}
     base-url: ${LAPS_TRANSLATE_BASE_URL:}

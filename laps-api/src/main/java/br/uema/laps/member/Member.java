@@ -46,7 +46,12 @@ public class Member {
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 
-    /** SHA-256 of the verification token; the plaintext is shown to the member once. */
+    /**
+     * BCrypt of the 6-digit verification code; the plaintext only ever exists in
+     * the email the member receives. BCrypt rather than the SHA-256 the invite
+     * tokens use — six digits is a keyspace a database reader could walk in
+     * seconds against a fast digest. See V28.
+     */
     @JsonIgnore
     @Column(name = "email_verification_token_hash", length = 64)
     private String emailVerificationTokenHash;
@@ -54,6 +59,11 @@ public class Member {
     @JsonIgnore
     @Column(name = "email_verification_token_expires_at")
     private Instant emailVerificationTokenExpiresAt;
+
+    /** Wrong codes entered against the current one. Reset on issue, capped on use. */
+    @JsonIgnore
+    @Column(name = "email_verification_attempts", nullable = false)
+    private short emailVerificationAttempts = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "member_role", nullable = false)

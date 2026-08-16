@@ -321,13 +321,24 @@ export const api = {
       method: "PUT",
       body: { currentPassword, newPassword },
     }),
+  /**
+   * Issues the 6-digit code. `channel` says how it was delivered:
+   *   EMAIL  — it is in the member's inbox, and `code` is absent by design.
+   *   MANUAL — no mail provider is configured on the server, so it comes back
+   *            here instead. Verification then proves nothing about the inbox;
+   *            the dialog says so rather than pretending otherwise.
+   */
   meRequestEmailVerification: () =>
-    request<{ message: string; token?: string; expiresAt?: string; alreadyVerified?: boolean }>(
-      "/api/v1/me/email/request-verification",
-      { method: "POST" }
-    ),
-  meVerifyEmail: (token: string) =>
-    request<{ message: string }>("/api/v1/me/email/verify", { method: "POST", body: { token } }),
+    request<{
+      message: string;
+      channel?: "EMAIL" | "MANUAL";
+      code?: string;
+      email?: string;
+      expiresAt?: string;
+      alreadyVerified?: boolean;
+    }>("/api/v1/me/email/request-verification", { method: "POST" }),
+  meVerifyEmail: (code: string) =>
+    request<{ message: string }>("/api/v1/me/email/verify", { method: "POST", body: { code } }),
   myProjects: () => request<ApiMemberProjectLink[]>("/api/v1/me/projects"),
   updateMyProjects: (links: { projectId: string; role: string }[]) =>
     request<void>("/api/v1/me/projects", { method: "PUT", body: links }),
