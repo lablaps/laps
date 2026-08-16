@@ -18,21 +18,43 @@ import LapsLogoMono from "./LapsLogoMono";
  * elements from the first frame, invisible until they draw, which is why it is
  * the one that actually animates on load.
  */
+/**
+ * Rendered width of the wordmark itself, in px, at full container width.
+ *
+ * This is the size the original dark logo drew at: `LapsLogoAnimationWhite`
+ * defaulted to maxWidth 480 over a 663-unit viewBox holding a 498-unit glyph,
+ * i.e. 480 × 498/663 ≈ 360px of actual letterforms.
+ */
+const GLYPH_WIDTH = 360.5;
+
+/**
+ * Per-variant maxWidth that renders GLYPH_WIDTH of letterforms.
+ *
+ * The two artworks crop differently — 383 glyph units inside a 410 viewBox for
+ * the colour version, 498 inside 520 for the mono — so passing them the same
+ * maxWidth produces visibly different logos. Scaling each by its own
+ * viewBox/glyph ratio is what keeps the mark from resizing when the theme is
+ * toggled.
+ */
+const COLOR_MAX_WIDTH = Math.round(GLYPH_WIDTH * (410 / 383)); // 386
+const MONO_MAX_WIDTH = Math.round(GLYPH_WIDTH * (520 / 498)); // 377
+
 export default function LapsLogoAnimated({
   loop = false,
   maxWidth,
 }: {
   loop?: boolean;
-  /** Forwarded to the mono variant; the colour variant sizes itself. */
+  /** Override the matched sizing. Scales both variants proportionally. */
   maxWidth?: number;
 }) {
   const { isDark } = useTheme();
+  const scale = maxWidth ? maxWidth / GLYPH_WIDTH : 1;
 
   // Remounting on theme change is intentional — each variant should play its
   // entrance again rather than appear mid-animation in a new colourway.
   return isDark ? (
-    <LapsLogoMono key="dark" loop={loop} maxWidth={maxWidth} />
+    <LapsLogoMono key="dark" loop={loop} maxWidth={MONO_MAX_WIDTH * scale} />
   ) : (
-    <LapsLogoAnimation key="light" loop={loop} />
+    <LapsLogoAnimation key="light" loop={loop} maxWidth={COLOR_MAX_WIDTH * scale} />
   );
 }

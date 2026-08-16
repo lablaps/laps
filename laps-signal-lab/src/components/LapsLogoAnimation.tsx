@@ -58,9 +58,21 @@ const LOOP_PAUSE_MS = 600;
 
 interface LapsLogoAnimationProps {
   loop?: boolean;
+  /**
+   * Max rendered width in px.
+   *
+   * Not directly comparable to the same prop on the other variants: this
+   * viewBox is 410 units wide around a 383-unit glyph, while the mono artwork
+   * is 520 around the same 498-unit glyph, so equal maxWidth values do NOT
+   * produce equal-looking logos. `LapsLogoAnimated` does that arithmetic.
+   */
+  maxWidth?: number;
 }
 
-export default function LapsLogoAnimation({ loop = false }: LapsLogoAnimationProps) {
+export default function LapsLogoAnimation({
+  loop = false,
+  maxWidth = 560,
+}: LapsLogoAnimationProps) {
   const pathRefs = useRef<(SVGPathElement | null)[]>([]);
   const [runKey, setRunKey] = useState(0);
 
@@ -115,7 +127,7 @@ export default function LapsLogoAnimation({ loop = false }: LapsLogoAnimationPro
         key={runKey}
         viewBox="130 90 410 200"
         width="100%"
-        style={{ maxWidth: 560, height: "auto", display: "block" }}
+        style={{ maxWidth, height: "auto", display: "block" }}
         xmlns="http://www.w3.org/2000/svg"
       >
         {PATHS.map((p, i) => (
