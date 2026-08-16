@@ -73,17 +73,24 @@ class ManagerAllowlistTest {
     }
 
     @Test
-    @DisplayName("seniority above Gerenciador is not itself an admin grant")
-    void seniorTiersAreNotManagers() {
-        // COORDINATOR and HEAD outrank MANAGER academically but describe
-        // seniority, not console duty — they need an allowlist entry like anyone
-        // else. Keeping them out is what stops the whole leadership row of the
-        // dashboard from silently becoming administrators.
+    @DisplayName("the Coordenador tier grants MANAGER without an allowlist entry")
+    void coordinatorTierGrantsAuthority() {
+        // Coordenadores run the console alongside Gerenciadores; an off-allowlist
+        // email (or none at all) must not keep them out.
+        ManagerAllowlist allowlist = new ManagerAllowlist(List.of("coord@uema.br"));
+        assertThat(allowlist.roleFor(with("other@uema.br", MemberRole.COORDINATOR))).isEqualTo("MANAGER");
+        assertThat(allowlist.roleFor(with(null, MemberRole.COORDINATOR))).isEqualTo("MANAGER");
+    }
+
+    @Test
+    @DisplayName("HEAD is seniority, not a console grant")
+    void headTierIsNotAManager() {
+        // HEAD outranks both console tiers academically but describes seniority,
+        // not console duty — it needs an allowlist entry like anyone else.
         ManagerAllowlist allowlist = new ManagerAllowlist(List.of("coord@uema.br"));
         assertThat(allowlist.roleFor(with("head@uema.br", MemberRole.HEAD))).isEqualTo("MEMBER");
-        assertThat(allowlist.roleFor(with("other@uema.br", MemberRole.COORDINATOR))).isEqualTo("MEMBER");
         // …but the allowlist still wins regardless of tier.
-        assertThat(allowlist.roleFor(with("coord@uema.br", MemberRole.COORDINATOR))).isEqualTo("MANAGER");
+        assertThat(allowlist.roleFor(with("coord@uema.br", MemberRole.HEAD))).isEqualTo("MANAGER");
     }
 
     @Test

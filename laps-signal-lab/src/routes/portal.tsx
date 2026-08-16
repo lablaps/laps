@@ -341,10 +341,11 @@ function PortalPage() {
           </Link>
           <div className="flex items-center gap-2">
             <PortalLangSwitcher />
-            {/* Managers work in both halves of the app — their own portfolio and
-                the lab-wide console. Rendered off auth.isManager (the resolved
-                security role) rather than me.currentRole, so the button is only
-                offered when /admin will actually let them in. */}
+            {/* Gerenciadores and coordenadores work in both halves of the app —
+                their own portfolio and the lab-wide console. Rendered off
+                auth.isManager (the resolved security role, which covers both
+                tiers) rather than me.currentRole, so the button is only offered
+                when /admin will actually let them in. */}
             {auth.isManager && (
               <Link
                 to="/admin"
