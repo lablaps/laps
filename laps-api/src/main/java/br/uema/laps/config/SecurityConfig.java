@@ -74,6 +74,14 @@ public class SecurityConfig {
                 .requestMatchers(
                         antMatcher(HttpMethod.GET, "/actuator/health"),
                         antMatcher(HttpMethod.GET, "/actuator/health/**")).permitAll()
+                // Spring Boot's security filter chain runs on the ERROR dispatch as well
+                // as the REQUEST one. Without this, /error inherits
+                // anyRequest().authenticated(), so *any* unmapped path answers 401
+                // instead of 404 — a genuine 404 gets reported as an auth failure and
+                // sends whoever is debugging it hunting through the permit list.
+                // Nothing sensitive rides on the error body: server.error.include-message,
+                // include-stacktrace and include-exception are all off in application.yml.
+                .requestMatchers(antMatcher("/error")).permitAll()
                 .requestMatchers(
                         antMatcher(HttpMethod.GET, "/"),
                         antMatcher(HttpMethod.GET, "/index.html"),
@@ -135,6 +143,13 @@ public class SecurityConfig {
             // Cloudinary-hosted uploads. blob: grants no capability that data:
             // does not already — both are same-origin payloads minted by the
             // page itself, not a remote fetch.
+            //
+            // frame-src is listed explicitly because it otherwise falls back through
+            // child-src to default-src 'self', which silently blocks the Google Maps
+            // embed on /contact — the iframe was in the markup but never rendered in
+            // production. Scoped to the single origin that serves the embed rather
+            // than a blanket https:, and frame-ancestors 'none' still holds: this
+            // says what we may frame, not who may frame us.
             .headers(h -> h
                     .contentSecurityPolicy(csp -> csp.policyDirectives(
                             "default-src 'self'; "
@@ -143,6 +158,7 @@ public class SecurityConfig {
                             + "img-src 'self' data: blob: https:; "
                             + "font-src 'self' data:; "
                             + "connect-src 'self'; "
+                            + "frame-src https://www.google.com; "
                             + "object-src 'none'; "
                             + "frame-ancestors 'none'; "
                             + "base-uri 'self'; "

@@ -16,6 +16,15 @@ import org.springframework.web.bind.annotation.GetMapping;
  * served by the static handler with the correct content-type). Everything
  * else — including /, /team, /projects, /contact, /aboutus, /exchange — is
  * forwarded to the SPA shell.
+ *
+ * <p><b>This list must cover every file route under laps-signal-lab/src/routes.</b>
+ * A missing entry does not fail loudly: with no handler mapped, the request
+ * 404s, Spring dispatches it to /error, and the security chain — which also
+ * runs on the ERROR dispatch — sees /error fall through to
+ * {@code anyRequest().authenticated()} and answers 401
+ * {@code {"code":"unauthenticated_v3"}}. That is exactly how invite links
+ * (/join/&lt;token&gt;) broke: SecurityConfig permitted GET /join/** all
+ * along, but permitAll cannot help a path that has nothing to permit.
  */
 @Controller
 public class SpaController {
@@ -30,6 +39,8 @@ public class SpaController {
             "/aboutus",
             "/exchange",
             "/login",
+            "/join",
+            "/join/{*rest}",
             "/admin",
             "/admin/{*rest}",
             "/portal",
