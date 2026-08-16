@@ -316,9 +316,31 @@ function TeamMemberPage() {
   const programCode = toProgramCode(member.undergradProgram);
   const programMeta = programCode ? UNDERGRAD_PROGRAMS[programCode] : null;
 
-  const primaryContact = member.contactEmail || member.email;
+  // Visibility is enforced here, not just server-side.
+  //
+  // The API redacts hidden fields to null — but only for ordinary callers.
+  // MemberPublicView.of(m, includeHidden) skips redaction entirely when the
+  // request carries the MANAGER authority, which the admin console depends on
+  // (it reads the same /api/v1/members endpoint). The consequence on THIS page
+  // was that a logged-in manager saw every member's hidden email, LinkedIn,
+  // Lattes and GitHub rendered as though they were public — including their
+  // own, which is what made it look like the "hide" toggle did nothing.
+  //
+  // So presence is not sufficient; the flag has to be checked. These are the
+  // values the public actually sees, and this page shows the public view to
+  // everyone, managers included.
+  const publicEmail = member.showEmail ? member.email : null;
+  const publicContactEmail = member.showContactEmail ? member.contactEmail : null;
+  const publicLinkedin = member.showLinkedin ? member.linkedinUrl : null;
+  const publicLattes = member.showLattes ? member.lattesUrl : null;
+  const publicGithub = member.showGithub ? member.githubUrl : null;
+  const publicCustomUrl = member.showCustomUrl ? member.customUrl : null;
+
+  // contactEmail is the address meant for correspondence; the login email is
+  // the fallback only when the member has published it.
+  const primaryContact = publicContactEmail || publicEmail;
   const hasAnyContact = !!(
-    primaryContact || member.linkedinUrl || member.lattesUrl || member.githubUrl || member.customUrl
+    primaryContact || publicLinkedin || publicLattes || publicGithub || publicCustomUrl
   );
   const projectRoleLabel = (role: string) => {
     if (role === "LEAD") return tx.projectRoleLead;
@@ -449,9 +471,9 @@ function TeamMemberPage() {
                         <Mail className="h-3.5 w-3.5" /> {tx.contact.email}
                       </a>
                     )}
-                    {member.linkedinUrl && (
+                    {publicLinkedin && (
                       <a
-                        href={member.linkedinUrl}
+                        href={publicLinkedin}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-lg bg-laps-ink px-3 py-2 text-xs font-semibold text-white transition hover:bg-laps-accent"
@@ -459,9 +481,9 @@ function TeamMemberPage() {
                         <Linkedin className="h-3.5 w-3.5" /> LinkedIn
                       </a>
                     )}
-                    {member.lattesUrl && (
+                    {publicLattes && (
                       <a
-                        href={member.lattesUrl}
+                        href={publicLattes}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-surface px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
@@ -469,9 +491,9 @@ function TeamMemberPage() {
                         <Globe className="h-3.5 w-3.5" /> Lattes
                       </a>
                     )}
-                    {member.githubUrl && (
+                    {publicGithub && (
                       <a
-                        href={member.githubUrl}
+                        href={publicGithub}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-surface px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
@@ -479,13 +501,13 @@ function TeamMemberPage() {
                         <Github className="h-3.5 w-3.5" /> GitHub
                       </a>
                     )}
-                    {member.customUrl && (
+                    {publicCustomUrl && (
                       <a
-                        href={member.customUrl}
+                        href={publicCustomUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-lg border border-laps-blue/20 bg-surface px-3 py-2 text-xs font-semibold text-laps-navy/80 transition hover:border-laps-blue hover:text-laps-blue"
-                        title={member.customUrl}
+                        title={publicCustomUrl}
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                         <span className="max-w-[14rem] truncate">

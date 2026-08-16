@@ -372,9 +372,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-xs text-white/50 md:flex-row">
+          <div className="mt-14 flex flex-col items-center justify-center gap-3 border-t border-white/10 pt-6 text-xs text-white/50 md:flex-row">
             <span>{t.footer.rights}</span>
-            <span>{t.footer.made}</span>
           </div>
         </div>
       </footer>

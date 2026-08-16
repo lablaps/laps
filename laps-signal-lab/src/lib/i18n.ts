@@ -153,7 +153,6 @@ export const translations = {
       contactTitle: "Contato",
       address: "Universidade Estadual do Maranhão — UEMA — São Cristóvão, São Luís - MA",
       rights: "© 2026 LAPS — Todos os direitos reservados",
-      made: "Desenvolvido com ❤ pelo LAPS",
     },
     portal: {
       statAreas: "ÁREAS",
@@ -320,7 +319,6 @@ export const translations = {
       contactTitle: "Contact",
       address: "State University of Maranhão — UEMA — São Cristóvão, São Luís - MA",
       rights: "© 2026 LAPS — All rights reserved",
-      made: "Built with ❤ by LAPS",
     },
     portal: {
       statAreas: "AREAS",
@@ -487,7 +485,6 @@ export const translations = {
       contactTitle: "Contact",
       address: "Université d'État du Maranhão — UEMA — São Cristóvão, São Luís - MA",
       rights: "© 2026 LAPS — Tous droits réservés",
-      made: "Conçu avec ❤ par LAPS",
     },
     portal: {
       statAreas: "ZONES",

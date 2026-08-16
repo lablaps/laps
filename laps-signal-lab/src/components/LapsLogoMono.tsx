@@ -47,9 +47,24 @@ const PATHS: LetterPath[] = [
   },
 ];
 
-export default function LapsLogoMono() {
+interface LapsLogoMonoProps {
+  /** Max rendered width in px. Defaults to the size /login and /admin use. */
+  maxWidth?: number;
+  /** Replay continuously, for the loading screen. */
+  loop?: boolean;
+}
+
+export default function LapsLogoMono({ maxWidth = 560, loop = false }: LapsLogoMonoProps) {
   const pathRefs = useRef<(SVGPathElement | null)[]>([]);
   const [runKey, setRunKey] = useState(0);
+
+  // Full run is the last path's delay + its draw + the fill fade.
+  useEffect(() => {
+    if (!loop) return;
+    const last = PATHS.reduce((m, p) => Math.max(m, p.strokeDelay + p.strokeDur), 0);
+    const id = setTimeout(() => setRunKey((k) => k + 1), (last + FILL_FADE) * 1000 + 600);
+    return () => clearTimeout(id);
+  }, [loop, runKey]);
 
   useEffect(() => {
     PATHS.forEach((p, i) => {
@@ -91,7 +106,7 @@ export default function LapsLogoMono() {
         key={runKey}
         viewBox="70 65 520 265"
         width="100%"
-        style={{ maxWidth: 560, height: "auto", display: "block", margin: "0 auto" }}
+        style={{ maxWidth, height: "auto", display: "block", margin: "0 auto" }}
         xmlns="http://www.w3.org/2000/svg"
       >
         {PATHS.map((p, i) => (
