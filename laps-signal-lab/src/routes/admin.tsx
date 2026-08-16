@@ -315,6 +315,8 @@ function AdminPage() {
               </button>
             </section>
 
+            <PublicationApprovalSection />
+
             {/* Member grid */}
             <section>
               {membersQuery.isLoading && (
@@ -1662,6 +1664,107 @@ function FieldCard({ label, children }: { label: React.ReactNode; children: Reac
 }
 
 // ───── ProjectSection ─────
+
+// ───── Publication approval queue ─────
+//
+// Members submit publications from their portal (any tier — undergrads
+// included) and they stay off the public site until approved here. The section
+// renders nothing at all when the queue is empty, so the page only grows a
+// moderation panel on the days there is something to moderate.
+
+function PublicationApprovalSection() {
+  const queryClient = useQueryClient();
+  const pendingQuery = useQuery({
+    queryKey: ["admin", "pending-publications"],
+    queryFn: () => api.adminPendingPublications(),
+    staleTime: 15_000,
+  });
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin", "pending-publications"] });
+    // The approved row becomes public immediately; drop anything showing it.
+    queryClient.invalidateQueries({ queryKey: ["publications"] });
+  };
+
+  const approveMutation = useMutation({
+    mutationFn: (id: string) => api.adminApprovePublication(id),
+    onSuccess: refresh,
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) =>
+      api.adminRejectPublication(id, note),
+    onSuccess: refresh,
+  });
+
+  const pending = pendingQuery.data ?? [];
+  if (pendingQuery.isLoading || pending.length === 0) return null;
+
+  const busy = approveMutation.isPending || rejectMutation.isPending;
+
+  return (
+    <section className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
+      <h3 className="mb-1 flex items-center gap-2 font-display text-lg font-bold text-laps-navy">
+        <Clock className="h-5 w-5 text-amber-600" />
+        Publicações aguardando revisão
+        <span className="rounded-full bg-amber-200/70 px-2 py-0.5 text-xs font-bold text-amber-900">
+          {pending.length}
+        </span>
+      </h3>
+      <p className="mb-4 text-xs text-laps-navy/60">
+        Enviadas por membros pelo portal. Só aparecem no site público depois de aprovadas.
+      </p>
+
+      <div className="space-y-3">
+        {pending.map(({ publication: p, submitterName }) => (
+          <div key={p.id} className="rounded-lg border border-amber-200/80 bg-white p-3">
+            <div className="mb-1 font-bold leading-snug text-laps-navy">{p.title}</div>
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-laps-navy/45">
+              {p.venue} · {p.year} · {p.type}
+              {submitterName ? ` · enviado por ${submitterName}` : ""}
+            </div>
+            {p.doi && (
+              <a
+                href={`https://doi.org/${p.doi}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mb-2 inline-flex items-center gap-1 text-[11px] font-medium text-laps-blue hover:underline"
+              >
+                doi:{p.doi} <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => approveMutation.mutate(p.id)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-laps-blue px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-laps-navy disabled:opacity-50"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  // The note is what the member reads in their portal, so a
+                  // rejection is never a silent disappearance.
+                  const note = window.prompt(
+                    "Motivo da recusa (opcional) — o membro verá esta mensagem:",
+                  );
+                  if (note === null) return;
+                  rejectMutation.mutate({ id: p.id, note: note.trim() || undefined });
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
+              >
+                <X className="h-3.5 w-3.5" /> Recusar
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function ProjectSection() {
   const queryClient = useQueryClient();

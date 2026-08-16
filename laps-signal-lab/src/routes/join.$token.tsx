@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api, ApiError, type MemberRole } from "@/lib/api";
+import { type Lang } from "@/lib/i18n";
+import { LANG_FLAGS } from "@/lib/lang-flags";
 import { useInvalidateAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -23,34 +25,11 @@ export const Route = createFileRoute("/join/$token")({
 
 // ───── i18n ─────
 
-type JoinLang = "pt" | "en" | "fr";
-
-const JOIN_FLAGS: Record<JoinLang, React.ReactNode> = {
-  pt: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15" className="h-4 w-5 rounded-[2px]">
-      <rect width="8" height="15" fill="#009B3A" />
-      <rect x="8" width="12" height="15" fill="#FEDF00" />
-      <ellipse cx="9" cy="7.5" rx="3.5" ry="3.5" fill="#002776" />
-      <path d="M5.7 7.5a3.3 3.3 0 0 0 6.6 0" fill="none" stroke="#fff" strokeWidth="0.5" />
-    </svg>
-  ),
-  en: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15" className="h-4 w-5 rounded-[2px]">
-      <rect width="20" height="15" fill="#012169" />
-      <path d="M0 0l20 15M20 0L0 15" stroke="#fff" strokeWidth="3" />
-      <path d="M0 0l20 15M20 0L0 15" stroke="#C8102E" strokeWidth="2" />
-      <path d="M10 0v15M0 7.5h20" stroke="#fff" strokeWidth="5" />
-      <path d="M10 0v15M0 7.5h20" stroke="#C8102E" strokeWidth="3" />
-    </svg>
-  ),
-  fr: (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 15" className="h-4 w-5 rounded-[2px]">
-      <rect width="7" height="15" fill="#002395" />
-      <rect x="7" width="6" height="15" fill="#fff" />
-      <rect x="13" width="7" height="15" fill="#ED2939" />
-    </svg>
-  ),
-};
+// The invite page is deliberately outside PublicLayout — no nav, no footer, so
+// nothing distracts from the one form. That is also how it ended up with its
+// own broken copy of the flags. It now shares the site's set; only the
+// switcher chrome below is local, because this one sits on a dark panel.
+type JoinLang = Lang;
 
 const JOIN_COPY = {
   pt: {
@@ -175,7 +154,7 @@ function JoinLangSwitcher({ lang, setLang }: { lang: JoinLang; setLang: (l: Join
                 transform: active ? "scale(1.05)" : "scale(0.85)",
               }}
             >
-              {JOIN_FLAGS[c]}
+              {LANG_FLAGS[c]}
             </span>
           </button>
         );
@@ -497,7 +476,7 @@ function JoinPage() {
                               transform: bioLang === bl ? "scale(1.05)" : "scale(0.85)",
                             }}
                           >
-                            {JOIN_FLAGS[bl]}
+                            {LANG_FLAGS[bl]}
                           </span>
                         </button>
                       ))}

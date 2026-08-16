@@ -245,6 +245,49 @@ export interface ApiProject {
   updatedAt: string;
 }
 
+export type PublicationType = "JOURNAL" | "CONFERENCE" | "DISSERTATION" | "THESIS" | "WORKSHOP";
+/** The research lifecycle — what stage the work itself is at. */
+export type PublicationStatus = "PUBLISHED" | "IN_PROGRESS" | "COMPLETED" | "IN_PRESS";
+/** Moderation state — orthogonal to the above. Only APPROVED rows are public. */
+export type PublicationApproval = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface ApiPublication {
+  id: string;
+  title: string;
+  venue: string;
+  year: number;
+  doi?: string | null;
+  url?: string | null;
+  type: PublicationType;
+  status: PublicationStatus;
+  abstractText?: string | null;
+  approvalStatus: PublicationApproval;
+  submittedBy?: string | null;
+  reviewedAt?: string | null;
+  /** Why a submission was turned down. Shown back to the member. */
+  reviewNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** What a member fills in when submitting. Approval fields are the server's. */
+export interface PublicationSubmission {
+  title: string;
+  venue: string;
+  year: number;
+  type: PublicationType;
+  status?: PublicationStatus;
+  doi?: string;
+  url?: string;
+  abstractText?: string;
+}
+
+export interface PendingPublication {
+  publication: ApiPublication;
+  submitterName: string | null;
+  submitterSlug: string | null;
+}
+
 // ───── Endpoints ─────
 
 /**
@@ -298,6 +341,30 @@ export const api = {
     advisorId?: string | null;
     participantIds?: string[];
   }) => request<ApiProject>("/api/v1/me/projects/new", { method: "POST", body }),
+
+  /**
+   * The caller's own publications, pending and rejected ones included — this is
+   * the only endpoint that returns unapproved rows, and only ever the caller's.
+   */
+  myPublications: () => request<ApiPublication[]>("/api/v1/me/publications"),
+  /** Submits a publication for manager review. Open to every tier, undergrads included. */
+  meSubmitPublication: (body: PublicationSubmission) =>
+    request<ApiPublication>("/api/v1/me/publications", { method: "POST", body }),
+  /** Approved publications for one member — what the public profile renders. */
+  publicationsByMember: (memberId: string) =>
+    request<Page<ApiPublication>>(
+      `/api/v1/publications?memberId=${encodeURIComponent(memberId)}&size=200&sort=year,desc`,
+    ),
+
+  adminPendingPublications: () =>
+    request<PendingPublication[]>("/api/v1/admin/publications/pending"),
+  adminApprovePublication: (id: string) =>
+    request<ApiPublication>(`/api/v1/admin/publications/${id}/approve`, { method: "POST" }),
+  adminRejectPublication: (id: string, note?: string) =>
+    request<ApiPublication>(`/api/v1/admin/publications/${id}/reject`, {
+      method: "POST",
+      body: { note: note ?? null },
+    }),
   /** Member photo upload — multipart to /me/media/photo. */
   meUploadPhoto: async (file: File): Promise<{ url: string }> => {
     const form = new FormData();

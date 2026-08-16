@@ -4,46 +4,11 @@ import { motion } from "framer-motion";
 import { Linkedin, Github, MapPin, Mail, Menu, X, UserCircle2 } from "lucide-react";
 import { useLang } from "@/hooks/use-lang";
 import { type Lang } from "@/lib/i18n";
+import { LANG_FLAGS } from "@/lib/lang-flags";
 import { useAuth } from "@/hooks/use-auth";
 import { WaveStrip } from "@/components/WaveStrip";
 import lapsLogoColor from "@/assets/laps-logo.png";
 import lapsLogoWhite from "@/assets/laps-logo1.png";
-
-// Hand-drawn-ish inline flags. We render them in full color; the
-// `desaturated` style on the parent button greys them out for the inactive
-// state and the transition gives the user the vivid → muted feedback they
-// asked for. Sizes are tuned to align with the PT/EN/FR text labels.
-const FLAGS: Record<Lang, ReactNode> = {
-  pt: (
-    <svg viewBox="0 0 24 16" className="h-3.5 w-5 shrink-0 rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.15)]">
-      <rect width="24" height="16" fill="#009C3B" />
-      <polygon points="12,2 22,8 12,14 2,8" fill="#FFDF00" />
-      <circle cx="12" cy="8" r="3" fill="#002776" />
-    </svg>
-  ),
-  en: (
-    <svg viewBox="0 0 60 40" className="h-3.5 w-5 shrink-0 rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.15)]">
-      <rect width="60" height="40" fill="#FFFFFF" />
-      {/* 7 red stripes — stripes 1, 3, 5, 7, 9, 11, 13 of the 13-stripe field. */}
-      <rect y="0" width="60" height="3.08" fill="#B22234" />
-      <rect y="6.15" width="60" height="3.08" fill="#B22234" />
-      <rect y="12.31" width="60" height="3.08" fill="#B22234" />
-      <rect y="18.46" width="60" height="3.08" fill="#B22234" />
-      <rect y="24.62" width="60" height="3.08" fill="#B22234" />
-      <rect y="30.77" width="60" height="3.08" fill="#B22234" />
-      <rect y="36.92" width="60" height="3.08" fill="#B22234" />
-      {/* Blue canton — sized to overlay the top 7 stripes. */}
-      <rect width="24" height="21.54" fill="#3C3B6E" />
-    </svg>
-  ),
-  fr: (
-    <svg viewBox="0 0 24 16" className="h-3.5 w-5 shrink-0 rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.15)]">
-      <rect width="8" height="16" fill="#002776" />
-      <rect x="8" width="8" height="16" fill="#FFFFFF" />
-      <rect x="16" width="8" height="16" fill="#ED2939" />
-    </svg>
-  ),
-};
 
 function LangSwitcher({
   lang,
@@ -88,7 +53,7 @@ function LangSwitcher({
                 transform: active ? "scale(1.05)" : "scale(0.85)",
               }}
             >
-              {FLAGS[c]}
+              {LANG_FLAGS[c]}
             </span>
           </button>
         );

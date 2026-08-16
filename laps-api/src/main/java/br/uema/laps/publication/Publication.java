@@ -45,6 +45,29 @@ public class Publication {
     @Column(columnDefinition = "text")
     private String abstractText;
 
+    /**
+     * Moderation state. Defaults to APPROVED so the admin create path and any
+     * server-side insert keep behaving as they did; the portal submission path
+     * sets PENDING explicitly.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status", nullable = false)
+    private PublicationApproval approvalStatus = PublicationApproval.APPROVED;
+
+    /** Member who submitted this from the portal; null for manager-entered rows. */
+    @Column(name = "submitted_by")
+    private UUID submittedBy;
+
+    @Column(name = "reviewed_by")
+    private UUID reviewedBy;
+
+    @Column(name = "reviewed_at")
+    private Instant reviewedAt;
+
+    /** Shown back to the submitter, so a rejection says why. */
+    @Column(name = "review_note", columnDefinition = "text")
+    private String reviewNote;
+
     @ManyToMany
     @JoinTable(
         name = "authorship",

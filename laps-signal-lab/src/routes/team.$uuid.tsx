@@ -26,11 +26,13 @@ import { type Tier, initials, team as staticTeam } from "@/lib/team-data";
 import { areas as researchAreas, type AreaSlug } from "@/lib/areas-data";
 import { publications, publicationsByMember } from "@/lib/publications-data";
 import {
+  api,
   fetchMember,
   fetchMembers,
   fetchProjects,
   resolveMediaUrl,
   type ApiMember,
+  type ApiPublication,
 } from "@/lib/api";
 import { applyOverlay, decoratePhotoUrl } from "@/lib/static-source";
 import { PublicLayout } from "@/components/PublicLayout";
@@ -100,6 +102,58 @@ const PUB_TYPE_LABELS: Record<string, { pt: string; en: string; fr: string }> = 
   THESIS: { pt: "Tese de Doutorado", en: "Doctoral Thesis", fr: "Thèse de Doctorat" },
 };
 
+/** The fields this page renders for a publication, from either source. */
+interface ProfilePublication {
+  id: string;
+  title: string;
+  venue: string;
+  year: number;
+  type: string;
+  status: string;
+  doi?: string | null;
+  url?: string | null;
+}
+
+/**
+ * Seed entries and API entries side by side, without showing anything twice.
+ *
+ * Several seeded publications were later entered into the database as well, so
+ * a naive concat double-renders them. Identity is the DOI when there is one —
+ * that is what a DOI is for — and otherwise the title and year, normalised,
+ * which catches the same paper typed with different capitalisation or spacing.
+ * The seed entry wins a collision: it is the curated copy, and it carries the
+ * authorship the co-author section reads.
+ */
+function mergePublications(
+  seeded: ProfilePublication[],
+  fromApi: ApiPublication[],
+): ProfilePublication[] {
+  const identity = (p: { doi?: string | null; title: string; year: number }) =>
+    p.doi?.trim()
+      ? `doi:${p.doi.trim().toLowerCase()}`
+      : `t:${p.title.trim().toLowerCase().replace(/\s+/g, " ")}|${p.year}`;
+
+  const seen = new Set(seeded.map(identity));
+  const merged = [...seeded];
+
+  for (const p of fromApi) {
+    if (seen.has(identity(p))) continue;
+    seen.add(identity(p));
+    merged.push({
+      id: p.id,
+      title: p.title,
+      venue: p.venue,
+      year: p.year,
+      type: p.type,
+      status: p.status,
+      doi: p.doi,
+      url: p.url,
+    });
+  }
+
+  return merged.sort((a, b) => b.year - a.year);
+}
+
 export const Route = createFileRoute("/team/$uuid")({
   loader: async ({ params }) => {
     // Parallel fan-out: the detail view needs the member, the full roster
@@ -113,7 +167,20 @@ export const Route = createFileRoute("/team/$uuid")({
     if (!memberRaw) throw notFound();
     const member: ApiMember = { ...memberRaw, photoUrl: decoratePhotoUrl(memberRaw) };
     const allMembers = applyOverlay(allMembersRaw);
-    return { member, allMembers, apiProjects };
+
+    // Sequential rather than part of the fan-out above: the filter keys on the
+    // member's UUID, and params.uuid is usually the slug, so the id is not
+    // known until fetchMember resolves. Only approved rows come back — the
+    // endpoint has no way to return anything else (PublicationSpecifications).
+    //
+    // Degrades to the seed list on failure: a publications outage should not
+    // take a member's whole profile page down with it.
+    const apiPublications = await api
+      .publicationsByMember(member.id)
+      .then((page) => page.content)
+      .catch(() => []);
+
+    return { member, allMembers, apiProjects, apiPublications };
   },
   head: ({ loaderData }) => {
     if (!loaderData) return {};
@@ -188,10 +255,11 @@ function TeamMemberPage() {
 
   const labels = t.structure.network;
 
-  // Publications: the seed data keys authors by slug; ApiMember's id is the
-  // UUID, so we use slug here. Resolves to an empty list cleanly when nothing
-  // has been seeded for this member yet.
-  const pubs = publicationsByMember(member.slug);
+  // Publications come from two places now. The seed file keys authors by slug
+  // and still holds the lab's historical record; the API holds everything since
+  // — including what members submit from their portal, once a manager approves
+  // it. Without the merge an added publication would never reach this page.
+  const pubs = mergePublications(publicationsByMember(member.slug), data.apiPublications ?? []);
   const languages = parseLanguages(member.languages);
 
   const memberProjects = apiProjects

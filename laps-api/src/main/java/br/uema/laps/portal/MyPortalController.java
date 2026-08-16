@@ -8,6 +8,12 @@ import br.uema.laps.project.MemberProjectRepository;
 import br.uema.laps.project.Project;
 import br.uema.laps.project.ProjectRepository;
 import br.uema.laps.project.ProjectStatus;
+import br.uema.laps.publication.Publication;
+import br.uema.laps.publication.PublicationApproval;
+import br.uema.laps.publication.PublicationRepository;
+import br.uema.laps.publication.PublicationSpecifications;
+import br.uema.laps.publication.PublicationStatus;
+import br.uema.laps.publication.PublicationType;
 import br.uema.laps.security.AuthenticatedMember;
 import br.uema.laps.security.RateLimitGuard;
 import br.uema.laps.security.TokenHashing;
@@ -15,10 +21,13 @@ import br.uema.laps.translate.TranslationService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,6 +61,7 @@ public class MyPortalController {
     private final MemberRepository memberRepository;
     private final MemberProjectRepository memberProjectRepository;
     private final ProjectRepository projectRepository;
+    private final PublicationRepository publicationRepository;
     private final PasswordEncoder passwordEncoder;
     private final TranslationService translationService;
     private final RateLimitGuard rateLimitGuard;
@@ -60,12 +70,14 @@ public class MyPortalController {
             MemberRepository memberRepository,
             MemberProjectRepository memberProjectRepository,
             ProjectRepository projectRepository,
+            PublicationRepository publicationRepository,
             PasswordEncoder passwordEncoder,
             TranslationService translationService,
             RateLimitGuard rateLimitGuard) {
         this.memberRepository = memberRepository;
         this.memberProjectRepository = memberProjectRepository;
         this.projectRepository = projectRepository;
+        this.publicationRepository = publicationRepository;
         this.passwordEncoder = passwordEncoder;
         this.translationService = translationService;
         this.rateLimitGuard = rateLimitGuard;
@@ -285,18 +297,92 @@ public class MyPortalController {
         return ResponseEntity.noContent().build();
     }
 
-    // POST /publications/{id}/claim was removed here.
-    //
-    // It let any authenticated member add themselves as an author of ANY
-    // publication, with no ownership test and no approval step — i.e. falsify
-    // the lab's public research record, which is then republished through
-    // /api/v1/publications and the author filter. Nothing in the SPA called it,
-    // so removing it costs no functionality.
-    //
-    // Reinstating self-service authorship needs an approval workflow (member
-    // requests, manager confirms) rather than a direct write; alternatively an
-    // admin-side "set authors on this publication" endpoint, which is the
-    // capability that is actually missing today.
+    // ───── Publications ─────
+
+    /**
+     * The member's own publications, including the ones the public cannot see.
+     *
+     * <p>Deliberately not filtered to APPROVED: the whole point of showing this
+     * list in the portal is that the member can tell a submission still waiting
+     * on a manager apart from one that was turned down, and read the reason.
+     */
+    @GetMapping("/publications")
+    public List<Publication> myPublications() {
+        return publicationRepository.findAll(
+                PublicationSpecifications.ownedBy(AuthenticatedMember.id()),
+                Sort.by(Sort.Direction.DESC, "year").and(Sort.by(Sort.Direction.DESC, "createdAt")));
+    }
+
+    /**
+     * Submits a publication for review. Open to every member, undergraduates
+     * included — this is the one authoring path that is not tiered.
+     *
+     * <p>The asymmetry with projects is intentional. A project entry is the
+     * lab's record of work it is running, so who appears on it is the
+     * supervisor's call ({@link #guardProjectAuthoring}). A publication is the
+     * member's own authorship of a paper that already exists in the world, and
+     * an undergraduate with a conference paper has exactly as much standing to
+     * report it as a doctorate does.
+     *
+     * <p>What makes that safe is the review step rather than the role: the row
+     * is written PENDING and stays off every public surface until a manager
+     * approves it (see {@link PublicationSpecifications#approved()}). This is
+     * the approval workflow the removed {@code /publications/{id}/claim}
+     * endpoint lacked — that one let a member attach themselves to *someone
+     * else's* existing publication with no review at all. Here the member
+     * creates a new record, is recorded as its author and its submitter, and a
+     * manager decides whether it joins the public record.
+     */
+    @PostMapping("/publications")
+    @Transactional
+    public ResponseEntity<Publication> submitPublication(@Valid @RequestBody MyPublicationCreate req) {
+        Member me = loadMe();
+        guardLockedUntilPasswordChanged(me);
+
+        Publication p = new Publication();
+        p.setTitle(req.title().trim());
+        p.setVenue(req.venue().trim());
+        p.setYear(req.year().shortValue());
+        p.setType(req.type());
+        p.setStatus(req.status() != null ? req.status() : PublicationStatus.PUBLISHED);
+        p.setDoi(blankToNull(req.doi()));
+        p.setUrl(blankToNull(req.url()));
+        p.setAbstractText(blankToNull(req.abstractText()));
+        p.setApprovalStatus(PublicationApproval.PENDING);
+        p.setSubmittedBy(me.getId());
+
+        Publication saved = publicationRepository.save(p);
+
+        // The submitter is author 1 of a record that had no authors a moment
+        // ago. Co-authors are not accepted from this endpoint: naming someone
+        // else is a claim about them, and that is what the manager's review and
+        // the admin surface are for.
+        publicationRepository.addAuthor(saved.getId(), me.getId(), (short) 1);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
+    }
+
+    /**
+     * Fields a member may set on their own submission. Notably absent:
+     * approvalStatus and submittedBy — both are decided by the server, so a
+     * crafted body cannot self-approve. Lengths mirror the column widths
+     * (venue/doi VARCHAR(255), url VARCHAR(500)) so an over-long value is a 400
+     * rather than a constraint violation surfacing as a 500.
+     */
+    public record MyPublicationCreate(
+            @NotBlank @Size(max = 500) String title,
+            @NotBlank @Size(max = 255) String venue,
+            @NotNull @Min(1900) @Max(2100) Integer year,
+            @NotNull PublicationType type,
+            PublicationStatus status,
+            @Size(max = 255) String doi,
+            @Size(max = 500) String url,
+            @Size(max = 5000) String abstractText) {
+    }
 
     private Member loadMe() {
         UUID myId = AuthenticatedMember.id();

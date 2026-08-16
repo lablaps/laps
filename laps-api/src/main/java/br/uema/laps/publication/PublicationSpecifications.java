@@ -12,6 +12,35 @@ public final class PublicationSpecifications {
 
     private PublicationSpecifications() {}
 
+    /**
+     * The public visibility rule, in one place.
+     *
+     * <p>Members can now submit publications from the portal, and those land
+     * PENDING. Every public read path goes through {@link #build} below, so the
+     * filter is applied there rather than left to each caller to remember — an
+     * unreviewed submission must never reach /api/v1/publications, the member
+     * filter, or anything downstream of them.
+     */
+    public static Specification<Publication> approved() {
+        return (root, query, cb) -> cb.equal(root.get("approvalStatus"), PublicationApproval.APPROVED);
+    }
+
+    /**
+     * Everything a member may see about their own submissions — including the
+     * PENDING and REJECTED ones the public never sees. Matched on authorship or
+     * on who submitted it, so a member keeps sight of a submission even if the
+     * authorship rows are edited afterwards.
+     */
+    public static Specification<Publication> ownedBy(UUID memberId) {
+        return (root, query, cb) -> {
+            Join<Publication, Member> authors = root.join("authors", JoinType.LEFT);
+            query.distinct(true);
+            return cb.or(
+                    cb.equal(authors.get("id"), memberId),
+                    cb.equal(root.get("submittedBy"), memberId));
+        };
+    }
+
     public static Specification<Publication> build(
             String q,
             Integer yearFrom,
@@ -21,7 +50,10 @@ public final class PublicationSpecifications {
             Set<PublicationType> types,
             Boolean hasDoi
     ) {
-        Specification<Publication> spec = (root, query, cb) -> cb.conjunction();
+        // Not optional and not a parameter: this is the public search, so the
+        // approval filter is the first thing ANDed in and nothing a caller
+        // passes can widen it.
+        Specification<Publication> spec = approved();
 
         if (q != null && !q.isBlank()) {
             String like = "%" + q.toLowerCase() + "%";

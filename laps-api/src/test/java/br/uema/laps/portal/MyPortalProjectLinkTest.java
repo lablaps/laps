@@ -7,6 +7,7 @@ import br.uema.laps.member.MemberStatus;
 import br.uema.laps.project.MemberProject;
 import br.uema.laps.project.MemberProjectRepository;
 import br.uema.laps.project.ProjectRepository;
+import br.uema.laps.publication.PublicationRepository;
 import br.uema.laps.security.RateLimitGuard;
 import br.uema.laps.translate.TranslationService;
 import jakarta.persistence.EntityNotFoundException;
@@ -59,6 +60,7 @@ class MyPortalProjectLinkTest {
                 memberRepository,
                 memberProjectRepository,
                 projectRepository,
+                mock(PublicationRepository.class),
                 mock(PasswordEncoder.class),
                 mock(TranslationService.class),
                 mock(RateLimitGuard.class));

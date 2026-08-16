@@ -8,6 +8,7 @@ import {
   Briefcase,
   Calendar,
   CheckCircle2,
+  Clock,
   Compass,
   Crown,
   Edit2,
@@ -45,7 +46,7 @@ import { countryName, brStateName } from "@/lib/exchange-data";
 import { DestinationFlag } from "@/lib/flags";
 import { useLang } from "@/hooks/use-lang";
 import { type Lang } from "@/lib/i18n";
-import { api, ApiError, resolveMediaUrl, type ApiMember, type ApiProject, type ApiResearchArea, type MyProfile } from "@/lib/api";
+import { api, ApiError, resolveMediaUrl, type ApiMember, type ApiProject, type ApiPublication, type ApiResearchArea, type MyProfile, type PublicationStatus, type PublicationType } from "@/lib/api";
 import {
   LANGUAGE_CATALOG, LANGUAGE_BY_CODE, LEVELS_BY_SYSTEM, NATIVE_LEVEL,
   parseLanguages, serializeLanguages, levelBadgeClass, levelShortLabel,
@@ -418,6 +419,7 @@ function PortalPage() {
               myProjectLinks={myProjectLinks}
               allProjects={allProjects}
             />
+            <PublicationsSection />
             <PasswordChangeCard
               emailVerified={auth.emailVerified}
               mustChangePassword={auth.mustChangePassword}
@@ -2216,6 +2218,310 @@ function ProjectsSection({
         </div>
       )}
     </PortfolioCard>
+  );
+}
+
+// ───── Publications section ─────
+
+const PUB_TYPE_LABELS: Record<PublicationType, string> = {
+  JOURNAL: "Periódico",
+  CONFERENCE: "Conferência",
+  WORKSHOP: "Workshop",
+  DISSERTATION: "Dissertação",
+  THESIS: "Tese",
+};
+
+const PUB_STATUS_LABELS: Record<PublicationStatus, string> = {
+  PUBLISHED: "Publicado",
+  IN_PRESS: "No prelo",
+  IN_PROGRESS: "Em andamento",
+  COMPLETED: "Concluído",
+};
+
+/**
+ * Unlike PROJETOS, this card has no tier lock.
+ *
+ * Every member may submit a publication, undergraduates included: it is their
+ * own authorship of a paper that already exists, not a claim on the lab's
+ * project record. What stands in for the role check is the review step — a
+ * submission is PENDING until a manager approves it, and the chip on each row
+ * is what tells the member which of theirs are live.
+ */
+function PublicationsSection() {
+  const [creating, setCreating] = useState(false);
+  const qc = useQueryClient();
+
+  const myPublicationsQuery = useQuery({
+    queryKey: ["my-publications"],
+    queryFn: () => api.myPublications(),
+    staleTime: 10_000,
+  });
+
+  const mine = myPublicationsQuery.data ?? [];
+  const pendingCount = mine.filter((p) => p.approvalStatus === "PENDING").length;
+
+  return (
+    <PortfolioCard title="PUBLICAÇÕES" icon={BookOpen}>
+      <div className="space-y-3">
+        {myPublicationsQuery.isLoading && (
+          <p className="text-sm italic text-laps-navy/45">Carregando…</p>
+        )}
+
+        {mine.map((p) => (
+          <PublicationRow key={p.id} publication={p} />
+        ))}
+
+        {!myPublicationsQuery.isLoading && mine.length === 0 && !creating && (
+          <p className="text-sm italic text-laps-navy/45">
+            Nenhuma publicação ainda. Envie a primeira abaixo!
+          </p>
+        )}
+
+        {creating ? (
+          <SubmitPublicationForm
+            onCancel={() => setCreating(false)}
+            onSubmitted={() => {
+              setCreating(false);
+              qc.invalidateQueries({ queryKey: ["my-publications"] });
+              toast.success("Publicação enviada para revisão.");
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-laps-blue/40 py-3 text-sm font-semibold text-laps-blue/70 transition hover:border-laps-blue hover:bg-laps-ghost/20 hover:text-laps-blue"
+          >
+            <Plus className="h-4 w-4" /> Adicionar publicação
+          </button>
+        )}
+
+        <p className="flex items-start gap-2 text-[11px] leading-relaxed text-laps-navy/55">
+          <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-laps-navy/40" />
+          <span>
+            Publicações enviadas pelo portal passam por revisão de um gestor antes de aparecerem no
+            site público.
+            {pendingCount > 0 && <> Você tem {pendingCount} aguardando revisão.</>}
+          </span>
+        </p>
+      </div>
+    </PortfolioCard>
+  );
+}
+
+function PublicationRow({ publication }: { publication: ApiPublication }) {
+  const chip =
+    publication.approvalStatus === "APPROVED"
+      ? { label: "No site", className: "bg-emerald-50 text-emerald-700", Icon: CheckCircle2 }
+      : publication.approvalStatus === "REJECTED"
+        ? { label: "Recusada", className: "bg-red-50 text-red-700", Icon: X }
+        : { label: "Em revisão", className: "bg-amber-50 text-amber-700", Icon: Clock };
+
+  return (
+    <div className="rounded-xl border border-laps-blue/15 bg-gradient-to-br from-white to-laps-ghost/30 p-4">
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <h4 className="text-sm font-bold text-laps-navy">{publication.title}</h4>
+        <span
+          className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${chip.className}`}
+        >
+          <chip.Icon className="h-3 w-3" /> {chip.label}
+        </span>
+      </div>
+      <p className="text-xs text-laps-navy/70">
+        {publication.venue} · {publication.year} · {PUB_TYPE_LABELS[publication.type]} ·{" "}
+        {PUB_STATUS_LABELS[publication.status]}
+      </p>
+      {publication.doi && (
+        <a
+          href={`https://doi.org/${publication.doi}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-block text-[11px] font-medium text-laps-blue hover:underline"
+        >
+          doi:{publication.doi} ↗
+        </a>
+      )}
+      {/* A rejection with no reason is just a disappearance — show the note. */}
+      {publication.approvalStatus === "REJECTED" && (
+        <p className="mt-2 rounded-lg border border-red-100 bg-red-50/60 px-2.5 py-2 text-[11px] leading-relaxed text-red-800">
+          {publication.reviewNote ?? "Um gestor recusou esta publicação. Fale com a coordenação."}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SubmitPublicationForm({
+  onCancel,
+  onSubmitted,
+}: {
+  onCancel: () => void;
+  onSubmitted: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [venue, setVenue] = useState("");
+  const [year, setYear] = useState(String(new Date().getFullYear()));
+  const [type, setType] = useState<PublicationType>("CONFERENCE");
+  const [status, setStatus] = useState<PublicationStatus>("PUBLISHED");
+  const [doi, setDoi] = useState("");
+  const [url, setUrl] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      api.meSubmitPublication({
+        title: title.trim(),
+        venue: venue.trim(),
+        year: parseInt(year, 10),
+        type,
+        status,
+        doi: doi.trim() || undefined,
+        url: url.trim() || undefined,
+      }),
+    onSuccess: onSubmitted,
+    onError: (err) =>
+      setError(
+        saveErrorMessage(err, err instanceof ApiError ? err.message : "Erro ao enviar publicação."),
+      ),
+  });
+
+  const parsedYear = parseInt(year, 10);
+  const valid =
+    title.trim().length > 0 &&
+    venue.trim().length > 0 &&
+    Number.isInteger(parsedYear) &&
+    parsedYear >= 1900 &&
+    parsedYear <= 2100;
+
+  return (
+    <div className="rounded-xl border border-laps-blue/20 bg-gradient-to-br from-laps-ghost/30 to-white p-4 shadow-sm">
+      <h4 className="mb-4 text-sm font-bold text-laps-navy">Nova publicação</h4>
+
+      <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+            Título *
+          </label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Título do artigo"
+            className="h-10 text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+            Veículo *
+          </label>
+          <Input
+            value={venue}
+            onChange={(e) => setVenue(e.target.value)}
+            placeholder="Periódico, conferência ou workshop"
+            className="h-10 text-sm"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Ano *
+            </label>
+            <Input
+              value={year}
+              onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              inputMode="numeric"
+              placeholder="2026"
+              className="h-10 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Tipo *
+            </label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as PublicationType)}
+              className="h-10 w-full rounded-md border border-laps-navy/15 bg-white px-3 text-sm text-laps-navy"
+            >
+              {(Object.keys(PUB_TYPE_LABELS) as PublicationType[]).map((t) => (
+                <option key={t} value={t}>
+                  {PUB_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+            Situação
+          </label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as PublicationStatus)}
+            className="h-10 w-full rounded-md border border-laps-navy/15 bg-white px-3 text-sm text-laps-navy"
+          >
+            {(Object.keys(PUB_STATUS_LABELS) as PublicationStatus[]).map((s) => (
+              <option key={s} value={s}>
+                {PUB_STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              DOI
+            </label>
+            <Input
+              value={doi}
+              onChange={(e) => setDoi(e.target.value)}
+              placeholder="10.3390/app15147802"
+              className="h-10 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+              Link
+            </label>
+            <Input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://…"
+              className="h-10 text-sm"
+            />
+          </div>
+        </div>
+
+        {error && (
+          <p className="flex items-start gap-1.5 text-xs text-red-600">
+            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            {error}
+          </p>
+        )}
+
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => mutation.mutate()}
+            disabled={!valid || mutation.isPending}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-laps-blue py-2.5 text-sm font-semibold text-white transition hover:bg-laps-navy disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Save className="h-4 w-4" />
+            {mutation.isPending ? "Enviando…" : "Enviar para revisão"}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-xl border border-laps-navy/15 px-4 py-2.5 text-sm font-semibold text-laps-navy/70 transition hover:bg-laps-ghost/40"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

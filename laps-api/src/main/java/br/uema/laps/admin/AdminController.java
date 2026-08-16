@@ -10,6 +10,7 @@ import br.uema.laps.member.MemberRole;
 import br.uema.laps.member.MemberStatus;
 import br.uema.laps.member.UndergradProgram;
 import br.uema.laps.publication.Publication;
+import br.uema.laps.publication.PublicationApproval;
 import br.uema.laps.publication.PublicationRepository;
 import br.uema.laps.publication.PublicationStatus;
 import br.uema.laps.publication.PublicationType;
@@ -301,6 +302,75 @@ public class AdminController {
         auditService.record(AuthenticatedMember.id(), "CREATE_PUBLICATION", "Publication", saved.getId().toString(),
                 req);
         return saved;
+    }
+
+    // ───── Publication approval queue ─────
+    //
+    // Members submit publications from the portal (MyPortalController) and they
+    // land PENDING, invisible to the public site until someone here rules on
+    // them. Managers entering a publication directly above skip the queue — that
+    // write *is* the approval.
+
+    @GetMapping("/publications/pending")
+    public List<PendingPublicationView> pendingPublications() {
+        return publicationRepository
+                .findByApprovalStatusOrderByCreatedAtAsc(PublicationApproval.PENDING)
+                .stream()
+                .map(p -> {
+                    // One lookup per row, not one per field.
+                    Member submitter = p.getSubmittedBy() == null
+                            ? null
+                            : memberRepository.findById(p.getSubmittedBy()).orElse(null);
+                    return new PendingPublicationView(
+                            p,
+                            submitter == null ? null : submitter.getFullName(),
+                            submitter == null ? null : submitter.getSlug());
+                })
+                .toList();
+    }
+
+    /** Publishes a submission: it becomes visible everywhere the public list is read. */
+    @PostMapping("/publications/{id}/approve")
+    @Transactional
+    public Publication approvePublication(@PathVariable UUID id) {
+        Publication p = publicationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("publication not found: " + id));
+        p.setApprovalStatus(PublicationApproval.APPROVED);
+        p.setReviewedBy(AuthenticatedMember.id());
+        p.setReviewedAt(Instant.now());
+        p.setReviewNote(null);
+        Publication saved = publicationRepository.save(p);
+        auditService.record(AuthenticatedMember.id(), "APPROVE_PUBLICATION", "Publication", id.toString(), null);
+        return saved;
+    }
+
+    /**
+     * Turns a submission down, with a reason the member reads in their portal.
+     *
+     * <p>Not restricted to PENDING rows on purpose: rejecting an approved
+     * publication is how a manager retracts something that should not be on the
+     * public site, and it keeps the record and its history instead of destroying
+     * them the way DELETE does.
+     */
+    @PostMapping("/publications/{id}/reject")
+    @Transactional
+    public Publication rejectPublication(@PathVariable UUID id, @RequestBody(required = false) RejectRequest req) {
+        Publication p = publicationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("publication not found: " + id));
+        p.setApprovalStatus(PublicationApproval.REJECTED);
+        p.setReviewedBy(AuthenticatedMember.id());
+        p.setReviewedAt(Instant.now());
+        p.setReviewNote(req == null || req.note() == null || req.note().isBlank() ? null : req.note().trim());
+        Publication saved = publicationRepository.save(p);
+        auditService.record(AuthenticatedMember.id(), "REJECT_PUBLICATION", "Publication", id.toString(), req);
+        return saved;
+    }
+
+    /** The queue needs a name next to each row; the entity only carries the submitter's id. */
+    public record PendingPublicationView(Publication publication, String submitterName, String submitterSlug) {
+    }
+
+    public record RejectRequest(String note) {
     }
 
     @DeleteMapping("/publications/{id}")
