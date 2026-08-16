@@ -1,5 +1,6 @@
 package br.uema.laps.portal;
 
+import br.uema.laps.email.EmailSendBudget;
 import br.uema.laps.email.EmailService;
 import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
@@ -12,6 +13,7 @@ import br.uema.laps.publication.PublicationApproval;
 import br.uema.laps.publication.PublicationRepository;
 import br.uema.laps.publication.PublicationStatus;
 import br.uema.laps.publication.PublicationType;
+import br.uema.laps.security.ManagerAllowlist;
 import br.uema.laps.security.RateLimitGuard;
 import br.uema.laps.translate.TranslationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,7 +71,9 @@ class MyPortalPublicationTest {
                 mock(PasswordEncoder.class),
                 mock(TranslationService.class),
                 mock(RateLimitGuard.class),
-                mock(EmailService.class));
+                mock(EmailService.class),
+                mock(EmailSendBudget.class),
+                new ManagerAllowlist(List.of()));
 
         me = new Member();
         me.setId(ME);

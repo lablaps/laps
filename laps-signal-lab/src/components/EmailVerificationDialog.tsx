@@ -14,6 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
+/** Keep in step with laps.email.min-interval-seconds on the server. */
+const RESEND_COOLDOWN_SECONDS = 60;
+
 interface Issued {
   channel: "EMAIL" | "MANUAL";
   /** Present only in MANUAL mode — see api.meRequestEmailVerification. */
@@ -34,6 +37,7 @@ export function EmailVerificationDialog({ me }: { me: MyProfile }) {
   const [issued, setIssued] = useState<Issued | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [issuedAt, setIssuedAt] = useState<number | null>(null);
 
   const requestCode = useMutation({
     mutationFn: () => api.meRequestEmailVerification(),
@@ -48,6 +52,7 @@ export function EmailVerificationDialog({ me }: { me: MyProfile }) {
         code: res.code,
         expiresAt: res.expiresAt,
       });
+      setIssuedAt(Date.now());
       setCode("");
       setError(null);
       setOpen(true);
@@ -79,6 +84,10 @@ export function EmailVerificationDialog({ me }: { me: MyProfile }) {
 
   const busy = verify.isPending;
   const resending = requestCode.isPending && open;
+  // Mirrors the server's per-account cooldown (EmailSendBudget). Purely
+  // cosmetic — the server refuses regardless — but a button that visibly
+  // counts down beats one that looks live and answers 429.
+  const cooldown = useCooldown(issuedAt, RESEND_COOLDOWN_SECONDS);
 
   return (
     <>
@@ -171,11 +180,15 @@ export function EmailVerificationDialog({ me }: { me: MyProfile }) {
             <button
               type="button"
               onClick={() => requestCode.mutate()}
-              disabled={requestCode.isPending || busy}
+              disabled={requestCode.isPending || busy || cooldown > 0}
               className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-laps-navy/70 transition-colors duration-150 hover:text-laps-blue active:scale-[0.98] disabled:opacity-60"
             >
               {resending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {resending ? "Reenviando…" : "Reenviar código"}
+              {resending
+                ? "Reenviando…"
+                : cooldown > 0
+                  ? `Reenviar em ${cooldown}s`
+                  : "Reenviar código"}
             </button>
             <button
               type="button"
@@ -191,6 +204,21 @@ export function EmailVerificationDialog({ me }: { me: MyProfile }) {
       </Dialog>
     </>
   );
+}
+
+/** Seconds left before `since + seconds`, ticking while it runs. 0 once elapsed. */
+function useCooldown(since: number | null, seconds: number) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (since === null) return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, [since]);
+
+  if (since === null) return 0;
+  return Math.max(0, Math.ceil((since + seconds * 1000 - now) / 1000));
 }
 
 /** Ticks down to the code's expiry, so "it stopped working" is never a surprise. */

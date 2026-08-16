@@ -129,7 +129,17 @@ public class InviteController {
 
         InviteToken invite = resolveAndCheck(token);
 
-        if (memberRepository.existsByEmailIgnoreCase(req.email())) {
+        // Same rejection for both conditions, deliberately: an invitee must not
+        // be able to tell "somebody already has this address" from "this address
+        // is on the manager allowlist".
+        //
+        // The allowlist check is the one that matters. Registration picks its
+        // own email, and ManagerAllowlist resolves MANAGER from that column on
+        // every request — so without this, redeeming any invite while typing a
+        // coordinator's address hands the console to whoever holds the invite.
+        // The tier on the invite was never the only way in.
+        if (memberRepository.existsByEmailIgnoreCase(req.email())
+                || managerAllowlist.isManager(req.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
 

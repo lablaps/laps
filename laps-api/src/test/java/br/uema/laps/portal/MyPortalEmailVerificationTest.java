@@ -1,5 +1,6 @@
 package br.uema.laps.portal;
 
+import br.uema.laps.email.EmailSendBudget;
 import br.uema.laps.email.EmailService;
 import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
@@ -8,6 +9,7 @@ import br.uema.laps.member.MemberStatus;
 import br.uema.laps.project.MemberProjectRepository;
 import br.uema.laps.project.ProjectRepository;
 import br.uema.laps.publication.PublicationRepository;
+import br.uema.laps.security.ManagerAllowlist;
 import br.uema.laps.security.RateLimitGuard;
 import br.uema.laps.translate.TranslationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,7 +74,9 @@ class MyPortalEmailVerificationTest {
                 new BCryptPasswordEncoder(4),
                 mock(TranslationService.class),
                 mock(RateLimitGuard.class),
-                emailService);
+                emailService,
+                mock(EmailSendBudget.class),
+                new ManagerAllowlist(List.of()));
 
         me = new Member();
         me.setId(ME);

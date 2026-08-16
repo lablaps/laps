@@ -85,6 +85,14 @@ services:
         sync: false
       - key: LAPS_EMAIL_FROM_NAME
         value: LAPS
+      # Send budget. max-per-day sits below Brevo's free 300/day so the ceiling
+      # we hit is our own 429 rather than an opaque rejection from the provider.
+      - key: LAPS_EMAIL_MIN_INTERVAL_SECONDS
+        value: "60"
+      - key: LAPS_EMAIL_MAX_PER_ACCOUNT_PER_DAY
+        value: "5"
+      - key: LAPS_EMAIL_MAX_PER_DAY
+        value: "200"
 
       # --- Translation provider ---
       - key: LAPS_TRANSLATE_PROVIDER

@@ -1,5 +1,6 @@
 package br.uema.laps.portal;
 
+import br.uema.laps.email.EmailSendBudget;
 import br.uema.laps.email.EmailService;
 import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
@@ -16,6 +17,7 @@ import br.uema.laps.publication.PublicationSpecifications;
 import br.uema.laps.publication.PublicationStatus;
 import br.uema.laps.publication.PublicationType;
 import br.uema.laps.security.AuthenticatedMember;
+import br.uema.laps.security.ManagerAllowlist;
 import br.uema.laps.security.RateLimitGuard;
 import br.uema.laps.translate.TranslationService;
 import jakarta.persistence.EntityNotFoundException;
@@ -44,6 +46,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -84,6 +87,8 @@ public class MyPortalController {
     private final TranslationService translationService;
     private final RateLimitGuard rateLimitGuard;
     private final EmailService emailService;
+    private final EmailSendBudget emailSendBudget;
+    private final ManagerAllowlist managerAllowlist;
 
     public MyPortalController(
             MemberRepository memberRepository,
@@ -93,7 +98,9 @@ public class MyPortalController {
             PasswordEncoder passwordEncoder,
             TranslationService translationService,
             RateLimitGuard rateLimitGuard,
-            EmailService emailService) {
+            EmailService emailService,
+            EmailSendBudget emailSendBudget,
+            ManagerAllowlist managerAllowlist) {
         this.memberRepository = memberRepository;
         this.memberProjectRepository = memberProjectRepository;
         this.projectRepository = projectRepository;
@@ -102,6 +109,8 @@ public class MyPortalController {
         this.translationService = translationService;
         this.rateLimitGuard = rateLimitGuard;
         this.emailService = emailService;
+        this.emailSendBudget = emailSendBudget;
+        this.managerAllowlist = managerAllowlist;
     }
 
     @GetMapping
@@ -235,10 +244,14 @@ public class MyPortalController {
         if (me.isEmailVerified()) {
             return ResponseEntity.ok(Map.of("message", "Email already verified", "alreadyVerified", true));
         }
-        // Metered per account: unmetered, this is a button that mails an
-        // attacker-triggered message into a real inbox as fast as it can be
-        // clicked, and it drains a free-tier daily quota in seconds.
+        // Two independent meters, because they answer different questions.
+        // The guard is the burst limit shared with the credential endpoints;
+        // the budget is what bounds mail specifically — a per-account cooldown
+        // and daily cap, plus a global ceiling under the provider's own quota.
+        // Both are spent before the provider is touched, so a refusal costs
+        // nothing downstream.
         rateLimitGuard.enforce(request, "emailcode:" + me.getId());
+        emailSendBudget.consume(me.getId());
 
         String code = randomCode();
         // BCrypt, not the SHA-256 that invite tokens use: six digits is a
@@ -585,14 +598,64 @@ public class MyPortalController {
             me.setBannerImageUrl(u.bannerImageUrl().isBlank() ? null : u.bannerImageUrl());
         if (u.languages() != null)
             me.setLanguages(u.languages().isBlank() ? null : u.languages());
-        // Email change invalidates verification — the SPA's snackbar will
-        // re-fire prompting the member to verify the new address.
-        if (u.email() != null && !u.email().equals(me.getEmail())) {
-            me.setEmail(u.email());
-            me.setEmailVerified(false);
-            me.setEmailVerificationTokenHash(null);
-            me.setEmailVerificationTokenExpiresAt(null);
+        if (u.email() != null) applyEmailChange(me, u.email());
+    }
+
+    /**
+     * Writes the login email, which is the most security-sensitive field a
+     * member can set on themselves.
+     *
+     * <p>It used to be a straight assignment of whatever arrived. Three things
+     * were wrong with that, all of them because this column is not just contact
+     * information — it is an identity the rest of the system resolves against.
+     *
+     * <ol>
+     *   <li><b>The manager allowlist is keyed on it.</b> {@code ManagerAllowlist}
+     *       lowercases the member's email and looks it up in
+     *       {@code LAPS_MANAGER_EMAILS}, and {@code JwtAuthFilter} re-runs that
+     *       on every request. So any member who typed a coordinator's address
+     *       into their own profile was granted MANAGER on their next call —
+     *       self-service privilege escalation, needing nothing but knowledge of
+     *       an address the public roster may well display. Claiming an
+     *       allowlisted address is now refused outright; a manager whose account
+     *       needs that address gets it set from the Central de Comando, which is
+     *       where provisioning already lives.</li>
+     *   <li><b>The unique constraint is case-sensitive.</b> Postgres treats
+     *       {@code Ada@uema.br} and {@code ada@uema.br} as different values,
+     *       while every lookup in this codebase is {@code ...IgnoreCase}. Two
+     *       rows differing only in case therefore satisfied the database and
+     *       then made {@code findByEmailIgnoreCase} return two results, which
+     *       is an exception, not a login — one member could lock another out by
+     *       re-typing their address in a different case. Normalising on write
+     *       and rejecting a case-insensitive collision closes both halves.</li>
+     *   <li><b>Blank was a value.</b> An empty string is not "no email": it is
+     *       an email that collides with the next member who also sends blank.</li>
+     * </ol>
+     *
+     * <p>The collision and allowlist rejections deliberately return the same
+     * status and wording, so the response cannot be used to probe which
+     * addresses are on the allowlist.
+     */
+    private void applyEmailChange(Member me, String raw) {
+        String next = raw.trim().toLowerCase(Locale.ROOT);
+        if (next.isBlank()) next = null;
+
+        boolean changed = next == null
+                ? me.getEmail() != null
+                : !next.equalsIgnoreCase(me.getEmail());
+        if (!changed) return;
+
+        if (next != null) {
+            if (managerAllowlist.isManager(next) || memberRepository.existsByEmailIgnoreCase(next)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+            }
         }
+        me.setEmail(next);
+        // A new address is an unproven address. Dropping any code in flight
+        // matters as much as the flag: without it, a code mailed to the old
+        // address would still verify the new one.
+        me.setEmailVerified(false);
+        clearVerificationCode(me);
     }
 
     /**
@@ -716,7 +779,12 @@ public class MyPortalController {
             @Size(max = 500) String lattesUrl,
             @Size(max = 500) String githubUrl,
             @Size(max = 255) String contactEmail,
-            @Size(max = 255) String email,
+            // Empty clears the address. @Email on anything else so a malformed
+            // string is refused here rather than shipped to the mail provider
+            // as a recipient — every rejected send still costs an API call and
+            // counts against the sender's reputation.
+            @Size(max = 255) @Pattern(regexp = "^$|^[^@\\s]+@[^@\\s.]+(\\.[^@\\s.]+)+$",
+                     message = "must be a valid email address") String email,
             @Size(max = 500) String customUrl,
             @Size(max = 60) String customUrlLabel,
             // Empty string clears the field; anything else must match exactly.

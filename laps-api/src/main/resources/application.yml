@@ -96,6 +96,14 @@ laps:
     # Must be an address the provider has authorised, or every send 4xxs.
     from-address: ${LAPS_EMAIL_FROM:}
     from-name: ${LAPS_EMAIL_FROM_NAME:LAPS}
+    # Send budget (EmailSendBudget). The recipient of a verification code is
+    # whatever address is on the profile, and members edit that themselves —
+    # so these are what stop the endpoint being used to mail strangers, not
+    # just what stop a member being impatient. The global cap sits below the
+    # provider's daily quota so exhaustion is a 429 we control.
+    min-interval-seconds: ${LAPS_EMAIL_MIN_INTERVAL_SECONDS:60}
+    max-per-account-per-day: ${LAPS_EMAIL_MAX_PER_ACCOUNT_PER_DAY:5}
+    max-per-day: ${LAPS_EMAIL_MAX_PER_DAY:200}
   translate:
     provider: ${LAPS_TRANSLATE_PROVIDER:mymemory}
     base-url: ${LAPS_TRANSLATE_BASE_URL:}
