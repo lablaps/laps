@@ -71,9 +71,13 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(antMatcher(HttpMethod.OPTIONS, "/**")).permitAll()
+                // No HttpMethod restriction here: uptime monitors (UptimeRobot et al.)
+                // default to HEAD requests, and a GET-only matcher let those fall
+                // through to anyRequest().authenticated() — 401ing every external
+                // health check while the browser-driven GET kept working fine.
                 .requestMatchers(
-                        antMatcher(HttpMethod.GET, "/actuator/health"),
-                        antMatcher(HttpMethod.GET, "/actuator/health/**")).permitAll()
+                        antMatcher("/actuator/health"),
+                        antMatcher("/actuator/health/**")).permitAll()
                 // Spring Boot's security filter chain runs on the ERROR dispatch as well
                 // as the REQUEST one. Without this, /error inherits
                 // anyRequest().authenticated(), so *any* unmapped path answers 401
