@@ -96,7 +96,7 @@ class MyPortalProjectLinkTest {
         when(memberProjectRepository.findByMemberId(ME)).thenReturn(List.of());
 
         controller.updateMyProjects(List.of(
-                new MyPortalController.MyProjectLink(PROJECT_A, "LEAD")));
+                new MyPortalController.MyProjectLink(PROJECT_A, "LEAD", null)));
 
         assertThat(savedLinks()).singleElement()
                 .satisfies(link -> {
@@ -111,7 +111,7 @@ class MyPortalProjectLinkTest {
         when(memberProjectRepository.findByMemberId(ME)).thenReturn(List.of());
 
         controller.updateMyProjects(List.of(
-                new MyPortalController.MyProjectLink(PROJECT_A, "SUPREME_DIRECTOR")));
+                new MyPortalController.MyProjectLink(PROJECT_A, "SUPREME_DIRECTOR", null)));
 
         assertThat(savedLinks()).singleElement()
                 .satisfies(link -> assertThat(link.getRole()).isEqualTo("RESEARCHER"));
@@ -125,7 +125,7 @@ class MyPortalProjectLinkTest {
                 .thenReturn(List.of(new MemberProject(PROJECT_A, ME, "CO_LEAD")));
 
         controller.updateMyProjects(List.of(
-                new MyPortalController.MyProjectLink(PROJECT_A, "RESEARCHER")));
+                new MyPortalController.MyProjectLink(PROJECT_A, "RESEARCHER", null)));
 
         assertThat(savedLinks()).singleElement()
                 .satisfies(link -> assertThat(link.getRole()).isEqualTo("CO_LEAD"));
@@ -138,7 +138,7 @@ class MyPortalProjectLinkTest {
                 .thenReturn(List.of(new MemberProject(PROJECT_A, ME, "RESEARCHER")));
 
         controller.updateMyProjects(List.of(
-                new MyPortalController.MyProjectLink(PROJECT_A, "LEAD")));
+                new MyPortalController.MyProjectLink(PROJECT_A, "LEAD", null)));
 
         assertThat(savedLinks()).singleElement()
                 .satisfies(link -> assertThat(link.getRole()).isEqualTo("RESEARCHER"));
@@ -151,7 +151,7 @@ class MyPortalProjectLinkTest {
         when(projectRepository.existsById(PROJECT_B)).thenReturn(false);
 
         assertThatThrownBy(() -> controller.updateMyProjects(List.of(
-                new MyPortalController.MyProjectLink(PROJECT_B, "RESEARCHER"))))
+                new MyPortalController.MyProjectLink(PROJECT_B, "RESEARCHER", null))))
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
@@ -168,7 +168,7 @@ class MyPortalProjectLinkTest {
 
         assertThatThrownBy(() -> controller.createMyProject(
                 new MyPortalController.MemberProjectCreate(
-                        "Projeto", null, null, null, null, null, advisorId, null)))
+                        "Projeto", null, null, null, null, null, advisorId, null, null)))
                 .hasMessageContaining("head or coordinator");
 
         // The undergrad must not have been linked as LEAD before the check.
@@ -182,7 +182,7 @@ class MyPortalProjectLinkTest {
 
         assertThatThrownBy(() -> controller.createMyProject(
                 new MyPortalController.MemberProjectCreate(
-                        "Projeto", null, "NOT_A_STATUS", null, null, null, null, null)))
+                        "Projeto", null, "NOT_A_STATUS", null, null, null, null, null, null)))
                 .hasMessageContaining("Unknown project status");
     }
 
@@ -200,7 +200,7 @@ class MyPortalProjectLinkTest {
 
         assertThatThrownBy(() -> controller.createMyProject(
                 new MyPortalController.MemberProjectCreate(
-                        "Projeto", null, null, null, null, null, null, null)))
+                        "Projeto", null, null, null, null, null, null, null, null)))
                 .hasMessageContaining("cannot add or join projects");
 
         // Refused before anything is written — no orphan project row, no links.
@@ -215,7 +215,7 @@ class MyPortalProjectLinkTest {
         when(memberProjectRepository.findByMemberId(ME)).thenReturn(List.of());
 
         assertThatThrownBy(() -> controller.updateMyProjects(List.of(
-                new MyPortalController.MyProjectLink(PROJECT_A, "RESEARCHER"))))
+                new MyPortalController.MyProjectLink(PROJECT_A, "RESEARCHER", null))))
                 .hasMessageContaining("cannot add or join projects");
 
         verify(memberProjectRepository, never()).save(any());
@@ -245,7 +245,7 @@ class MyPortalProjectLinkTest {
         when(memberProjectRepository.findByMemberId(ME)).thenReturn(List.of());
 
         controller.updateMyProjects(List.of(
-                new MyPortalController.MyProjectLink(PROJECT_A, "RESEARCHER")));
+                new MyPortalController.MyProjectLink(PROJECT_A, "RESEARCHER", null)));
 
         assertThat(savedLinks()).singleElement()
                 .satisfies(link -> assertThat(link.getMemberId()).isEqualTo(ME));
