@@ -372,6 +372,10 @@ public class MyPortalController {
      * time they tick a checkbox), and newly added links are always
      * {@code RESEARCHER}. Elevating someone remains a manager action.
      *
+     * <p>{@code contribution} carries no authority, unlike {@code role} — it is
+     * just what the member says they did — so it is taken from the request body
+     * as-is rather than preserved server-side.
+     *
      * <p>Closed to undergraduates entirely — see {@link #guardProjectAuthoring}.
      * Because this endpoint replaces the whole list rather than editing it, the
      * card is read-only for them: additions and removals both come from someone
@@ -398,7 +402,8 @@ public class MyPortalController {
                     throw new EntityNotFoundException("project not found: " + l.projectId());
                 }
                 memberProjectRepository.save(new MemberProject(
-                        l.projectId(), myId, rolesBefore.getOrDefault(l.projectId(), SELF_SERVICE_ROLE)));
+                        l.projectId(), myId, rolesBefore.getOrDefault(l.projectId(), SELF_SERVICE_ROLE),
+                        l.contribution()));
             }
         }
         return ResponseEntity.noContent().build();
@@ -713,7 +718,8 @@ public class MyPortalController {
 
         // Creator → CO_LEAD when an advisor exists, otherwise RESEARCHER
         String myRole = req.advisorId() != null ? "CO_LEAD" : "RESEARCHER";
-        memberProjectRepository.save(new MemberProject(saved.getId(), me.getId(), myRole));
+        memberProjectRepository.save(
+                new MemberProject(saved.getId(), me.getId(), myRole, req.myContribution()));
 
         // Additional participants → RESEARCHER (skip creator and advisor).
         // Every id must resolve to a live member: unchecked, this wrote rows
@@ -821,7 +827,8 @@ public class MyPortalController {
 
     public record MyProjectLink(
             @NotNull UUID projectId,
-            @NotBlank String role) {
+            @NotBlank String role,
+            @Size(max = 1000) String contribution) {
     }
 
     public record MemberProjectCreate(
@@ -832,6 +839,7 @@ public class MyPortalController {
             String articleUrl,
             List<String> tags,
             UUID advisorId,
-            List<UUID> participantIds) {
+            List<UUID> participantIds,
+            @Size(max = 1000) String myContribution) {
     }
 }

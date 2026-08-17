@@ -205,6 +205,7 @@ export interface ApiMemberProjectLink {
   memberId: string;
   projectId: string;
   role: string;
+  contribution?: string | null;
 }
 
 interface Page<T> {
@@ -221,6 +222,8 @@ export interface ApiMemberProject {
   projectId: string;
   memberId: string;
   role: string; // "LEAD" | "CO_LEAD" | "RESEARCHER"
+  /** Free text: what this member says they did on the project. Self-service. */
+  contribution?: string | null;
   member?: ApiMember;
 }
 
@@ -385,7 +388,7 @@ export const api = {
   meVerifyEmail: (code: string) =>
     request<{ message: string }>("/api/v1/me/email/verify", { method: "POST", body: { code } }),
   myProjects: () => request<ApiMemberProjectLink[]>("/api/v1/me/projects"),
-  updateMyProjects: (links: { projectId: string; role: string }[]) =>
+  updateMyProjects: (links: { projectId: string; role: string; contribution?: string | null }[]) =>
     request<void>("/api/v1/me/projects", { method: "PUT", body: links }),
   meCreateProject: (body: {
     titlePt: string;
@@ -396,6 +399,7 @@ export const api = {
     tags?: string[];
     advisorId?: string | null;
     participantIds?: string[];
+    myContribution?: string;
   }) => request<ApiProject>("/api/v1/me/projects/new", { method: "POST", body }),
 
   /**

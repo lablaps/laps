@@ -2106,7 +2106,7 @@ function ProjectsSection({
   me: MyProfile;
   allMembers: ApiMember[];
   portfolioProjects: ApiProject[];
-  myProjectLinks: { projectId: string; role: string }[];
+  myProjectLinks: { projectId: string; role: string; contribution?: string | null }[];
   allProjects: ApiProject[];
 }) {
   const [creating, setCreating] = useState(false);
@@ -2530,6 +2530,12 @@ function ProjectCard({ project, me }: { project: ApiProject; me: MyProfile }) {
       {project.descriptionPt && (
         <p className="text-xs leading-relaxed text-laps-navy/70">{project.descriptionPt}</p>
       )}
+      {myLink?.contribution && (
+        <p className="mt-2 rounded-lg border border-laps-navy/10 bg-laps-ghost/30 px-2.5 py-2 text-[11px] leading-relaxed text-laps-navy/70">
+          <span className="font-bold uppercase tracking-wider text-laps-navy/50">O que você fez: </span>
+          {myLink.contribution}
+        </p>
+      )}
     </div>
   );
 }
@@ -2554,6 +2560,7 @@ function CreateProjectForm({
   const [tags, setTags] = useState<string[]>([]);
   const [advisorId, setAdvisorId] = useState("");
   const [participantIds, setParticipantIds] = useState<string[]>([]);
+  const [myContribution, setMyContribution] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const mutation = useMutation({
@@ -2567,6 +2574,7 @@ function CreateProjectForm({
         tags,
         advisorId: advisorId || null,
         participantIds,
+        myContribution: myContribution || undefined,
       }),
     onSuccess: onCreated,
     onError: (err) =>
@@ -2625,6 +2633,21 @@ function CreateProjectForm({
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
             placeholder="Descrição breve do projeto…"
+            className="w-full rounded-md border border-laps-navy/15 bg-surface px-3 py-2 text-sm text-laps-navy outline-none focus:border-laps-blue/40 focus:ring-2 focus:ring-laps-blue/15"
+          />
+        </div>
+
+        {/* Own contribution */}
+        <div>
+          <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
+            O que você fez neste projeto?
+          </label>
+          <textarea
+            value={myContribution}
+            onChange={(e) => setMyContribution(e.target.value)}
+            rows={2}
+            maxLength={1000}
+            placeholder="Sua contribuição — aparece no seu perfil público"
             className="w-full rounded-md border border-laps-navy/15 bg-surface px-3 py-2 text-sm text-laps-navy outline-none focus:border-laps-blue/40 focus:ring-2 focus:ring-laps-blue/15"
           />
         </div>
@@ -2796,14 +2819,15 @@ function ExistingProjectLinker({
 }: {
   me: MyProfile;
   allProjects: ApiProject[];
-  myProjectLinks: { projectId: string; role: string }[];
+  myProjectLinks: { projectId: string; role: string; contribution?: string | null }[];
 }) {
   const qc = useQueryClient();
-  const [pending, setPending] = useState<{ projectId: string; role: string }[] | null>(null);
-  const editable = pending ?? myProjectLinks.map((l) => ({ projectId: l.projectId, role: l.role }));
+  type Link = { projectId: string; role: string; contribution?: string | null };
+  const [pending, setPending] = useState<Link[] | null>(null);
+  const editable = pending ?? myProjectLinks.map((l) => ({ ...l }));
 
   const mutation = useMutation({
-    mutationFn: (next: { projectId: string; role: string }[]) => api.updateMyProjects(next),
+    mutationFn: (next: Link[]) => api.updateMyProjects(next),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-projects"] });
       qc.invalidateQueries({ queryKey: ["projects"] });
@@ -2826,8 +2850,12 @@ function ExistingProjectLinker({
     const current = editable.find((l) => l.projectId === p.id);
     const next = current
       ? editable.filter((l) => l.projectId !== p.id)
-      : [...editable, { projectId: p.id, role: "RESEARCHER" }];
+      : [...editable, { projectId: p.id, role: "RESEARCHER", contribution: "" }];
     setPending(next);
+  }
+
+  function setContribution(projectId: string, contribution: string) {
+    setPending(editable.map((l) => (l.projectId === projectId ? { ...l, contribution } : l)));
   }
 
   if (linkable.length === 0) return <p className="text-xs text-laps-navy/40">Não há outros projetos para vincular.</p>;
@@ -2835,28 +2863,41 @@ function ExistingProjectLinker({
   return (
     <div className="space-y-2">
       {linkable.map((p) => {
-        const linked = !!editable.find((l) => l.projectId === p.id);
+        const link = editable.find((l) => l.projectId === p.id);
+        const linked = !!link;
         return (
           <div
             key={p.id}
-            className={`flex items-center justify-between gap-2 rounded-lg border p-2.5 transition ${
+            className={`rounded-lg border p-2.5 transition ${
               linked ? "border-laps-blue/30 bg-laps-ghost/20" : "border-laps-navy/10 bg-surface"
             }`}
           >
-            <span className="truncate text-xs font-medium text-laps-navy/85">
-              {p.titlePt || p.titleEn || p.slug}
-            </span>
-            <button
-              type="button"
-              onClick={() => toggle(p)}
-              className={`shrink-0 rounded-sm px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors ${
-                linked
-                  ? "border border-red-200 bg-surface text-red-600 hover:bg-red-50"
-                  : "border border-laps-blue/25 bg-surface text-laps-blue hover:bg-laps-ghost"
-              }`}
-            >
-              {linked ? "Remover" : "Vincular"}
-            </button>
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-xs font-medium text-laps-navy/85">
+                {p.titlePt || p.titleEn || p.slug}
+              </span>
+              <button
+                type="button"
+                onClick={() => toggle(p)}
+                className={`shrink-0 rounded-sm px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.08em] transition-colors ${
+                  linked
+                    ? "border border-red-200 bg-surface text-red-600 hover:bg-red-50"
+                    : "border border-laps-blue/25 bg-surface text-laps-blue hover:bg-laps-ghost"
+                }`}
+              >
+                {linked ? "Remover" : "Vincular"}
+              </button>
+            </div>
+            {linked && (
+              <textarea
+                value={link.contribution ?? ""}
+                onChange={(e) => setContribution(p.id, e.target.value)}
+                rows={2}
+                maxLength={1000}
+                placeholder="O que você fez neste projeto?"
+                className="mt-2 w-full rounded-md border border-laps-navy/15 bg-surface px-2.5 py-1.5 text-xs text-laps-navy outline-none focus:border-laps-blue/40 focus:ring-2 focus:ring-laps-blue/15"
+              />
+            )}
           </div>
         );
       })}

@@ -178,7 +178,12 @@ function TeamMemberPage() {
     descriptionPt?: string;
     descriptionEn?: string;
     descriptionFr?: string;
-    leaders?: Array<{ memberId: string; role?: string; member?: { slug?: string; id?: string } }>;
+    leaders?: Array<{
+      memberId: string;
+      role?: string;
+      contribution?: string | null;
+      member?: { slug?: string; id?: string };
+    }>;
   }>;
 
   const { lang, t } = useLang();
@@ -237,6 +242,10 @@ function TeamMemberPage() {
         p.leaders?.find(
           (l) => l.memberId === member.id || l.member?.id === member.id || l.member?.slug === member.slug
         )?.role || "RESEARCHER",
+      contribution:
+        p.leaders?.find(
+          (l) => l.memberId === member.id || l.member?.id === member.id || l.member?.slug === member.slug
+        )?.contribution || null,
       i18n: {
         pt: { title: p.titlePt || p.titleEn || "", description: p.descriptionPt || "" },
         en: { title: p.titleEn || p.titlePt || "", description: p.descriptionEn || "" },
@@ -670,6 +679,11 @@ function TeamMemberPage() {
                         {proj.i18n[L].description && (
                           <p className="text-xs leading-relaxed text-laps-navy/70">
                             {proj.i18n[L].description}
+                          </p>
+                        )}
+                        {proj.contribution && (
+                          <p className="mt-2 rounded-lg border border-laps-navy/10 bg-laps-ghost/30 px-2.5 py-2 text-[11px] leading-relaxed text-laps-navy/70">
+                            {proj.contribution}
                           </p>
                         )}
                         {proj.articleUrl && (

@@ -52,10 +52,21 @@ public class MemberProject {
     @Column(nullable = false)
     private String role; // "LEAD", "CO_LEAD", "RESEARCHER"
 
+    /** Free text: what this member actually did on the project. Self-service, unlike {@link #role}. */
+    @Column(length = 1000)
+    private String contribution;
+
     public MemberProject(UUID projectId, UUID memberId, String role) {
         this.projectId = projectId;
         this.memberId = memberId;
         this.role = role;
+    }
+
+    public MemberProject(UUID projectId, UUID memberId, String role, String contribution) {
+        this.projectId = projectId;
+        this.memberId = memberId;
+        this.role = role;
+        this.contribution = contribution;
     }
 
     @Getter

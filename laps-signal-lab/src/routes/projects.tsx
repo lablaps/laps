@@ -413,6 +413,11 @@ function ProjectDetailDialog({
                         <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-laps-navy/45">
                           {roleLabel(l.role)}
                         </div>
+                        {l.contribution && (
+                          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-laps-navy/60">
+                            {l.contribution}
+                          </p>
+                        )}
                       </div>
                     </Link>
                   );

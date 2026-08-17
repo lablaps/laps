@@ -316,7 +316,7 @@ function AdminPage() {
           <div className="min-w-0">
             {/* Filter bar */}
             <section className="mb-6 flex flex-wrap items-center gap-3">
-              <div className="relative min-w-0 flex-1">
+              <div className="relative min-w-0 basis-full">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-laps-navy/40" />
                 <Input
                   value={query}
