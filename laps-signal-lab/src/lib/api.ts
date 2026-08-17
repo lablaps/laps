@@ -288,6 +288,51 @@ export interface PendingPublication {
   submitterSlug: string | null;
 }
 
+/** How a name sits on a paper. AUTHOR is the ordinary case. */
+export type AuthorRole = "AUTHOR" | "ADVISOR" | "CO_ADVISOR";
+
+/**
+ * One name to attach to a publication: a roster member by id, or someone from
+ * another institution by name. Exactly one of the two — the API rejects both.
+ */
+export interface AuthorLink {
+  memberId?: string | null;
+  externalName?: string | null;
+  role?: AuthorRole;
+}
+
+/** An author as the console reads it back. memberId/slug are null when external. */
+export interface AuthorView {
+  memberId: string | null;
+  name: string;
+  slug: string | null;
+  role: AuthorRole;
+  order: number;
+}
+
+/**
+ * A publication plus its author list. The public `ApiPublication` has no
+ * authors field at all — the entity hides the join — so the console reads the
+ * names through this admin-only view.
+ */
+export interface AdminPublication {
+  publication: ApiPublication;
+  authors: AuthorView[];
+}
+
+/** What a manager fills in. `authors` is the whole list: sending it replaces it. */
+export interface AdminPublicationInput {
+  title: string;
+  venue: string;
+  year: number;
+  type: PublicationType;
+  status: PublicationStatus;
+  doi?: string | null;
+  url?: string | null;
+  abstractText?: string | null;
+  authors?: AuthorLink[];
+}
+
 // ───── Endpoints ─────
 
 /**
@@ -501,6 +546,22 @@ export const api = {
 
     updateProjectMembers: (id: string, members: { memberId: string; role: string }[]) =>
       request<void>(`/api/v1/admin/projects/${id}/members`, { method: "PUT", body: members }),
+
+    /**
+     * The whole publication record — pending and rejected rows included, which
+     * is what makes this different from the public `/publications` search.
+     */
+    publications: () => request<AdminPublication[]>("/api/v1/admin/publications"),
+
+    createPublication: (body: AdminPublicationInput) =>
+      request<AdminPublication>("/api/v1/admin/publications", { method: "POST", body }),
+
+    /** Omitted fields are left alone; omitting `authors` keeps the current list. */
+    updatePublication: (id: string, body: Partial<AdminPublicationInput>) =>
+      request<AdminPublication>(`/api/v1/admin/publications/${id}`, { method: "PUT", body }),
+
+    deletePublication: (id: string) =>
+      request<void>(`/api/v1/admin/publications/${id}`, { method: "DELETE" }),
 
     /** Per-member auth flags (must-change-password, email verified). Admin only. */
     authStatus: () =>

@@ -44,7 +44,7 @@ split three ways:
 
 - **Public** (`/api/v1/members`, `/projects`, `/publications`, `/areas`, `/graph`) — unauthenticated reads, redacted through `MemberPublicView`.
 - **Portal** (`/api/v1/me/**`) — self-service for any logged-in member: profile, bio, research areas, publication submission, project links.
-- **Admin** (`/api/v1/admin/**`) — the *Central de Comando*: roster, credentials, publication moderation, projects, audit log.
+- **Admin** (`/api/v1/admin/**`) — the *Central de Comando*: roster, credentials, publications (authoring, authorship links and moderation), projects, audit log.
 
 `MemberRole` is the academic hierarchy, junior→senior: `UNDERGRAD`, `MASTER`,
 `DOCTORATE`, `MANAGER`, `COORDINATOR`, `HEAD`. **This is not the security role.**

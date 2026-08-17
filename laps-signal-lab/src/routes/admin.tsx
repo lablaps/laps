@@ -32,6 +32,10 @@ import {
   Clock,
   CheckCircle2,
   UserCircle,
+  BookOpen,
+  Building2,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import {
   api,
@@ -41,6 +45,11 @@ import {
   type ProjectStatus,
   type MemberRole,
   type MemberStatusEnum,
+  type AdminPublication,
+  type AuthorLink,
+  type AuthorRole,
+  type PublicationType,
+  type PublicationStatus,
 } from "@/lib/api";
 import { resolveMediaUrl } from "@/lib/api";
 import { countryName, brStateName } from "@/lib/exchange-data";
@@ -94,6 +103,28 @@ const STATUS_META: Record<MemberStatusEnum, { label: string; dot: string }> = {
   ACTIVE: { label: "Ativo", dot: "bg-emerald-500" },
   COMPLETED: { label: "Concluído", dot: "bg-slate-400" },
   INACTIVE: { label: "Inativo", dot: "bg-rose-500" },
+};
+
+const PUB_TYPE_LABELS: Record<PublicationType, string> = {
+  JOURNAL: "Periódico",
+  CONFERENCE: "Conferência",
+  WORKSHOP: "Workshop",
+  DISSERTATION: "Dissertação",
+  THESIS: "Tese",
+};
+
+/** The research lifecycle — orthogonal to the approval state below. */
+const PUB_STATUS_LABELS: Record<PublicationStatus, string> = {
+  PUBLISHED: "Publicado",
+  IN_PRESS: "No prelo",
+  IN_PROGRESS: "Em andamento",
+  COMPLETED: "Concluído",
+};
+
+const AUTHOR_ROLE_LABELS: Record<AuthorRole, string> = {
+  AUTHOR: "Autor",
+  ADVISOR: "Orientador",
+  CO_ADVISOR: "Co-orientador",
 };
 
 function AdminPage() {
@@ -327,6 +358,7 @@ function AdminPage() {
             </section>
 
             <PublicationApprovalSection />
+            <PublicationSection />
 
             {/* Member grid */}
             <section>
@@ -1686,7 +1718,7 @@ function PublicationApprovalSection() {
   const busy = approveMutation.isPending || rejectMutation.isPending;
 
   return (
-    <section className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
+    <section className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
       <h3 className="mb-1 flex items-center gap-2 font-display text-lg font-bold text-laps-navy">
         <Clock className="h-5 w-5 text-amber-600" />
         Publicações aguardando revisão
@@ -1746,6 +1778,702 @@ function PublicationApprovalSection() {
         ))}
       </div>
     </section>
+  );
+}
+
+// ───── Publications ─────
+//
+// The lab's publication record, and the only path in the app that can name a
+// co-author. The portal deliberately records the submitter and nobody else —
+// naming someone is a claim about them — so students, professors and outside
+// collaborators are attached here, by the manager who answers for the claim.
+// Attaching a member is what puts the paper on their public profile, since
+// /publications?memberId reads the same authorship rows.
+
+const APPROVAL_META: Record<
+  AdminPublication["publication"]["approvalStatus"],
+  { label: string; className: string; Icon: typeof Clock }
+> = {
+  APPROVED: {
+    label: "No site",
+    className: "bg-emerald-50 text-emerald-700",
+    Icon: CheckCircle2,
+  },
+  PENDING: {
+    label: "Em revisão",
+    className: "bg-amber-50 text-amber-700",
+    Icon: Clock,
+  },
+  REJECTED: {
+    label: "Recusada",
+    className: "bg-rose-50 text-rose-700",
+    Icon: X,
+  },
+};
+
+function PublicationSection() {
+  const queryClient = useQueryClient();
+  const publicationsQuery = useQuery({
+    queryKey: ["admin", "publications"],
+    queryFn: () => api.admin.publications(),
+    staleTime: 30_000,
+  });
+
+  // null = no dialog; "new" = create flow; AdminPublication = edit that one.
+  const [editing, setEditing] = useState<null | "new" | AdminPublication>(null);
+  const [query, setQuery] = useState("");
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin", "publications"] });
+    // A manager-entered publication is approved on write, so it reaches the
+    // public list and every named member's profile immediately — both read
+    // through caches that are now stale.
+    queryClient.invalidateQueries({ queryKey: ["publications"] });
+    queryClient.invalidateQueries({ queryKey: ["my-publications"] });
+    queryClient.invalidateQueries({
+      queryKey: ["admin", "pending-publications"],
+    });
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.admin.deletePublication(id),
+    onSuccess: () => {
+      refresh();
+      toast.success("Publicação excluída.");
+    },
+    onError: () => toast.error("Não foi possível excluir a publicação."),
+  });
+
+  // Memoised, not inlined: `?? []` is a fresh array on every render, which
+  // would re-run the filter below on each keystroke elsewhere on the page.
+  const all = useMemo(() => publicationsQuery.data ?? [], [publicationsQuery.data]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return all;
+    return all.filter(
+      ({ publication: p, authors }) =>
+        p.title.toLowerCase().includes(q) ||
+        p.venue.toLowerCase().includes(q) ||
+        String(p.year).includes(q) ||
+        authors.some((a) => (a.name ?? "").toLowerCase().includes(q)),
+    );
+  }, [all, query]);
+
+  return (
+    <section className="mb-8 rounded-2xl border border-laps-light/25 bg-surface p-5">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <h3 className="flex items-center gap-2 font-display text-lg font-bold text-laps-navy">
+          <BookOpen className="h-5 w-5 text-laps-blue" />
+          Publicações
+          <span className="rounded-full bg-laps-ghost px-2 py-0.5 text-xs font-bold text-laps-blue">
+            {all.length}
+          </span>
+        </h3>
+        <div className="relative ml-auto min-w-0 flex-1 sm:max-w-xs">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-laps-navy/40" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por título, veículo, ano ou autor…"
+            className="h-9 border-laps-navy/15 bg-surface pl-9 text-sm focus-visible:ring-laps-blue"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setEditing("new")}
+          className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-laps-cta"
+        >
+          <Plus className="h-3.5 w-3.5" /> Nova publicação
+        </button>
+      </div>
+
+      {publicationsQuery.isLoading && (
+        <div className="flex items-center justify-center py-8 text-laps-navy/55">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando publicações…
+        </div>
+      )}
+      {publicationsQuery.isError && (
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          Não foi possível carregar as publicações.
+        </div>
+      )}
+      {!publicationsQuery.isLoading && filtered.length === 0 && (
+        <div className="rounded-lg border border-dashed border-laps-navy/15 py-8 text-center text-xs text-laps-navy/50">
+          {all.length === 0
+            ? "Nenhuma publicação cadastrada ainda."
+            : "Nenhuma publicação corresponde à busca."}
+        </div>
+      )}
+
+      <div className="max-h-[28rem] space-y-2.5 overflow-y-auto pr-1">
+        {filtered.map((row) => {
+          const p = row.publication;
+          const approval = APPROVAL_META[p.approvalStatus];
+          return (
+            <div
+              key={p.id}
+              onClick={() => setEditing(row)}
+              className="group cursor-pointer rounded-lg border border-laps-navy/10 p-3 transition hover:border-laps-blue/30 hover:bg-laps-ghost/20"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 font-bold leading-snug text-laps-navy">
+                  {p.title}
+                </div>
+                <span
+                  className={`inline-flex shrink-0 items-center gap-1 rounded-sm px-2 py-0.5 font-mono text-[9px] font-medium uppercase tracking-[0.1em] ${approval.className}`}
+                >
+                  <approval.Icon className="h-3 w-3" /> {approval.label}
+                </span>
+                <button
+                  type="button"
+                  title="Excluir publicação"
+                  className="shrink-0 text-laps-navy/35 opacity-0 transition hover:text-rose-600 group-hover:opacity-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Destroys the row and its authorship — unlike "Recusar",
+                    // which keeps the record and its history off the site.
+                    if (window.confirm(`Excluir "${p.title}" definitivamente?`)) {
+                      deleteMutation.mutate(p.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+
+              <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-laps-navy/45">
+                {p.venue} · {p.year} · {PUB_TYPE_LABELS[p.type]} · {PUB_STATUS_LABELS[p.status]}
+              </div>
+
+              {row.authors.length === 0 ? (
+                <div className="mt-2 text-[11px] italic text-amber-700">
+                  Sem autores vinculados — não aparece no perfil de ninguém.
+                </div>
+              ) : (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {row.authors.map((a, i) => (
+                    <span
+                      key={`${a.memberId ?? a.name}-${i}`}
+                      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap ${
+                        a.memberId
+                          ? "bg-laps-ghost text-laps-blue"
+                          : "border border-laps-navy/15 text-laps-navy/55"
+                      }`}
+                    >
+                      {!a.memberId && <Building2 className="h-2.5 w-2.5" />}
+                      {a.name}
+                      {a.role !== "AUTHOR" && (
+                        <span className="font-normal opacity-70">
+                          · {AUTHOR_ROLE_LABELS[a.role]}
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {editing && (
+        <PublicationEditPanel
+          existing={editing === "new" ? null : editing}
+          onClose={() => setEditing(null)}
+          onSaved={refresh}
+        />
+      )}
+    </section>
+  );
+}
+
+// ───── PublicationEditPanel ─────
+// Mirrors ProjectEditPanel: left = where and when it was published, right =
+// title, abstract and the author list.
+
+function PublicationEditPanel({
+  existing,
+  onClose,
+  onSaved,
+}: {
+  existing: AdminPublication | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const isNew = existing === null;
+  const p = existing?.publication;
+
+  const [title, setTitle] = useState(p?.title ?? "");
+  const [venue, setVenue] = useState(p?.venue ?? "");
+  const [year, setYear] = useState(String(p?.year ?? new Date().getFullYear()));
+  const [type, setType] = useState<PublicationType>(p?.type ?? "CONFERENCE");
+  const [status, setStatus] = useState<PublicationStatus>(p?.status ?? "PUBLISHED");
+  const [doi, setDoi] = useState(p?.doi ?? "");
+  const [url, setUrl] = useState(p?.url ?? "");
+  const [abstractText, setAbstractText] = useState(p?.abstractText ?? "");
+  const [authors, setAuthors] = useState<AuthorDraft[]>(() => existing?.authors.map(toDraft) ?? []);
+
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        title: title.trim(),
+        venue: venue.trim(),
+        year: parseInt(year, 10),
+        type,
+        status,
+        // Empty string clears the field server-side; null would be a no-op on
+        // the update path, which is not what an emptied input means.
+        doi: doi.trim(),
+        url: url.trim(),
+        abstractText: abstractText.trim(),
+        authors: toAuthorLinks(authors),
+      };
+      if (isNew) {
+        await api.admin.createPublication(payload);
+      } else {
+        await api.admin.updatePublication(existing!.publication.id, payload);
+      }
+    },
+    onSuccess: () => {
+      onSaved();
+      onClose();
+      toast.success(isNew ? "Publicação criada." : "Publicação atualizada.");
+    },
+    onError: (err) => {
+      // Same treatment as the other panels: a 401 here is an expired session,
+      // and showing the raw Spring message helps nobody.
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        queryClient.invalidateQueries({ queryKey: ["me"] });
+        navigate({ to: "/login" });
+      }
+    },
+  });
+
+  const saveErrorMessage = save.isError
+    ? save.error instanceof ApiError && (save.error.status === 401 || save.error.status === 403)
+      ? "Sessão expirada — redirecionando para login…"
+      : save.error instanceof ApiError
+        ? save.error.message
+        : "Falha ao salvar."
+    : null;
+
+  const parsedYear = parseInt(year, 10);
+  const valid =
+    title.trim().length > 0 &&
+    venue.trim().length > 0 &&
+    Number.isInteger(parsedYear) &&
+    parsedYear >= 1900 &&
+    parsedYear <= 2100 &&
+    // An external author with an emptied name has nothing to store, and the
+    // API would reject the whole request for it.
+    authors.every((a) => a.memberId != null || (a.externalName ?? "").trim().length > 0);
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="w-[95vw] max-w-5xl overflow-hidden rounded-md border border-laps-navy/25 bg-surface p-0">
+        <DialogTitle className="sr-only">
+          {isNew ? "Nova publicação" : `Editando ${p?.title}`}
+        </DialogTitle>
+
+        <div className="flex flex-col md:h-[88vh] md:max-h-[820px] md:flex-row">
+          {/* LEFT — where and when */}
+          <div className="relative flex flex-col overflow-y-auto border-b border-laps-blue/10 md:w-5/12 md:border-b-0 md:border-r">
+            <div className="relative h-24 shrink-0 bg-laps-ink">
+              <div className="absolute right-5 top-4 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
+                {isNew ? "Nova publicação" : "Editando publicação"}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 px-6 py-6 md:px-8">
+              <FormField
+                label="Veículo"
+                value={venue}
+                onChange={setVenue}
+                placeholder="Periódico, conferência ou workshop"
+              />
+
+              <FormField
+                label="Ano"
+                value={year}
+                onChange={(v) => setYear(v.replace(/\D/g, "").slice(0, 4))}
+                placeholder="2026"
+              />
+
+              <FieldCard label="Tipo">
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value as PublicationType)}
+                  className="h-10 w-full rounded-md border border-laps-navy/15 bg-surface px-3 text-sm text-laps-navy focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
+                >
+                  {(Object.keys(PUB_TYPE_LABELS) as PublicationType[]).map((t) => (
+                    <option key={t} value={t}>
+                      {PUB_TYPE_LABELS[t]}
+                    </option>
+                  ))}
+                </select>
+              </FieldCard>
+
+              <FieldCard label="Situação da pesquisa">
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as PublicationStatus)}
+                  className="h-10 w-full rounded-md border border-laps-navy/15 bg-surface px-3 text-sm text-laps-navy focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
+                >
+                  {(Object.keys(PUB_STATUS_LABELS) as PublicationStatus[]).map((s) => (
+                    <option key={s} value={s}>
+                      {PUB_STATUS_LABELS[s]}
+                    </option>
+                  ))}
+                </select>
+              </FieldCard>
+
+              <FormField
+                label="DOI (opcional)"
+                value={doi}
+                onChange={setDoi}
+                placeholder="10.3390/app15147802"
+              />
+
+              <FormField
+                label="Link (opcional)"
+                value={url}
+                onChange={setUrl}
+                placeholder="https://…"
+                type="url"
+                icon={<ExternalLink className="h-3.5 w-3.5" />}
+              />
+
+              {/* Moderation state is the approve/reject pair's business, not a
+                  field here — but a manager editing a rejected row should see
+                  why it is off the site. */}
+              {p && p.approvalStatus !== "APPROVED" && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 text-[11px] leading-relaxed text-amber-900">
+                  {p.approvalStatus === "PENDING"
+                    ? "Aguardando revisão — ainda não aparece no site público."
+                    : `Recusada${p.reviewNote ? `: ${p.reviewNote}` : ""} — use Aprovar na fila de revisão para publicar.`}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT — content and authorship */}
+          <div className="relative flex flex-col bg-laps-ghost/5 md:w-7/12">
+            <div className="flex-1 space-y-7 overflow-y-auto p-6 md:p-8">
+              <Section title="Título e resumo">
+                <FormField
+                  label="Título"
+                  value={title}
+                  onChange={setTitle}
+                  placeholder="Título do artigo, como publicado"
+                />
+                <div className="mt-2">
+                  <BioField
+                    label="Resumo (opcional)"
+                    value={abstractText}
+                    onChange={setAbstractText}
+                    rows={4}
+                    maxLength={5000}
+                  />
+                </div>
+              </Section>
+
+              <Section title="Autores — na ordem em que assinam o trabalho">
+                <AuthorPicker authors={authors} onChange={setAuthors} />
+              </Section>
+            </div>
+
+            <div className="mt-auto flex shrink-0 items-center justify-end gap-3 border-t border-laps-blue/10 bg-surface/95 p-4 backdrop-blur-md">
+              {saveErrorMessage && (
+                <span className="mr-auto text-xs text-rose-600">{saveErrorMessage}</span>
+              )}
+              <button
+                onClick={onClose}
+                className="rounded-md px-5 py-2 text-sm font-semibold text-laps-navy/65 transition hover:bg-laps-ghost hover:text-laps-navy"
+              >
+                Descartar
+              </button>
+              <button
+                onClick={() => save.mutate()}
+                disabled={save.isPending || !valid}
+                className="inline-flex h-10 items-center gap-2 rounded-md bg-laps-cta px-6 text-sm font-semibold text-white transition-colors hover:bg-laps-accent active:translate-y-px disabled:opacity-50"
+              >
+                {save.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {isNew ? "Criar publicação" : "Salvar publicação"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ───── AuthorPicker ─────
+// The roster search of ResearcherPicker, plus two things a publication needs
+// that a project does not: co-authors who are not in the lab at all, and an
+// order — on a paper, who is first author is part of the record.
+
+interface AuthorDraft {
+  /** Stable across reordering, which index keys are not. */
+  key: string;
+  memberId: string | null;
+  externalName: string | null;
+  role: AuthorRole;
+}
+
+function draftKey(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `a${Math.random().toString(36).slice(2)}`;
+}
+
+function toDraft(author: AdminPublication["authors"][number]): AuthorDraft {
+  return {
+    key: draftKey(),
+    memberId: author.memberId,
+    // A member's name comes from the roster on every read, so only an external
+    // author's name is data this form owns.
+    externalName: author.memberId ? null : author.name,
+    role: author.role,
+  };
+}
+
+function toAuthorLinks(authors: AuthorDraft[]): AuthorLink[] {
+  return authors.map((a) =>
+    a.memberId
+      ? { memberId: a.memberId, role: a.role }
+      : { externalName: (a.externalName ?? "").trim(), role: a.role },
+  );
+}
+
+function AuthorPicker({
+  authors,
+  onChange,
+}: {
+  authors: AuthorDraft[];
+  onChange: (next: AuthorDraft[]) => void;
+}) {
+  const membersQuery = useQuery({
+    queryKey: ["admin", "members"],
+    queryFn: () => api.members(),
+    staleTime: 30_000,
+  });
+  // Memoised so the search below re-ranks on keystrokes, not on every render.
+  const allMembers = useMemo(() => membersQuery.data?.content ?? [], [membersQuery.data]);
+  const byId = useMemo(() => Object.fromEntries(allMembers.map((m) => [m.id, m])), [allMembers]);
+
+  const [q, setQ] = useState("");
+  const results = useMemo(() => {
+    if (!q.trim()) return [];
+    const taken = new Set(authors.map((a) => a.memberId).filter(Boolean));
+    return searchMembers(
+      allMembers.filter((m) => !m.deletedAt && !taken.has(m.id)),
+      q,
+      8,
+    );
+  }, [q, allMembers, authors]);
+
+  const add = (draft: Omit<AuthorDraft, "key">) => {
+    onChange([...authors, { ...draft, key: draftKey() }]);
+    setQ("");
+  };
+
+  const move = (index: number, delta: number) => {
+    const target = index + delta;
+    if (target < 0 || target >= authors.length) return;
+    const next = [...authors];
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  };
+
+  const typed = q.trim();
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-laps-navy/40" />
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Buscar membro por nome, slug ou iniciais — ou digitar um autor externo"
+          className="h-10 border-laps-navy/15 bg-surface pl-10 focus-visible:ring-laps-blue"
+        />
+        {typed.length > 0 && (
+          <div className="absolute left-0 right-0 top-11 z-20 max-h-64 overflow-y-auto rounded-lg border border-laps-light/40 bg-surface shadow-xl">
+            {results.map(({ member }) => (
+              <button
+                key={member.id}
+                type="button"
+                onClick={() =>
+                  add({
+                    memberId: member.id,
+                    externalName: null,
+                    role: "AUTHOR",
+                  })
+                }
+                className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition hover:bg-laps-ghost"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-laps-ghost text-[10px] font-bold text-laps-blue">
+                  {member.photoUrl ? (
+                    <img
+                      src={resolveMediaUrl(member.photoUrl)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    initials(member.fullName)
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <div className="truncate font-semibold text-laps-navy">{member.fullName}</div>
+                  <div className="truncate text-[10px] uppercase tracking-wider text-laps-navy/50">
+                    {TIER_META[member.currentRole].label} · /{member.slug}
+                  </div>
+                </span>
+                <Plus className="h-4 w-4 text-laps-blue/60" />
+              </button>
+            ))}
+            {/* Always offered, never inferred from "no results": plenty of
+                external co-authors share a first name with someone in the lab,
+                and picking the wrong one is a claim about the wrong person. */}
+            <button
+              type="button"
+              onClick={() => add({ memberId: null, externalName: typed, role: "AUTHOR" })}
+              className="flex w-full items-center gap-3 border-t border-laps-light/40 px-3 py-2 text-left text-sm transition hover:bg-laps-ghost"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-laps-navy/5 text-laps-navy/50">
+                <Building2 className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <div className="truncate font-semibold text-laps-navy">“{typed}”</div>
+                <div className="text-[10px] uppercase tracking-wider text-laps-navy/50">
+                  Adicionar como autor externo
+                </div>
+              </span>
+              <Plus className="h-4 w-4 text-laps-blue/60" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {authors.length === 0 ? (
+        <p className="rounded-lg border border-dashed py-4 text-center text-xs italic text-laps-navy/45">
+          Nenhum autor vinculado — a publicação não aparecerá no perfil de nenhum membro.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {authors.map((a, i) => {
+            const m = a.memberId ? byId[a.memberId] : undefined;
+            return (
+              <div
+                key={a.key}
+                className="flex items-center gap-2.5 rounded-lg border border-laps-light/30 bg-surface p-2.5"
+              >
+                <span className="w-4 shrink-0 text-center font-mono text-[11px] font-bold tabular-nums text-laps-navy/40">
+                  {i + 1}
+                </span>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-laps-ghost text-[10px] font-bold text-laps-blue">
+                  {m?.photoUrl ? (
+                    <img
+                      src={resolveMediaUrl(m.photoUrl)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : m ? (
+                    initials(m.fullName)
+                  ) : (
+                    <Building2 className="h-3.5 w-3.5 text-laps-navy/45" />
+                  )}
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  {a.memberId ? (
+                    <>
+                      <div className="truncate text-sm font-semibold text-laps-navy">
+                        {m?.fullName ?? a.memberId.slice(0, 8)}
+                      </div>
+                      {m && (
+                        <div className="truncate text-[10px] uppercase tracking-wider text-laps-navy/45">
+                          {TIER_META[m.currentRole].label}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Input
+                      value={a.externalName ?? ""}
+                      onChange={(e) =>
+                        onChange(
+                          authors.map((x) =>
+                            x.key === a.key ? { ...x, externalName: e.target.value } : x,
+                          ),
+                        )
+                      }
+                      placeholder="Nome do autor externo"
+                      className="h-8 border-laps-navy/15 bg-surface text-sm focus-visible:ring-laps-blue"
+                    />
+                  )}
+                </div>
+
+                <select
+                  value={a.role}
+                  onChange={(e) =>
+                    onChange(
+                      authors.map((x) =>
+                        x.key === a.key ? { ...x, role: e.target.value as AuthorRole } : x,
+                      ),
+                    )
+                  }
+                  className="h-8 shrink-0 rounded-md border border-laps-blue/20 bg-laps-accent/5 px-2 text-xs font-semibold text-laps-blue focus:outline-none focus:ring-2 focus:ring-laps-blue/40"
+                >
+                  {(Object.keys(AUTHOR_ROLE_LABELS) as AuthorRole[]).map((r) => (
+                    <option key={r} value={r}>
+                      {AUTHOR_ROLE_LABELS[r]}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="flex shrink-0 flex-col">
+                  <button
+                    type="button"
+                    title="Subir"
+                    disabled={i === 0}
+                    onClick={() => move(i, -1)}
+                    className="text-laps-navy/35 transition hover:text-laps-blue disabled:opacity-25 disabled:hover:text-laps-navy/35"
+                  >
+                    <ArrowUp className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Descer"
+                    disabled={i === authors.length - 1}
+                    onClick={() => move(i, 1)}
+                    className="text-laps-navy/35 transition hover:text-laps-blue disabled:opacity-25 disabled:hover:text-laps-navy/35"
+                  >
+                    <ArrowDown className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  title="Remover"
+                  onClick={() => onChange(authors.filter((x) => x.key !== a.key))}
+                  className="shrink-0 text-laps-navy/35 transition hover:text-rose-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -31,6 +31,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -38,7 +39,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -286,22 +294,210 @@ public class AdminController {
 
     // ───── Publications ─────
 
+    /**
+     * The lab's whole publication record, authors resolved, newest first.
+     *
+     * <p>Deliberately not filtered to APPROVED, unlike every public read: this
+     * is the console's working list, so a manager sees the rejected and
+     * still-pending rows beside the live ones instead of having to guess why a
+     * paper is missing from the site. The list is unpaged for the same reason
+     * the roster and the project list are — a lab's bibliography is tens of
+     * rows, and the console filters it client-side.
+     */
+    @GetMapping("/publications")
+    public List<AdminPublicationView> publications() {
+        return withAuthors(publicationRepository.findAll(
+                Sort.by(Sort.Direction.DESC, "year").and(Sort.by(Sort.Direction.DESC, "createdAt"))));
+    }
+
     @PostMapping("/publications")
     @Transactional
-    public Publication createPublication(@Valid @RequestBody PublicationCreate req) {
+    public AdminPublicationView createPublication(@Valid @RequestBody PublicationCreate req) {
         Publication p = new Publication();
-        p.setTitle(req.title());
-        p.setVenue(req.venue());
+        p.setTitle(req.title().trim());
+        p.setVenue(req.venue().trim());
         p.setYear(req.year());
-        p.setDoi(req.doi());
-        p.setUrl(req.url());
+        p.setDoi(blankToNull(req.doi()));
+        p.setUrl(blankToNull(req.url()));
         p.setType(req.type());
         p.setStatus(req.status());
-        p.setAbstractText(req.abstractText());
+        p.setAbstractText(blankToNull(req.abstractText()));
         Publication saved = publicationRepository.save(p);
+
+        // A manager entering a publication *is* the approval (see V27), so the
+        // entity's APPROVED default stands and this reaches the public site at
+        // once — including the profile of everyone named below.
+        writeAuthors(saved.getId(), req.authors());
+
         auditService.record(AuthenticatedMember.id(), "CREATE_PUBLICATION", "Publication", saved.getId().toString(),
                 req);
-        return saved;
+        return withAuthors(List.of(saved)).get(0);
+    }
+
+    /**
+     * Edits a publication, including who is on it.
+     *
+     * <p>This is the only path that can name a co-author. The portal's
+     * submission endpoint records the submitter and nobody else on purpose —
+     * naming someone is a claim about them — so attaching the rest of the
+     * authors to an approved submission happens here, by the manager who
+     * reviewed it.
+     */
+    @PutMapping("/publications/{id}")
+    @Transactional
+    public AdminPublicationView updatePublication(@PathVariable UUID id, @RequestBody PublicationUpdate req) {
+        Publication p = publicationRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("publication not found: " + id));
+
+        if (req.title() != null)
+            p.setTitle(req.title().trim());
+        if (req.venue() != null)
+            p.setVenue(req.venue().trim());
+        if (req.year() != null)
+            p.setYear(req.year());
+        if (req.type() != null)
+            p.setType(req.type());
+        if (req.status() != null)
+            p.setStatus(req.status());
+        // Same sentinel the project fields use: empty string clears the value,
+        // null means the SPA did not send the field at all.
+        if (req.doi() != null)
+            p.setDoi(blankToNull(req.doi()));
+        if (req.url() != null)
+            p.setUrl(blankToNull(req.url()));
+        if (req.abstractText() != null)
+            p.setAbstractText(blankToNull(req.abstractText()));
+
+        Publication saved = publicationRepository.save(p);
+
+        // Null leaves the author list untouched — a manager fixing a typo in the
+        // venue must not silently drop every name from the paper.
+        if (req.authors() != null) {
+            writeAuthors(id, req.authors());
+        }
+
+        auditService.record(AuthenticatedMember.id(), "UPDATE_PUBLICATION", "Publication", id.toString(), req);
+        return withAuthors(List.of(saved)).get(0);
+    }
+
+    /**
+     * Replaces a publication's author list with exactly what was sent.
+     *
+     * <p>Position in the list <em>is</em> {@code author_order}: on a paper the
+     * order of names is part of the record, and the console lets a manager
+     * reorder them. Replace-all rather than diffing because {@code authorship}
+     * has no primary key and reordering has no update to express.
+     */
+    private void writeAuthors(UUID publicationId, List<AuthorLink> authors) {
+        // Also flushes the pending publication INSERT on the create path — the
+        // authorship rows below carry a foreign key to a row Hibernate would
+        // otherwise still be holding in the persistence context.
+        publicationRepository.deleteAuthorsByPublicationId(publicationId);
+        if (authors == null || authors.isEmpty()) {
+            return;
+        }
+
+        Set<UUID> seenMembers = new HashSet<>();
+        short order = 1;
+        for (AuthorLink author : authors) {
+            String role = normalizeAuthorRole(author.role());
+            String externalName = blankToNull(author.externalName());
+            UUID memberId = author.memberId();
+
+            if ((memberId == null) == (externalName == null)) {
+                throw new ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST,
+                        "Each author is either a roster member or an external name — never both, never neither");
+            }
+
+            if (memberId == null) {
+                publicationRepository.addExternalAuthor(publicationId, externalName, order, role);
+            } else {
+                // An id that names nobody would surface as a foreign-key
+                // violation: a 500 the console cannot explain to whoever picked
+                // a member the roster had already dropped.
+                if (!memberRepository.existsById(memberId)) {
+                    throw new ResponseStatusException(
+                            org.springframework.http.HttpStatus.BAD_REQUEST, "Unknown member: " + memberId);
+                }
+                // The same member twice would double-count the paper on their
+                // profile, where /publications?memberId joins authorship.
+                if (!seenMembers.add(memberId)) {
+                    throw new ResponseStatusException(
+                            org.springframework.http.HttpStatus.BAD_REQUEST,
+                            "Member listed twice as author: " + memberId);
+                }
+                publicationRepository.addMemberAuthor(publicationId, memberId, order, role);
+            }
+            order++;
+        }
+    }
+
+    /** The roles the public profile pages know how to render. */
+    private static final Set<String> AUTHOR_ROLES = Set.of("AUTHOR", "ADVISOR", "CO_ADVISOR");
+
+    /**
+     * Blank means the ordinary case, AUTHOR. Anything outside the set is a typo
+     * rather than a new concept — storing it would put a role on the page that
+     * nothing knows how to label, and {@code author_role} has no CHECK to catch
+     * it at the table.
+     */
+    private static String normalizeAuthorRole(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "AUTHOR";
+        }
+        String role = raw.trim().toUpperCase();
+        if (!AUTHOR_ROLES.contains(role)) {
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Unknown author role: " + raw);
+        }
+        return role;
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
+    }
+
+    /**
+     * Attaches each publication's author list, resolving member ids to names.
+     *
+     * <p>Two queries for the whole page rather than two per row: the authorship
+     * rows come back in one batch, and the members they name in another.
+     */
+    private List<AdminPublicationView> withAuthors(List<Publication> publications) {
+        if (publications.isEmpty()) {
+            // IN () is a syntax error, and a lab with no publications on record
+            // yet is a real state.
+            return List.of();
+        }
+
+        List<PublicationRepository.AuthorRow> rows = publicationRepository.findAuthorRows(
+                publications.stream().map(Publication::getId).toList());
+
+        Map<UUID, Member> membersById = new HashMap<>();
+        memberRepository
+                .findAllById(rows.stream()
+                        .map(PublicationRepository.AuthorRow::getMemberId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet()))
+                .forEach(m -> membersById.put(m.getId(), m));
+
+        Map<UUID, List<AuthorView>> byPublication = new LinkedHashMap<>();
+        for (PublicationRepository.AuthorRow row : rows) {
+            Member m = row.getMemberId() == null ? null : membersById.get(row.getMemberId());
+            byPublication
+                    .computeIfAbsent(row.getPublicationId(), k -> new ArrayList<>())
+                    .add(new AuthorView(
+                            row.getMemberId(),
+                            m != null ? m.getFullName() : row.getExternalAuthorName(),
+                            m != null ? m.getSlug() : null,
+                            row.getAuthorRole(),
+                            row.getAuthorOrder()));
+        }
+
+        return publications.stream()
+                .map(p -> new AdminPublicationView(p, byPublication.getOrDefault(p.getId(), List.of())))
+                .toList();
     }
 
     // ───── Publication approval queue ─────
@@ -544,7 +740,45 @@ public class AdminController {
             String url,
             @NotNull PublicationType type,
             @NotNull PublicationStatus status,
-            String abstractText) {
+            String abstractText,
+            List<AuthorLink> authors) {
+    }
+
+    /** Every field optional: null is "not sent", and only what arrives is written. */
+    public record PublicationUpdate(
+            String title,
+            String venue,
+            Short year,
+            String doi,
+            String url,
+            PublicationType type,
+            PublicationStatus status,
+            String abstractText,
+            List<AuthorLink> authors) {
+    }
+
+    /**
+     * One name on a paper — a roster member by id, or someone from another
+     * institution by name. Exactly one of the two, enforced in
+     * {@code writeAuthors}: an entry with both would be two different claims
+     * about the same position in the author list.
+     */
+    public record AuthorLink(
+            UUID memberId,
+            String externalName,
+            /** AUTHOR (default), ADVISOR or CO_ADVISOR. */
+            String role) {
+    }
+
+    /** A publication plus its author list, which the entity itself does not expose. */
+    public record AdminPublicationView(Publication publication, List<AuthorView> authors) {
+    }
+
+    /**
+     * An author as the console renders it. {@code memberId} and {@code slug} are
+     * null for an external co-author, which is exactly what tells the two apart.
+     */
+    public record AuthorView(UUID memberId, String name, String slug, String role, short order) {
     }
 
     public record ProjectCreate(
