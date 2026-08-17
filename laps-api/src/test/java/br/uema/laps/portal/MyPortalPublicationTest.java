@@ -114,7 +114,7 @@ class MyPortalPublicationTest {
     }
 
     @Test
-    @DisplayName("an undergrad may submit a publication — this is not tiered like projects")
+    @DisplayName("an undergrad may submit a publication — not tiered, same as projects")
     void undergradMaySubmit() {
         var response = controller.submitPublication(request());
 

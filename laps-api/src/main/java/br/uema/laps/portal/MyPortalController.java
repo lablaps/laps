@@ -376,17 +376,16 @@ public class MyPortalController {
      * just what the member says they did — so it is taken from the request body
      * as-is rather than preserved server-side.
      *
-     * <p>Closed to undergraduates entirely — see {@link #guardProjectAuthoring}.
-     * Because this endpoint replaces the whole list rather than editing it, the
-     * card is read-only for them: additions and removals both come from someone
-     * further up the lab.
+     * <p>Open to every tier, undergraduates included. Elevated roles still
+     * can't be self-granted (see above), so the risk of opening this up is
+     * limited to a member listing themselves as RESEARCHER on projects they
+     * didn't work on, which a manager can undo from the Central de Comando.
      */
     @PutMapping("/projects")
     @Transactional
     public ResponseEntity<Void> updateMyProjects(@RequestBody List<MyProjectLink> links) {
         Member me = loadMe();
         guardLockedUntilPasswordChanged(me);
-        guardProjectAuthoring(me);
         UUID myId = me.getId();
 
         Map<UUID, String> rolesBefore = memberProjectRepository.findByMemberId(myId).stream()
@@ -427,14 +426,8 @@ public class MyPortalController {
 
     /**
      * Submits a publication for review. Open to every member, undergraduates
-     * included — this is the one authoring path that is not tiered.
-     *
-     * <p>The asymmetry with projects is intentional. A project entry is the
-     * lab's record of work it is running, so who appears on it is the
-     * supervisor's call ({@link #guardProjectAuthoring}). A publication is the
-     * member's own authorship of a paper that already exists in the world, and
-     * an undergraduate with a conference paper has exactly as much standing to
-     * report it as a doctorate does.
+     * included — same as project self-service ({@link #createMyProject},
+     * {@link #updateMyProjects}), neither authoring path is tiered.
      *
      * <p>What makes that safe is the review step rather than the role: the row
      * is written PENDING and stays off every public surface until a manager
@@ -513,30 +506,6 @@ public class MyPortalController {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "You must change your temporary password before editing your profile");
-        }
-    }
-
-    /**
-     * Undergraduates do not author the lab's project record.
-     *
-     * <p>Both self-service project endpoints write to what the public site
-     * publishes: {@code /projects/new} creates an entry outright, and
-     * {@code /projects} decides whose name appears on one. Undergrads are the
-     * largest tier in the lab and the one with the highest turnover, so the
-     * decision was to have their participation recorded by whoever supervises
-     * the work rather than claimed from the portal.
-     *
-     * <p>This closes the endpoints, not the outcome: an undergrad can still be
-     * put on a project by a manager from the Central de Comando, or listed in
-     * {@code participantIds} by the member creating the project — neither path
-     * goes through here, and both leave an actor other than the undergrad
-     * responsible for the claim.
-     */
-    private void guardProjectAuthoring(Member me) {
-        if (me.getCurrentRole() == MemberRole.UNDERGRAD) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Undergraduate members cannot add or join projects themselves");
         }
     }
 
@@ -669,15 +638,13 @@ public class MyPortalController {
      * (any HEAD/COORDINATOR) is added as LEAD. Additional participants are added
      * as RESEARCHER. Title and description are auto-translated PT→EN/FR.
      *
-     * <p>Closed to undergraduates — see {@link #guardProjectAuthoring}. They may
-     * still be named in {@code participantIds} by whoever creates the project.
+     * <p>Open to every tier, undergraduates included.
      */
     @PostMapping("/projects/new")
     @Transactional
     public ResponseEntity<Project> createMyProject(@RequestBody MemberProjectCreate req) {
         Member me = loadMe();
         guardLockedUntilPasswordChanged(me);
-        guardProjectAuthoring(me);
 
         Project p = new Project();
         p.setSlug(toSlug(req.titlePt()) + "-" + UUID.randomUUID().toString().substring(0, 8));

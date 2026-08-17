@@ -193,55 +193,23 @@ class MyPortalProjectLinkTest {
     }
 
     @Test
-    @DisplayName("an undergrad cannot create a project")
-    void undergradCannotCreateProject() {
+    @DisplayName("an undergrad may create a project like any other tier")
+    void undergradCanCreateProject() {
         makeMeAnUndergrad();
         when(projectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        assertThatThrownBy(() -> controller.createMyProject(
+        controller.createMyProject(
                 new MyPortalController.MemberProjectCreate(
-                        "Projeto", null, null, null, null, null, null, null, null)))
-                .hasMessageContaining("cannot add or join projects");
+                        "Projeto", null, null, null, null, null, null, null, null));
 
-        // Refused before anything is written — no orphan project row, no links.
-        verify(projectRepository, never()).save(any());
-        verify(memberProjectRepository, never()).save(any());
+        verify(projectRepository, times(1)).save(any());
+        verify(memberProjectRepository, times(1)).save(any());
     }
 
     @Test
-    @DisplayName("an undergrad cannot join an existing project either")
-    void undergradCannotLinkThemselves() {
+    @DisplayName("an undergrad may link themselves to an existing project like any other tier")
+    void undergradCanLinkThemselves() {
         makeMeAnUndergrad();
-        when(memberProjectRepository.findByMemberId(ME)).thenReturn(List.of());
-
-        assertThatThrownBy(() -> controller.updateMyProjects(List.of(
-                new MyPortalController.MyProjectLink(PROJECT_A, "RESEARCHER", null))))
-                .hasMessageContaining("cannot add or join projects");
-
-        verify(memberProjectRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("the undergrad's existing links survive — the endpoint refuses before deleting")
-    void undergradLinksAreNotWipedByARefusedCall() {
-        // updateMyProjects clears the caller's rows before rewriting them, so a
-        // guard placed after the delete would strip an undergrad's memberships
-        // on every refused call — silently undoing manager-assigned links.
-        makeMeAnUndergrad();
-        when(memberProjectRepository.findByMemberId(ME))
-                .thenReturn(List.of(new MemberProject(PROJECT_A, ME, "RESEARCHER")));
-
-        assertThatThrownBy(() -> controller.updateMyProjects(List.of()))
-                .hasMessageContaining("cannot add or join projects");
-
-        verify(memberProjectRepository, never()).deleteByMemberId(any());
-    }
-
-    @Test
-    @DisplayName("tiers above undergrad are unaffected")
-    void graduateTiersMayStillAuthor() {
-        Member me = memberRepository.findById(ME).orElseThrow();
-        me.setCurrentRole(MemberRole.MASTER);
         when(memberProjectRepository.findByMemberId(ME)).thenReturn(List.of());
 
         controller.updateMyProjects(List.of(
@@ -249,5 +217,18 @@ class MyPortalProjectLinkTest {
 
         assertThat(savedLinks()).singleElement()
                 .satisfies(link -> assertThat(link.getMemberId()).isEqualTo(ME));
+    }
+
+    @Test
+    @DisplayName("an undergrad still cannot self-promote to LEAD — the role guard is independent of tier")
+    void undergradCannotEscalateRoleEither() {
+        makeMeAnUndergrad();
+        when(memberProjectRepository.findByMemberId(ME)).thenReturn(List.of());
+
+        controller.updateMyProjects(List.of(
+                new MyPortalController.MyProjectLink(PROJECT_A, "LEAD", null)));
+
+        assertThat(savedLinks()).singleElement()
+                .satisfies(link -> assertThat(link.getRole()).isEqualTo("RESEARCHER"));
     }
 }

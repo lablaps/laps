@@ -183,9 +183,6 @@ function saveErrorMessage(err: unknown, fallback: string) {
     if (/temporary password/i.test(err.message)) {
       return "Troque a senha temporária antes de editar o perfil — a seção «Trocar senha» fica no fim da página e não exige email.";
     }
-    if (/add or join projects/i.test(err.message)) {
-      return "Membros da graduação não cadastram projetos — peça ao seu orientador para incluir você como participante.";
-    }
   }
   return fallback;
 }
@@ -2112,12 +2109,6 @@ function ProjectsSection({
   const [creating, setCreating] = useState(false);
   const qc = useQueryClient();
 
-  // Both self-service project endpoints are closed to undergrads server-side
-  // (MyPortalController.guardProjectAuthoring), so the card is read-only for
-  // them. Rendering the buttons anyway would only produce a 403 after they had
-  // filled in a whole form.
-  const canAuthorProjects = me.currentRole !== "UNDERGRAD";
-
   return (
     <PortfolioCard title="PROJETOS" icon={Sparkles}>
       <div className="space-y-3">
@@ -2128,22 +2119,12 @@ function ProjectsSection({
 
         {portfolioProjects.length === 0 && !creating && (
           <p className="text-sm italic text-laps-navy/45">
-            {canAuthorProjects
-              ? "Nenhum projeto ainda. Crie um abaixo!"
-              : "Nenhum projeto ainda."}
+            Nenhum projeto ainda. Crie um abaixo!
           </p>
         )}
 
         {/* Create new project */}
-        {!canAuthorProjects ? (
-          <div className="flex items-start gap-2 rounded-xl border border-laps-navy/10 bg-laps-ghost/40 px-3 py-3">
-            <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-laps-navy/45" />
-            <p className="text-[11px] leading-relaxed text-laps-navy/60">
-              Projetos da graduação são cadastrados pelo orientador ou pela coordenação. Peça para
-              ser incluído(a) como participante — o projeto aparece aqui automaticamente.
-            </p>
-          </div>
-        ) : creating ? (
+        {creating ? (
           <CreateProjectForm
             me={me}
             allMembers={allMembers}
@@ -2166,18 +2147,16 @@ function ProjectsSection({
       </div>
 
       {/* Link to existing projects section */}
-      {canAuthorProjects && (
-        <div className="mt-6 border-t border-laps-navy/8 pt-4">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-laps-navy/50">
-            Vincular a projetos existentes
-          </p>
-          <ExistingProjectLinker
-            me={me}
-            allProjects={allProjects}
-            myProjectLinks={myProjectLinks}
-          />
-        </div>
-      )}
+      <div className="mt-6 border-t border-laps-navy/8 pt-4">
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-laps-navy/50">
+          Vincular a projetos existentes
+        </p>
+        <ExistingProjectLinker
+          me={me}
+          allProjects={allProjects}
+          myProjectLinks={myProjectLinks}
+        />
+      </div>
     </PortfolioCard>
   );
 }
