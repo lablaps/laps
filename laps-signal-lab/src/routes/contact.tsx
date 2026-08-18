@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Linkedin, Github } from "lucide-react";
+import { Linkedin, Github, Youtube } from "lucide-react";
 import { useLang } from "@/hooks/use-lang";
 import { PublicLayout } from "@/components/PublicLayout";
 
@@ -107,6 +107,15 @@ function ContactPage() {
                   className="flex h-10 w-10 items-center justify-center rounded-md border border-laps-navy/20 text-laps-navy/70 transition-colors hover:border-laps-signal hover:text-laps-signal"
                 >
                   <Linkedin className="h-4 w-4" />
+                </a>
+                <a
+                  href="https://www.youtube.com/@lapslaboratorio"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="YouTube"
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-laps-navy/20 text-laps-navy/70 transition-colors hover:border-laps-signal hover:text-laps-signal"
+                >
+                  <Youtube className="h-4 w-4" />
                 </a>
                 <a
                   href="https://github.com/lablaps"
