@@ -62,31 +62,26 @@ class ManagerAllowlistTest {
     }
 
     @Test
-    @DisplayName("the Gerenciador tier grants MANAGER without an allowlist entry")
-    void managerTierGrantsAuthority() {
+    @DisplayName("the internal management permission grants MANAGER without an allowlist entry")
+    void managementPermissionGrantsAuthority() {
         ManagerAllowlist allowlist = new ManagerAllowlist(List.of("coord@uema.br"));
-        assertThat(allowlist.roleFor(with("sofia@uema.br", MemberRole.MANAGER))).isEqualTo("MANAGER");
-        // The path that motivated this: members created from the Central de
-        // Comando often have no email at all, so the allowlist can never reach
-        // them and the tier is their only route to the console.
-        assertThat(allowlist.roleFor(with(null, MemberRole.MANAGER))).isEqualTo("MANAGER");
+        Member member = with("sofia@uema.br", MemberRole.COLLABORATOR);
+        member.getPermissions().add(MemberPermission.MANAGE_PLATFORM);
+        assertThat(allowlist.roleFor(member)).isEqualTo("MANAGER");
     }
 
     @Test
-    @DisplayName("the Coordenador tier grants MANAGER without an allowlist entry")
-    void coordinatorTierGrantsAuthority() {
-        // Coordenadores run the console alongside Gerenciadores; an off-allowlist
-        // email (or none at all) must not keep them out.
+    @DisplayName("legacy public roles no longer grant management authority")
+    void legacyRolesDoNotGrantAuthority() {
         ManagerAllowlist allowlist = new ManagerAllowlist(List.of("coord@uema.br"));
-        assertThat(allowlist.roleFor(with("other@uema.br", MemberRole.COORDINATOR))).isEqualTo("MANAGER");
-        assertThat(allowlist.roleFor(with(null, MemberRole.COORDINATOR))).isEqualTo("MANAGER");
+        assertThat(allowlist.roleFor(with("other@uema.br", MemberRole.COORDINATOR))).isEqualTo("MEMBER");
+        assertThat(allowlist.roleFor(with(null, MemberRole.MANAGER))).isEqualTo("MEMBER");
     }
 
     @Test
     @DisplayName("HEAD is seniority, not a console grant")
     void headTierIsNotAManager() {
-        // HEAD outranks both console tiers academically but describes seniority,
-        // not console duty — it needs an allowlist entry like anyone else.
+        // HEAD describes seniority, not console duty.
         ManagerAllowlist allowlist = new ManagerAllowlist(List.of("coord@uema.br"));
         assertThat(allowlist.roleFor(with("head@uema.br", MemberRole.HEAD))).isEqualTo("MEMBER");
         // …but the allowlist still wins regardless of tier.

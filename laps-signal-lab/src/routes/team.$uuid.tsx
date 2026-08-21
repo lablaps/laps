@@ -193,8 +193,7 @@ function TeamMemberPage() {
 
   const tierMap: Record<string, Tier> = {
     HEAD: "head",
-    COORDINATOR: "coordinator",
-    MANAGER: "manager",
+    COLLABORATOR: "collaborator",
     DOCTORATE: "doctorate",
     MASTER: "master",
     UNDERGRAD: "undergrad",

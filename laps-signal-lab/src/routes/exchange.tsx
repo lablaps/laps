@@ -38,8 +38,7 @@ export const Route = createFileRoute("/exchange")({
 
 const ROLE_TO_TIER: Record<string, Tier> = {
   HEAD: "head",
-  COORDINATOR: "coordinator",
-  MANAGER: "manager",
+  COLLABORATOR: "collaborator",
   DOCTORATE: "doctorate",
   MASTER: "master",
   UNDERGRAD: "undergrad",

@@ -1,6 +1,6 @@
 import type { AreaSlug } from "./areas-data";
 
-export type Tier = "head" | "coordinator" | "manager" | "doctorate" | "master" | "undergrad";
+export type Tier = "head" | "collaborator" | "doctorate" | "master" | "undergrad";
 export type MemberStatus = "ACTIVE" | "COMPLETED" | "INACTIVE";
 
 export interface TeamMember {
@@ -39,19 +39,19 @@ export const team: TeamMember[] = [
     },
   },
 
-  // Coordenação — corpo discente sênior que apoia a operação do laboratório.
+  // Colaboradores — membros que contribuem fora dos níveis discentes.
   {
     id: "luis-guilherme-busaglo-lopes",
     uuid: "8c4d04b2-0fc0-4e9d-8739-4f0a69739fb7",
     fullName: "Luis Guilherme Busaglo Lopes",
-    tier: "coordinator",
+    tier: "collaborator",
     status: "ACTIVE",
   },
   {
     id: "patrick-melo-albuquerque",
     uuid: "f38fd36d-879b-40dc-b3d0-f0ab6fa8ad54",
     fullName: "Patrick Melo Albuquerque",
-    tier: "coordinator",
+    tier: "collaborator",
     status: "ACTIVE",
   },
 
@@ -232,7 +232,7 @@ export const team: TeamMember[] = [
 
 export const tierCounts = {
   head: team.filter((m) => m.tier === "head").length,
-  coordinator: team.filter((m) => m.tier === "coordinator").length,
+  collaborator: team.filter((m) => m.tier === "collaborator").length,
   doctorate: team.filter((m) => m.tier === "doctorate").length,
   master: team.filter((m) => m.tier === "master").length,
   undergrad: team.filter((m) => m.tier === "undergrad").length,

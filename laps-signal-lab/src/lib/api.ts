@@ -99,8 +99,7 @@ export type MemberRole =
   | "UNDERGRAD"
   | "MASTER"
   | "DOCTORATE"
-  | "MANAGER"
-  | "COORDINATOR"
+  | "COLLABORATOR"
   | "HEAD";
 export type MemberStatusEnum = "ACTIVE" | "COMPLETED" | "INACTIVE";
 
@@ -155,6 +154,15 @@ export interface ApiMember {
   joinedMonth: string | null;
   languages: string | null;
   deletedAt: string | null;
+}
+
+export interface AdminMember {
+  member: ApiMember;
+  mustChangePassword: boolean;
+  emailVerified: boolean;
+  canManage: boolean;
+  managementPermissionGranted: boolean;
+  managementAccessFromAllowlist: boolean;
 }
 
 export interface ApiResearchArea {
@@ -472,6 +480,7 @@ export const api = {
 
   // Public reads
   members: () => request<Page<ApiMember>>("/api/v1/members?size=200"),
+  meAdvisors: () => request<ApiMember[]>("/api/v1/me/advisors"),
   member: (slugOrId: string) => request<ApiMember>(`/api/v1/members/${slugOrId}`),
   areas: () => request<ApiResearchArea[]>("/api/v1/areas"),
   projects: () => request<ApiProject[]>("/api/v1/projects"),
@@ -503,6 +512,8 @@ export const api = {
 
   // Admin (MANAGER)
   admin: {
+    members: () => request<AdminMember[]>("/api/v1/admin/members"),
+
     createMember: (body: {
       slug: string;
       fullName: string;
@@ -535,6 +546,12 @@ export const api = {
 
     promote: (id: string, body: { toRole: MemberRole; effectiveDate?: string; reason?: string; force?: boolean }) =>
       request<ApiMember>(`/api/v1/admin/members/${id}/promote`, { method: "POST", body }),
+
+    setManagementAccess: (id: string, enabled: boolean) =>
+      request<AdminMember>(`/api/v1/admin/members/${id}/management-access`, {
+        method: "PUT",
+        body: { enabled },
+      }),
 
     createProject: (body: Record<string, unknown>) =>
       request<ApiProject>("/api/v1/admin/projects", { method: "POST", body }),

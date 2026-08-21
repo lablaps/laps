@@ -9,6 +9,7 @@ import br.uema.laps.project.ProjectRepository;
 import br.uema.laps.publication.PublicationRepository;
 import br.uema.laps.roletracking.RoleTransitionService;
 import br.uema.laps.security.MemberPasswordService;
+import br.uema.laps.security.ManagerAllowlist;
 import br.uema.laps.translate.TranslationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -54,7 +55,8 @@ class AdminExchangePlacementTest {
                 mock(AuditService.class),
                 mock(AuditLogRepository.class),
                 mock(TranslationService.class),
-                mock(MemberPasswordService.class));
+                mock(MemberPasswordService.class),
+                mock(ManagerAllowlist.class));
 
         member = new Member();
         member.setId(ID);

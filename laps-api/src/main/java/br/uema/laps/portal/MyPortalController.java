@@ -5,6 +5,8 @@ import br.uema.laps.email.EmailService;
 import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
 import br.uema.laps.member.MemberRole;
+import br.uema.laps.member.MemberPublicView;
+import br.uema.laps.security.MemberPermission;
 import br.uema.laps.project.MemberProject;
 import br.uema.laps.project.MemberProjectRepository;
 import br.uema.laps.project.Project;
@@ -32,6 +34,7 @@ import jakarta.validation.constraints.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -88,6 +91,7 @@ public class MyPortalController {
     private final RateLimitGuard rateLimitGuard;
     private final EmailService emailService;
     private final EmailSendBudget emailSendBudget;
+
     private final ManagerAllowlist managerAllowlist;
 
     public MyPortalController(
@@ -111,6 +115,19 @@ public class MyPortalController {
         this.emailService = emailService;
         this.emailSendBudget = emailSendBudget;
         this.managerAllowlist = managerAllowlist;
+    }
+
+    @GetMapping("/advisors")
+    @Transactional(readOnly = true)
+    public List<MemberPublicView> eligibleAdvisors() {
+        UUID me = AuthenticatedMember.id();
+        return memberRepository.findAllByDeletedAtIsNull(
+                        PageRequest.of(0, 500, Sort.by(Sort.Direction.ASC, "fullName"))).stream()
+                .filter(member -> !member.getId().equals(me))
+                .filter(member -> member.getCurrentRole() == MemberRole.HEAD
+                        || member.hasPermission(MemberPermission.ADVISE_PROJECTS))
+                .map(member -> MemberPublicView.of(member, false))
+                .toList();
     }
 
     @GetMapping
@@ -635,7 +652,7 @@ public class MyPortalController {
     /**
      * Creates a project owned by the authenticated member. The member is added
      * as CO_LEAD (or RESEARCHER if no advisor is selected). An optional advisor
-     * (any HEAD/COORDINATOR) is added as LEAD. Additional participants are added
+     * (HEAD or a member with the internal advising capability) is added as LEAD. Additional participants are added
      * as RESEARCHER. Title and description are auto-translated PT→EN/FR.
      *
      * <p>Open to every tier, undergraduates included.
@@ -676,9 +693,9 @@ public class MyPortalController {
                     .orElseThrow(() -> new EntityNotFoundException("advisor not found: " + req.advisorId()));
             if (advisor.getDeletedAt() != null
                     || (advisor.getCurrentRole() != MemberRole.HEAD
-                        && advisor.getCurrentRole() != MemberRole.COORDINATOR)) {
+                        && !advisor.hasPermission(MemberPermission.ADVISE_PROJECTS))) {
                 throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Advisor must be a lab head or coordinator");
+                        HttpStatus.BAD_REQUEST, "Advisor is not eligible to advise projects");
             }
             memberProjectRepository.save(new MemberProject(saved.getId(), req.advisorId(), "LEAD"));
         }

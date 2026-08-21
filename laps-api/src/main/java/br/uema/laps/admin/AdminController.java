@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import br.uema.laps.security.AuthenticatedMember;
 import br.uema.laps.security.MemberPasswordService;
+import br.uema.laps.security.MemberPermission;
+import br.uema.laps.security.ManagerAllowlist;
+import br.uema.laps.member.MemberPublicView;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -61,6 +64,7 @@ public class AdminController {
     private final AuditLogRepository auditLogRepository;
     private final TranslationService translationService;
     private final MemberPasswordService memberPasswordService;
+    private final ManagerAllowlist managerAllowlist;
 
     public AdminController(
             MemberRepository memberRepository,
@@ -71,7 +75,8 @@ public class AdminController {
             AuditService auditService,
             AuditLogRepository auditLogRepository,
             TranslationService translationService,
-            MemberPasswordService memberPasswordService) {
+            MemberPasswordService memberPasswordService,
+            ManagerAllowlist managerAllowlist) {
         this.memberRepository = memberRepository;
         this.publicationRepository = publicationRepository;
         this.projectRepository = projectRepository;
@@ -81,6 +86,7 @@ public class AdminController {
         this.auditLogRepository = auditLogRepository;
         this.translationService = translationService;
         this.memberPasswordService = memberPasswordService;
+        this.managerAllowlist = managerAllowlist;
     }
 
     // ───── Members ─────
@@ -88,6 +94,7 @@ public class AdminController {
     @PostMapping("/members")
     @Transactional
     public Map<String, Object> createMember(@Valid @RequestBody MemberCreate req) {
+        requireAssignable(req.currentRole());
         Member m = new Member();
         m.setSlug(req.slug());
         m.setFullName(req.fullName());
@@ -121,6 +128,38 @@ public class AdminController {
                         "mustChangePassword", m.isMustChangePassword(),
                         "emailVerified", m.isEmailVerified()))
                 .toList();
+    }
+
+    @GetMapping("/members")
+    @Transactional(readOnly = true)
+    public List<AdminMemberView> members() {
+        return memberRepository.findAllByDeletedAtIsNull(
+                        PageRequest.of(0, 500, Sort.by(Sort.Direction.ASC, "fullName"))).stream()
+                .map(member -> AdminMemberView.of(member, managerAllowlist))
+                .toList();
+    }
+
+    @PutMapping("/members/{id}/management-access")
+    @Transactional
+    public AdminMemberView setManagementAccess(
+            @PathVariable UUID id,
+            @Valid @RequestBody ManagementAccessUpdate req) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("member not found: " + id));
+        boolean enabled = Boolean.TRUE.equals(req.enabled());
+        if (enabled) {
+            member.getPermissions().add(MemberPermission.MANAGE_PLATFORM);
+        } else {
+            member.getPermissions().remove(MemberPermission.MANAGE_PLATFORM);
+        }
+        Member saved = memberRepository.save(member);
+        auditService.record(
+                AuthenticatedMember.id(),
+                enabled ? "GRANT_MANAGEMENT_ACCESS" : "REVOKE_MANAGEMENT_ACCESS",
+                "Member",
+                id.toString(),
+                req);
+        return AdminMemberView.of(saved, managerAllowlist);
     }
 
     /**
@@ -280,6 +319,7 @@ public class AdminController {
     @PostMapping("/members/{id}/promote")
     @Transactional
     public Member promote(@PathVariable UUID id, @Valid @RequestBody PromoteRequest req) {
+        requireAssignable(req.toRole());
         Member updated = roleTransitionService.transition(
                 new RoleTransitionService.TransitionRequest(
                         id,
@@ -694,6 +734,37 @@ public class AdminController {
     }
 
     // ───── Records ─────
+
+    private static void requireAssignable(MemberRole role) {
+        if (role == null || !role.isAssignable()) {
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Management duties cannot be assigned as member roles");
+        }
+    }
+
+    public record AdminMemberView(
+            MemberPublicView member,
+            boolean mustChangePassword,
+            boolean emailVerified,
+            boolean canManage,
+            boolean managementPermissionGranted,
+            boolean managementAccessFromAllowlist) {
+        static AdminMemberView of(Member member, ManagerAllowlist managerAllowlist) {
+            boolean permissionGranted = member.hasPermission(MemberPermission.MANAGE_PLATFORM);
+            boolean allowlisted = managerAllowlist.isManager(member.getEmail());
+            return new AdminMemberView(
+                    MemberPublicView.of(member, true),
+                    member.isMustChangePassword(),
+                    member.isEmailVerified(),
+                    permissionGranted || allowlisted,
+                    permissionGranted,
+                    allowlisted);
+        }
+    }
+
+    public record ManagementAccessUpdate(@NotNull Boolean enabled) {
+    }
 
     public record MemberCreate(
             @NotBlank String slug,

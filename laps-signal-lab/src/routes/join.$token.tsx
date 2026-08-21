@@ -119,8 +119,7 @@ const ROLE_LABELS: Record<MemberRole, Record<JoinLang, string>> = {
   UNDERGRAD:   { pt: "Graduação", en: "Undergraduate", fr: "Licence" },
   MASTER:      { pt: "Mestrado", en: "Master's", fr: "Master" },
   DOCTORATE:   { pt: "Doutorado", en: "Doctorate", fr: "Doctorat" },
-  COORDINATOR: { pt: "Coordenador", en: "Coordinator", fr: "Coordinateur" },
-  MANAGER:     { pt: "Gestor", en: "Manager", fr: "Gestionnaire" },
+  COLLABORATOR:{ pt: "Colaborador", en: "Collaborator", fr: "Collaborateur" },
   HEAD:        { pt: "Diretor", en: "Head", fr: "Directeur" },
 };
 
@@ -581,4 +580,3 @@ function FormField({
     </div>
   );
 }
-

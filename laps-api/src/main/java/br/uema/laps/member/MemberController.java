@@ -25,6 +25,10 @@ public class MemberController {
             @RequestParam(required = false) MemberStatus status,
             Pageable pageable
     ) {
+        if (role != null && !role.isAssignable()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Unknown public member role");
+        }
         boolean includeHidden = isManager();
         return memberRepository.findAll(MemberSpecifications.build(role, status), pageable)
                 .map(m -> MemberPublicView.of(m, includeHidden));

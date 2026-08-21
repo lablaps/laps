@@ -15,8 +15,8 @@ public class RoleTransitionService {
 
     // We used to enforce a strict promotion graph (UNDERGRAD→MASTER→DOCTORATE,
     // never sideways or downward). Lab leadership asked for a generic
-    // "change role" capability instead — a member moving from MANAGER to
-    // COORDINATOR, or a DOCTORATE rolling back to MASTER, is now valid. The
+    // "change role" capability instead — a member moving from DOCTORATE to
+    // MASTER, or from COLLABORATOR to UNDERGRAD, is valid. The
     // RoleHistory entry still records every transition so the chronological
     // trail isn't lost. `force` is retained on the request for compatibility
     // but no longer gates anything.
@@ -32,6 +32,9 @@ public class RoleTransitionService {
     public Member transition(TransitionRequest req, UUID managerId) {
         Member member = memberRepository.findById(req.memberId())
                 .orElseThrow(() -> new EntityNotFoundException("member not found: " + req.memberId()));
+        if (req.toRole() == null || !req.toRole().isAssignable()) {
+            throw new IllegalRoleTransitionException(member.getCurrentRole(), req.toRole());
+        }
 
         if (member.getCurrentRole() == req.toRole()) {
             return member; // idempotent — nothing to record

@@ -144,8 +144,7 @@ export const Route = createFileRoute("/portal")({
 
 const tierMap: Record<string, Tier> = {
   HEAD: "head",
-  COORDINATOR: "coordinator",
-  MANAGER: "manager",
+  COLLABORATOR: "collaborator",
   DOCTORATE: "doctorate",
   MASTER: "master",
   UNDERGRAD: "undergrad",
@@ -2562,10 +2561,12 @@ function CreateProjectForm({
       ),
   });
 
-  // Filter HEAD and COORDINATOR members as potential advisors
-  const potentialAdvisors = allMembers.filter(
-    (m) => (m.currentRole === "HEAD" || m.currentRole === "COORDINATOR") && m.id !== me.id
-  );
+  const advisorsQuery = useQuery({
+    queryKey: ["me", "advisors"],
+    queryFn: () => api.meAdvisors(),
+    staleTime: 30_000,
+  });
+  const potentialAdvisors = advisorsQuery.data ?? [];
 
   // All other members as potential participants (excluding self and selected advisor)
   const potentialParticipants = allMembers.filter(

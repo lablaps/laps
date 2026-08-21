@@ -5,8 +5,7 @@ import type { Tier, MemberStatus } from "@/lib/team-data";
 
 const ROLE_TO_TIER: Record<string, Tier> = {
   HEAD: "head",
-  COORDINATOR: "coordinator",
-  MANAGER: "manager",
+  COLLABORATOR: "collaborator",
   DOCTORATE: "doctorate",
   MASTER: "master",
   UNDERGRAD: "undergrad",
@@ -59,8 +58,7 @@ export function useTeamRoster() {
 
   const tierCounts: Record<Tier, number> = {
     head:        members.filter((m) => m.tier === "head").length,
-    coordinator: members.filter((m) => m.tier === "coordinator").length,
-    manager:     members.filter((m) => m.tier === "manager").length,
+    collaborator: members.filter((m) => m.tier === "collaborator").length,
     doctorate:   members.filter((m) => m.tier === "doctorate").length,
     master:      members.filter((m) => m.tier === "master").length,
     undergrad:   members.filter((m) => m.tier === "undergrad").length,

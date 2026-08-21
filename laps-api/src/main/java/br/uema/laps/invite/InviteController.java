@@ -73,6 +73,7 @@ public class InviteController {
     @PostMapping("/api/v1/admin/invites")
     @Transactional
     public Map<String, Object> createInvite(@Valid @RequestBody CreateInviteRequest req) {
+        requireAssignable(req.role());
         InviteToken invite = new InviteToken();
         // The plaintext is generated here, handed back once in the response, and
         // never stored — only its digest goes to the database.
@@ -100,6 +101,7 @@ public class InviteController {
         // cannot be used as an unmetered oracle or an amplification target.
         rateLimitGuard.enforceNamespaced(httpReq, "invite-validate");
         InviteToken invite = resolveAndCheck(token);
+        requireAssignable(invite.getRole());
         Map<String, Object> body = new HashMap<>();
         body.put("role", invite.getRole());
         body.put("expiresAt", invite.getExpiresAt());
@@ -128,6 +130,7 @@ public class InviteController {
         }
 
         InviteToken invite = resolveAndCheck(token);
+        requireAssignable(invite.getRole());
 
         // Same rejection for both conditions, deliberately: an invitee must not
         // be able to tell "somebody already has this address" from "this address
@@ -228,6 +231,13 @@ public class InviteController {
             throw new ResponseStatusException(HttpStatus.GONE, "Invite has expired");
         }
         return invite;
+    }
+
+    private static void requireAssignable(MemberRole role) {
+        if (role == null || !role.isAssignable()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Management duties cannot be assigned as member roles");
+        }
     }
 
     private String slugify(String name) {

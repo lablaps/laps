@@ -9,8 +9,10 @@ import br.uema.laps.member.MemberStatus;
 import br.uema.laps.project.MemberProject;
 import br.uema.laps.project.MemberProjectRepository;
 import br.uema.laps.project.ProjectRepository;
+import br.uema.laps.project.Project;
 import br.uema.laps.publication.PublicationRepository;
 import br.uema.laps.security.ManagerAllowlist;
+import br.uema.laps.security.MemberPermission;
 import br.uema.laps.security.RateLimitGuard;
 import br.uema.laps.translate.TranslationService;
 import jakarta.persistence.EntityNotFoundException;
@@ -156,7 +158,7 @@ class MyPortalProjectLinkTest {
     }
 
     @Test
-    @DisplayName("an advisor must actually be a head or coordinator")
+    @DisplayName("an advisor must have an eligible public role or internal permission")
     void advisorMustBeLabLeadership() {
         UUID advisorId = UUID.randomUUID();
         Member notLeadership = new Member();
@@ -169,10 +171,38 @@ class MyPortalProjectLinkTest {
         assertThatThrownBy(() -> controller.createMyProject(
                 new MyPortalController.MemberProjectCreate(
                         "Projeto", null, null, null, null, null, advisorId, null, null)))
-                .hasMessageContaining("head or coordinator");
+                .hasMessageContaining("not eligible to advise");
 
         // The undergrad must not have been linked as LEAD before the check.
         verify(memberProjectRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("a collaborator with ADVISE_PROJECTS can be selected without exposing a coordinator role")
+    void internalAdvisorPermissionIsAccepted() {
+        UUID advisorId = UUID.randomUUID();
+        Member advisor = new Member();
+        advisor.setId(advisorId);
+        advisor.setCurrentRole(MemberRole.COLLABORATOR);
+        advisor.setStatus(MemberStatus.ACTIVE);
+        advisor.getPermissions().add(MemberPermission.ADVISE_PROJECTS);
+        when(memberRepository.findById(advisorId)).thenReturn(Optional.of(advisor));
+        when(projectRepository.save(any())).thenAnswer(invocation -> {
+            Project project = invocation.getArgument(0);
+            project.setId(PROJECT_A);
+            return project;
+        });
+
+        controller.createMyProject(new MyPortalController.MemberProjectCreate(
+                "Projeto", null, null, null, null, null, advisorId, null, null));
+
+        ArgumentCaptor<MemberProject> links = ArgumentCaptor.forClass(MemberProject.class);
+        verify(memberProjectRepository, times(2)).save(links.capture());
+        assertThat(links.getAllValues())
+                .extracting(MemberProject::getMemberId, MemberProject::getRole)
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(advisorId, "LEAD"),
+                        org.assertj.core.groups.Tuple.tuple(ME, "CO_LEAD"));
     }
 
     @Test

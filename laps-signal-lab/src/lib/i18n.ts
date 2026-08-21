@@ -70,7 +70,7 @@ export const translations = {
       network: {
         helper: "Passe o mouse sobre um nó para ver as conexões. Clique para abrir o perfil.",
         legendTitle: "Legenda:",
-        tier: { head: "Head", coordinator: "Coordenador", manager: "Gerenciador", doctorate: "Doutorando", master: "Mestrando", undergrad: "Graduando" },
+        tier: { head: "Head", collaborator: "Colaborador", doctorate: "Doutorando", master: "Mestrando", undergrad: "Graduando" },
         linkedin: "Ver no LinkedIn",
         noLinkedin: "LinkedIn em breve",
         areas: "Áreas de Atuação",
@@ -139,8 +139,7 @@ export const translations = {
       },
       tier: {
         head: "Chefe do Laboratório",
-        coordinator: "Coordenador(a)",
-        manager: "Gerenciador(a)",
+        collaborator: "Colaborador(a)",
         doctorate: "Doutorando(a)",
         master: "Mestrando(a)",
         undergrad: "Graduando(a)",
@@ -241,7 +240,7 @@ export const translations = {
       network: {
         helper: "Hover a node to reveal its connections. Click to open the profile.",
         legendTitle: "Legend:",
-        tier: { head: "Head", coordinator: "Coordinator", manager: "Manager", doctorate: "Doutorando", master: "Mestrando", undergrad: "Graduando" },
+        tier: { head: "Head", collaborator: "Collaborator", doctorate: "Doutorando", master: "Mestrando", undergrad: "Graduando" },
         linkedin: "View on LinkedIn",
         noLinkedin: "LinkedIn coming soon",
         areas: "Research Areas",
@@ -305,8 +304,7 @@ export const translations = {
       },
       tier: {
         head: "Head of Laboratory",
-        coordinator: "Coordinator",
-        manager: "Manager",
+        collaborator: "Collaborator",
         doctorate: "Doutorando",
         master: "MSc Student",
         undergrad: "Undergrad",
@@ -407,7 +405,7 @@ export const translations = {
       network: {
         helper: "Survolez un nœud pour révéler ses connexions. Cliquez pour ouvrir le profil.",
         legendTitle: "Légende :",
-        tier: { head: "Head", coordinator: "Coordonnateur", manager: "Gérant", doctorate: "Doctorant", master: "Master", undergrad: "Licence" },
+        tier: { head: "Head", collaborator: "Collaborateur", doctorate: "Doctorant", master: "Master", undergrad: "Licence" },
         linkedin: "Voir sur LinkedIn",
         noLinkedin: "LinkedIn bientôt",
         areas: "Domaines de Recherche",
@@ -471,8 +469,7 @@ export const translations = {
       },
       tier: {
         head: "Chef du Laboratoire",
-        coordinator: "Coordonnateur",
-        manager: "Gérant",
+        collaborator: "Collaborateur",
         doctorate: "Doctorant",
         master: "Master",
         undergrad: "Licence",

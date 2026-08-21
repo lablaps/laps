@@ -20,8 +20,7 @@ import {
   Linkedin,
   ExternalLink,
   X,
-  Shield,
-  Briefcase,
+  Handshake,
   Replace,
   KeyRound,
   Copy,
@@ -88,8 +87,7 @@ const TIER_META: Record<
   // The console shows every role side by side in one list, which is exactly
   // where six unrelated pastels stopped being a hierarchy and became noise.
   HEAD: { label: "Head", Icon: Crown, accent: TIER_CLASS.head.text, chip: TIER_CONFIG.head.chip },
-  COORDINATOR: { label: "Coordenador", Icon: Shield, accent: TIER_CLASS.coordinator.text, chip: TIER_CONFIG.coordinator.chip },
-  MANAGER: { label: "Gerenciador", Icon: Briefcase, accent: TIER_CLASS.manager.text, chip: TIER_CONFIG.manager.chip },
+  COLLABORATOR: { label: "Colaborador", Icon: Handshake, accent: TIER_CLASS.collaborator.text, chip: TIER_CONFIG.collaborator.chip },
   DOCTORATE: { label: "Doutorando", Icon: Microscope, accent: TIER_CLASS.doctorate.text, chip: TIER_CONFIG.doctorate.chip },
   MASTER: { label: "Mestrando", Icon: GraduationCap, accent: TIER_CLASS.master.text, chip: TIER_CONFIG.master.chip },
   UNDERGRAD: { label: "Graduação", Icon: Users, accent: TIER_CLASS.undergrad.text, chip: TIER_CONFIG.undergrad.chip },
@@ -97,7 +95,7 @@ const TIER_META: Record<
 
 // Canonical role order — used in the change-role dropdown so the manager
 // always sees roles top-to-bottom.
-const ROLE_ORDER: MemberRole[] = ["HEAD", "COORDINATOR", "MANAGER", "DOCTORATE", "MASTER", "UNDERGRAD"];
+const ROLE_ORDER: MemberRole[] = ["HEAD", "COLLABORATOR", "DOCTORATE", "MASTER", "UNDERGRAD"];
 
 const STATUS_META: Record<MemberStatusEnum, { label: string; dot: string }> = {
   ACTIVE: { label: "Ativo", dot: "bg-emerald-500" },
@@ -145,41 +143,41 @@ function AdminPage() {
     // unredacted payload for MANAGER callers, so sharing one cache entry across
     // auth states served the admin UI a redacted roster (blank emails).
     queryKey: ["admin", "members"],
-    queryFn: () => api.members(),
+    queryFn: () => api.admin.members(),
     staleTime: 30_000,
   });
 
-  // Auth-state-per-member: needed to show "still on temp password" badges and
-  // to gate the credentials reveal in MemberCard. One round trip serves the
-  // whole list — refetch when the admin re-saves a member.
-  const authStatusQuery = useQuery({
-    queryKey: ["admin", "auth-status"],
-    queryFn: () => api.admin.authStatus(),
-    staleTime: 10_000,
-  });
   const authStatusMap = useMemo(() => {
-    const map = new Map<string, { mustChangePassword: boolean; emailVerified: boolean }>();
-    for (const row of authStatusQuery.data ?? []) {
-      map.set(row.memberId, {
+    const map = new Map<string, { mustChangePassword: boolean; emailVerified: boolean; canManage: boolean; managementPermissionGranted: boolean; managementAccessFromAllowlist: boolean }>();
+    for (const row of membersQuery.data ?? []) {
+      map.set(row.member.id, {
         mustChangePassword: row.mustChangePassword,
         emailVerified: row.emailVerified,
+        canManage: row.canManage,
+        managementPermissionGranted: row.managementPermissionGranted,
+        managementAccessFromAllowlist: row.managementAccessFromAllowlist,
       });
     }
     return map;
-  }, [authStatusQuery.data]);
+  }, [membersQuery.data]);
 
   const [query, setQuery] = useState("");
   const [tierFilter, setTierFilter] = useState<MemberRole | "ALL">("ALL");
+  const [passwordPendingOnly, setPasswordPendingOnly] = useState(false);
+  const [emailUnverifiedOnly, setEmailUnverifiedOnly] = useState(false);
   const [creating, setCreating] = useState(false);
   const [inviting, setInviting] = useState(false);
 
-  const members = membersQuery.data?.content ?? [];
+  const members = useMemo(() => (membersQuery.data ?? []).map((row) => row.member), [membersQuery.data]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return members.filter((m) => {
       if (m.deletedAt) return false;
       if (tierFilter !== "ALL" && m.currentRole !== tierFilter) return false;
+      const auth = authStatusMap.get(m.id);
+      if (passwordPendingOnly && auth?.mustChangePassword !== true) return false;
+      if (emailUnverifiedOnly && auth?.emailVerified !== false) return false;
       if (!q) return true;
       return (
         m.fullName.toLowerCase().includes(q) ||
@@ -187,13 +185,12 @@ function AdminPage() {
         (m.email ?? "").toLowerCase().includes(q)
       );
     });
-  }, [members, query, tierFilter]);
+  }, [members, query, tierFilter, passwordPendingOnly, emailUnverifiedOnly, authStatusMap]);
 
   const tierCounts = useMemo(() => {
     const counts: Record<MemberRole, number> = {
       HEAD: 0,
-      COORDINATOR: 0,
-      MANAGER: 0,
+      COLLABORATOR: 0,
       DOCTORATE: 0,
       MASTER: 0,
       UNDERGRAD: 0,
@@ -343,6 +340,22 @@ function AdminPage() {
               </div>
               <button
                 type="button"
+                aria-pressed={passwordPendingOnly}
+                onClick={() => setPasswordPendingOnly((value) => !value)}
+                className={`min-h-10 rounded-md border px-3 text-xs font-semibold transition-colors ${passwordPendingOnly ? "border-amber-500 bg-amber-50 text-amber-900" : "border-laps-navy/10 bg-surface text-laps-navy/65 hover:border-laps-blue/30"}`}
+              >
+                Senha não rotacionada
+              </button>
+              <button
+                type="button"
+                aria-pressed={emailUnverifiedOnly}
+                onClick={() => setEmailUnverifiedOnly((value) => !value)}
+                className={`min-h-10 rounded-md border px-3 text-xs font-semibold transition-colors ${emailUnverifiedOnly ? "border-slate-500 bg-slate-100 text-slate-900" : "border-laps-navy/10 bg-surface text-laps-navy/65 hover:border-laps-blue/30"}`}
+              >
+                Email não verificado
+              </button>
+              <button
+                type="button"
                 onClick={() => setInviting(true)}
                 className="inline-flex items-center gap-2 rounded-md border border-laps-blue/30 bg-laps-ghost px-4 py-2.5 text-xs font-bold text-laps-blue transition hover:bg-laps-accent/10"
               >
@@ -396,7 +409,6 @@ function AdminPage() {
             queryClient.invalidateQueries({ queryKey: ["members"] });
             queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
             queryClient.invalidateQueries({ queryKey: ["graph"] });
-            queryClient.invalidateQueries({ queryKey: ["admin", "auth-status"] });
           }}
         />
       )}
@@ -520,7 +532,7 @@ function CreateMemberDialog({
                 Nível
               </label>
               <div className="grid grid-cols-2 gap-1.5">
-                {(["UNDERGRAD", "MASTER", "DOCTORATE", "HEAD"] as MemberRole[]).map((r) => {
+                {(["UNDERGRAD", "MASTER", "DOCTORATE", "COLLABORATOR", "HEAD"] as MemberRole[]).map((r) => {
                   const meta = TIER_META[r];
                   return (
                     <button
@@ -654,7 +666,7 @@ const INVITE_ROLES: { value: MemberRole; label: string }[] = [
   { value: "UNDERGRAD", label: "Graduação" },
   { value: "MASTER", label: "Mestrado" },
   { value: "DOCTORATE", label: "Doutorado" },
-  { value: "COORDINATOR", label: "Coordenador" },
+  { value: "COLLABORATOR", label: "Colaborador" },
 ];
 
 function InviteDialog({ onClose }: { onClose: () => void }) {
@@ -807,7 +819,7 @@ function MemberCard({
   authStatus,
 }: {
   member: ApiMember;
-  authStatus?: { mustChangePassword: boolean; emailVerified: boolean };
+  authStatus?: { mustChangePassword: boolean; emailVerified: boolean; canManage: boolean; managementPermissionGranted: boolean; managementAccessFromAllowlist: boolean };
 }) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
@@ -822,12 +834,17 @@ function MemberCard({
     queryClient.invalidateQueries({ queryKey: ["graph"] });
     queryClient.invalidateQueries({ queryKey: ["member", member.id] });
     queryClient.invalidateQueries({ queryKey: ["member", member.slug] });
-    queryClient.invalidateQueries({ queryKey: ["admin", "auth-status"] });
   };
 
   const deleteMutation = useMutation({
     mutationFn: () => api.admin.deleteMember(member.id),
     onSuccess: invalidate,
+  });
+
+  const managementMutation = useMutation({
+    mutationFn: (enabled: boolean) => api.admin.setManagementAccess(member.id, enabled),
+    onSuccess: invalidate,
+    onError: () => toast.error("Não foi possível alterar o acesso de gestão."),
   });
 
   const meta = TIER_META[member.currentRole];
@@ -895,6 +912,25 @@ function MemberCard({
       {/* Auth state + credentials reveal */}
       <CredentialsPanel member={member} authStatus={authStatus} />
 
+      <div className="flex min-h-12 items-center justify-between gap-3 border-t border-laps-navy/10 px-4 py-2.5">
+        <div>
+          <p className="text-[11px] font-semibold text-laps-navy">Acesso à gestão</p>
+          <p className="text-[10px] text-laps-navy/50">
+            {authStatus?.managementAccessFromAllowlist ? "Concedido pela configuração do servidor." : "Permissão interna; não aparece no perfil."}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={authStatus?.canManage ?? false}
+          disabled={managementMutation.isPending || authStatus?.managementAccessFromAllowlist}
+          onClick={() => managementMutation.mutate(!(authStatus?.managementPermissionGranted ?? false))}
+          className={`min-h-10 rounded-md border px-3 text-[11px] font-bold transition-colors disabled:opacity-50 ${(authStatus?.canManage ?? false) ? "border-laps-blue bg-laps-blue text-white" : "border-laps-navy/15 bg-surface text-laps-navy/65"}`}
+        >
+          {authStatus?.managementAccessFromAllowlist ? "Configuração" : (authStatus?.canManage ?? false) ? "Permitido" : "Sem acesso"}
+        </button>
+      </div>
+
       {/* Actions — edit covers promote + project links, so a single primary action keeps the UI honest. */}
       <div className="grid grid-cols-2 gap-1.5 border-t border-laps-light/15 bg-laps-ghost/20 p-2 text-[11px] font-semibold">
         <ActionButton onClick={() => setEditing(true)} icon={<Pencil className="h-3.5 w-3.5" />}>
@@ -932,7 +968,7 @@ function CredentialsPanel({
   authStatus,
 }: {
   member: ApiMember;
-  authStatus?: { mustChangePassword: boolean; emailVerified: boolean };
+  authStatus?: { mustChangePassword: boolean; emailVerified: boolean; canManage?: boolean; managementPermissionGranted?: boolean; managementAccessFromAllowlist?: boolean };
 }) {
   const [copied, setCopied] = useState<"user" | "pwd" | "url" | null>(null);
 
@@ -1120,8 +1156,7 @@ function ActionButton({
 // ───── Helpers ─────
 const ROLE_TO_TIER: Record<MemberRole, Tier> = {
   HEAD: "head",
-  COORDINATOR: "coordinator",
-  MANAGER: "manager",
+  COLLABORATOR: "collaborator",
   DOCTORATE: "doctorate",
   MASTER: "master",
   UNDERGRAD: "undergrad",

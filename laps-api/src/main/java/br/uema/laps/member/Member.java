@@ -1,14 +1,18 @@
 package br.uema.laps.member;
 
+import br.uema.laps.security.MemberPermission;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.UUID;
 
 // Entity contract: /home/user/ICARO/Icaro de Jesus/01-projects/laps/laps-data-model.md
@@ -68,6 +72,18 @@ public class Member {
     @Enumerated(EnumType.STRING)
     @Column(name = "member_role", nullable = false)
     private MemberRole currentRole;
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "member_permission", joinColumns = @JoinColumn(name = "member_id"))
+    @Column(name = "permission", nullable = false, length = 40)
+    @Enumerated(EnumType.STRING)
+    @JsonIgnore
+    @BatchSize(size = 50)
+    private Set<MemberPermission> permissions = EnumSet.noneOf(MemberPermission.class);
+
+    public boolean hasPermission(MemberPermission permission) {
+        return permissions != null && permissions.contains(permission);
+    }
 
     @Column(name = "current_role_started_at")
     private LocalDate currentRoleStartedAt;

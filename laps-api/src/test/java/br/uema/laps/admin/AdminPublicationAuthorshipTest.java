@@ -11,6 +11,7 @@ import br.uema.laps.publication.PublicationStatus;
 import br.uema.laps.publication.PublicationType;
 import br.uema.laps.roletracking.RoleTransitionService;
 import br.uema.laps.security.MemberPasswordService;
+import br.uema.laps.security.ManagerAllowlist;
 import br.uema.laps.translate.TranslationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -69,7 +70,8 @@ class AdminPublicationAuthorshipTest {
                 mock(AuditService.class),
                 mock(AuditLogRepository.class),
                 mock(TranslationService.class),
-                mock(MemberPasswordService.class));
+                mock(MemberPasswordService.class),
+                mock(ManagerAllowlist.class));
 
         when(publicationRepository.save(any(Publication.class))).thenAnswer(inv -> {
             Publication p = inv.getArgument(0);

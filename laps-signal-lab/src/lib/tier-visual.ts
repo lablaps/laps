@@ -30,8 +30,7 @@ import type { Tier } from "./team-data";
  */
 export const TIER_COLOR: Record<Tier, string> = {
   head: "#0B6FD4",
-  coordinator: "#193A59",
-  manager: "#2C5578",
+  collaborator: "#2C5578",
   doctorate: "#0B4E8D",
   master: "#4A85BC",
   undergrad: "#8FB6D9",
@@ -46,8 +45,7 @@ export const TIER_COLOR: Record<Tier, string> = {
  */
 export const TIER_GRADIENT: Record<Tier, [string, string]> = {
   head: ["#0B6FD4", "#6FB6FF"],
-  coordinator: ["#193A59", "#2C5578"],
-  manager: ["#2C5578", "#4A85BC"],
+  collaborator: ["#193A59", "#4A85BC"],
   doctorate: ["#0B4E8D", "#4A85BC"],
   master: ["#4A85BC", "#8FB6D9"],
   undergrad: ["#8FB6D9", "#C3D8EA"],
@@ -61,8 +59,7 @@ export const TIER_GRADIENT: Record<Tier, [string, string]> = {
  */
 export const TIER_CLASS: Record<Tier, { text: string; border: string; dot: string }> = {
   head: { text: "text-laps-signal", border: "border-laps-signal", dot: "bg-laps-signal" },
-  coordinator: { text: "text-laps-navy", border: "border-laps-navy/60", dot: "bg-laps-navy" },
-  manager: { text: "text-laps-navy/85", border: "border-laps-navy/45", dot: "bg-laps-navy/75" },
+  collaborator: { text: "text-laps-navy", border: "border-laps-navy/55", dot: "bg-laps-navy" },
   doctorate: { text: "text-laps-blue", border: "border-laps-blue/45", dot: "bg-laps-blue" },
   master: { text: "text-laps-navy/70", border: "border-laps-navy/30", dot: "bg-laps-navy/55" },
   undergrad: { text: "text-laps-navy/55", border: "border-laps-navy/20", dot: "bg-laps-navy/35" },
@@ -93,19 +90,12 @@ export const TIER_CONFIG: Record<
     ring: "ring-laps-signal",
     label: "HEAD",
   },
-  coordinator: {
+  collaborator: {
     band: "bg-laps-ink",
     fill: "bg-laps-ink",
     chip: "border-laps-navy/50 text-laps-navy",
     ring: "ring-laps-ink",
-    label: "COORDINATOR",
-  },
-  manager: {
-    band: "bg-[#2C5578]",
-    fill: "bg-[#2C5578]",
-    chip: "border-laps-navy/40 text-laps-navy/85",
-    ring: "ring-[#2C5578]",
-    label: "MANAGER",
+    label: "COLLABORATOR",
   },
   doctorate: {
     band: "bg-laps-accent",

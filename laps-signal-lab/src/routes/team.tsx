@@ -23,7 +23,7 @@ const VIEW_ICON: Record<View, typeof Network> = {
   list: List,
 };
 
-const TIER_ORDER: Tier[] = ["head", "coordinator", "manager", "doctorate", "master", "undergrad"];
+const TIER_ORDER: Tier[] = ["head", "collaborator", "doctorate", "master", "undergrad"];
 
 // Tier colours come from lib/tier-visual.ts now — one ramp shared with the
 // graph and /exchange, instead of three drifting copies of a six-hue table.
@@ -103,7 +103,7 @@ function TeamPage() {
           <div className="mt-16 grid grid-cols-2 border-t border-laps-navy/15 sm:grid-cols-3 lg:grid-cols-5">
             {[
               { tier: "head" as Tier, label: labels.tier.head, value: tierCounts.head },
-              { tier: "coordinator" as Tier, label: labels.tier.coordinator, value: tierCounts.coordinator },
+              { tier: "collaborator" as Tier, label: labels.tier.collaborator, value: tierCounts.collaborator },
               { tier: "doctorate" as Tier, label: labels.tier.doctorate, value: tierCounts.doctorate },
               { tier: "master" as Tier, label: labels.tier.master, value: tierCounts.master },
               { tier: "undergrad" as Tier, label: labels.tier.undergrad, value: tierCounts.undergrad },

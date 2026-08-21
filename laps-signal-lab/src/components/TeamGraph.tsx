@@ -29,8 +29,7 @@ const CY = VIEW_H / 2;
 
 const TIER_ORDER: Tier[] = [
   "head",
-  "coordinator",
-  "manager",
+  "collaborator",
   "doctorate",
   "master",
   "undergrad",
@@ -42,8 +41,7 @@ const TIER_ORDER: Tier[] = [
 // Radial annulus [rMin, rMax] per tier — head at center.
 const TIER_ANNULUS: Record<Tier, [number, number]> = {
   head: [0, 0],
-  coordinator: [80, 150],
-  manager: [170, 240],
+  collaborator: [100, 200],
   doctorate: [260, 360],
   master: [380, 480],
   undergrad: [500, 600],
@@ -52,8 +50,7 @@ const TIER_ANNULUS: Record<Tier, [number, number]> = {
 // Base node radius per tier (degree will scale up to MAX_R).
 const BASE_R: Record<Tier, number> = {
   head: 32,
-  coordinator: 26,
-  manager: 24,
+  collaborator: 25,
   doctorate: 22,
   master: 18,
   undergrad: 14,
