@@ -70,7 +70,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   const { isDark } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -87,8 +87,9 @@ export function PublicLayout({ children }: { children: ReactNode }) {
     to: string;
     label: string;
     matchPrefix?: string;
+    hash?: string;
     /** When set, hovering the item on desktop reveals a dropdown with these links. */
-    submenu?: { to: string; label: string }[];
+    submenu?: { to: string; label: string; hash?: string }[];
   };
 
   const navItems: NavItem[] = [
@@ -103,6 +104,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         { to: "/exchange", label: t.nav.intercambio },
       ],
     },
+    { to: "/", hash: "parceiros", label: t.partners.nav },
     { to: "/contact", label: t.nav.contato },
   ];
 
@@ -145,7 +147,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           <nav className="relative hidden items-center justify-center md:flex">
             {navItems.map((it) => {
               const submenuActive = it.submenu?.some((s) => pathname === s.to);
-              const active = isActive(it.to, it.matchPrefix) || !!submenuActive;
+              const active = it.hash ? pathname === it.to && hash === it.hash : (isActive(it.to, it.matchPrefix) && !hash) || !!submenuActive;
               const pill = (
                 <>
                   <span
@@ -168,9 +170,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 // Hover-driven submenu. The wrapping div owns the :hover state so
                 // the dropdown stays visible while the cursor moves into it.
                 return (
-                  <div key={it.to} className="group relative">
+                  <div key={it.hash ?? it.to} className="group relative">
                     <Link
                       to={it.to}
+                  hash={it.hash}
+                  onClick={() => { if (it.hash) document.getElementById(it.hash)?.scrollIntoView(); }}
                       className="relative isolate block px-1 py-1"
                       aria-current={active ? "page" : undefined}
                     >
@@ -184,8 +188,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                           const subActive = pathname === sub.to;
                           return (
                             <Link
-                              key={sub.to}
+                              key={sub.hash ?? sub.to}
                               to={sub.to}
+                      hash={sub.hash}
+                      onClick={() => setMobileOpen(false)}
                               className={`block border-l-2 px-3 py-2 text-[13px] font-semibold transition-colors ${subActive
                                 ? "border-laps-signal text-laps-navy"
                                 : "border-transparent text-laps-navy/70 hover:border-laps-navy/30 hover:bg-laps-ghost hover:text-laps-navy"
@@ -203,8 +209,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
               return (
                 <Link
-                  key={it.to}
+                  key={it.hash ?? it.to}
                   to={it.to}
+                  hash={it.hash}
+                  onClick={() => { if (it.hash) document.getElementById(it.hash)?.scrollIntoView(); }}
                   className="relative isolate px-1 py-1"
                   aria-current={active ? "page" : undefined}
                 >
@@ -256,13 +264,15 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               {navItems.flatMap((it) => {
                 // Mobile flattens the submenu into siblings so users don't need
                 // to deal with a hover/long-press affordance on touch devices.
-                const links = it.submenu ?? [{ to: it.to, label: it.label }];
+                const links = it.submenu ?? [{ to: it.to, label: it.label, hash: it.hash }];
                 return links.map((sub) => {
-                  const active = isActive(sub.to, it.matchPrefix);
+                  const active = sub.hash ? pathname === sub.to && hash === sub.hash : isActive(sub.to, it.matchPrefix) && !hash;
                   return (
                     <Link
-                      key={sub.to}
+                      key={sub.hash ?? sub.to}
                       to={sub.to}
+                      hash={sub.hash}
+                      onClick={() => { setMobileOpen(false); if (sub.hash) document.getElementById(sub.hash)?.scrollIntoView(); }}
                       className={`border-l-2 px-4 py-3 text-sm font-semibold transition-colors ${active
                         ? "border-laps-signal text-laps-navy"
                         : "border-transparent text-laps-navy/70 hover:border-laps-navy/25 hover:text-laps-navy"
@@ -348,9 +358,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               </h4>
               <ul className="mt-6 space-y-3.5 text-sm text-white/75">
                 {navItems.map((it) => (
-                  <li key={it.to}>
+                  <li key={it.hash ?? it.to}>
                     <Link
                       to={it.to}
+                  hash={it.hash}
+                  onClick={() => { if (it.hash) document.getElementById(it.hash)?.scrollIntoView(); }}
                       className="transition-colors hover:text-laps-signal-ink"
                     >
                       {it.label}

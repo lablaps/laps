@@ -368,3 +368,13 @@ html {
 .animate-scroll-dot {
   animation: scroll-dot 2.4s ease-in-out infinite;
 }
+
+/* Follow the transparent artwork, rather than outlining its image box. */
+.partner-logo--imesc {
+  filter: drop-shadow(1px 0 0 #124d9b) drop-shadow(-1px 0 0 #124d9b) drop-shadow(0 1px 0 #124d9b) drop-shadow(0 -1px 0 #124d9b);
+}
+.dark .partner-logo--imesc { filter: none; }
+.dark .partner-logo--abin,
+.dark .partner-logo--biosolo {
+  filter: drop-shadow(1px 0 0 rgba(255, 255, 255, .9)) drop-shadow(-1px 0 0 rgba(255, 255, 255, .9)) drop-shadow(0 1px 0 rgba(255, 255, 255, .9)) drop-shadow(0 -1px 0 rgba(255, 255, 255, .9));
+}

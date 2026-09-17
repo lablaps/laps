@@ -4,6 +4,7 @@ import { stats } from "@/lib/i18n";
 import { WaveBackground } from "@/components/WaveBackground";
 import { CountUp } from "@/components/CountUp";
 import { AreaIndex } from "@/components/AreaIndex";
+import { Partners } from "@/components/Partners";
 import { PublicLayout } from "@/components/PublicLayout";
 
 export const Route = createFileRoute("/")({
@@ -174,6 +175,7 @@ function Index() {
           </div>
         </div>
       </section>
+      <Partners />
     </PublicLayout>
   );
 }
