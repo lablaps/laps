@@ -13,6 +13,7 @@ import { Route as TeamRouteImport } from './routes/team'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ImpactosRouteImport } from './routes/impactos'
 import { Route as ExchangeRouteImport } from './routes/exchange'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -39,6 +40,11 @@ const PortalRoute = PortalRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImpactosRoute = ImpactosRouteImport.update({
+  id: '/impactos',
+  path: '/impactos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExchangeRoute = ExchangeRouteImport.update({
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/exchange': typeof ExchangeRoute
+  '/impactos': typeof ImpactosRoute
   '/login': typeof LoginRoute
   '/portal': typeof PortalRoute
   '/projects': typeof ProjectsRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/exchange': typeof ExchangeRoute
+  '/impactos': typeof ImpactosRoute
   '/login': typeof LoginRoute
   '/portal': typeof PortalRoute
   '/projects': typeof ProjectsRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/contact': typeof ContactRoute
   '/exchange': typeof ExchangeRoute
+  '/impactos': typeof ImpactosRoute
   '/login': typeof LoginRoute
   '/portal': typeof PortalRoute
   '/projects': typeof ProjectsRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/exchange'
+    | '/impactos'
     | '/login'
     | '/portal'
     | '/projects'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/exchange'
+    | '/impactos'
     | '/login'
     | '/portal'
     | '/projects'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/contact'
     | '/exchange'
+    | '/impactos'
     | '/login'
     | '/portal'
     | '/projects'
@@ -165,6 +177,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ContactRoute: typeof ContactRoute
   ExchangeRoute: typeof ExchangeRoute
+  ImpactosRoute: typeof ImpactosRoute
   LoginRoute: typeof LoginRoute
   PortalRoute: typeof PortalRoute
   ProjectsRoute: typeof ProjectsRoute
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/impactos': {
+      id: '/impactos'
+      path: '/impactos'
+      fullPath: '/impactos'
+      preLoaderRoute: typeof ImpactosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/exchange': {
@@ -270,6 +290,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ContactRoute: ContactRoute,
   ExchangeRoute: ExchangeRoute,
+  ImpactosRoute: ImpactosRoute,
   LoginRoute: LoginRoute,
   PortalRoute: PortalRoute,
   ProjectsRoute: ProjectsRoute,

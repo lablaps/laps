@@ -1,3 +1,4 @@
+import { impactCopy } from "@/lib/impacts";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { motion } from "framer-motion";
@@ -105,6 +106,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       ],
     },
     { to: "/", hash: "parceiros", label: t.partners.nav },
+    { to: "/impactos", label: impactCopy[lang].title },
     { to: "/contact", label: t.nav.contato },
   ];
 

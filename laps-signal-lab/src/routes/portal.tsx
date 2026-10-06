@@ -1,3 +1,4 @@
+import { ImpactEditor } from "@/components/impacts/ImpactEditor";
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -374,6 +375,7 @@ function PortalPage() {
               allProjects={allProjects}
             />
             <PublicationsSection />
+            <ImpactEditor locked={auth.mustChangePassword} />
             <PasswordChangeCard
               emailVerified={auth.emailVerified}
               mustChangePassword={auth.mustChangePassword}

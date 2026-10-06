@@ -4,11 +4,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 /**
  * Does the application still wire up?
@@ -36,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * are still only proven by running them against a real Postgres.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@AutoConfigureMockMvc
 @TestPropertySource(properties = {
         // Required by the app, which refuses to start without a secret — by design.
         "laps.jwt.secret=test-secret-value-at-least-32-characters-long",
@@ -62,6 +66,9 @@ class ApplicationContextSmokeTest {
     @Autowired
     private WebApplicationContext context;
 
+    @Autowired
+    private MockMvc mockMvc;
+
     @Test
     @DisplayName("the application context starts")
     void contextLoads() {
@@ -75,5 +82,12 @@ class ApplicationContextSmokeTest {
         // was a filter chain that silently stopped applying. A context that
         // starts without one is the shape of that bug.
         assertThat(context.getBeansOfType(SecurityFilterChain.class)).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("public partner logo requests do not require authentication")
+    void partnerLogoDoesNotRequireAuthentication() throws Exception {
+        mockMvc.perform(get("/images/partners/uema.png"))
+                .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
     }
 }

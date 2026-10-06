@@ -1,3 +1,4 @@
+import { MemberImpacts } from "@/components/impacts/ImpactList";
 import { createFileRoute, notFound, useNavigate, Link } from "@tanstack/react-router";
 // Crown / Shield / Briefcase / Microscope went with the per-tier icon chips and
 // ArrowRight with the arrows stapled to link rows. Sparkles is replaced rather
@@ -619,6 +620,7 @@ function TeamMemberPage() {
 
             {/* MAIN */}
             <main className="flex flex-col gap-6">
+              <MemberImpacts key={member.id} memberId={member.id} />
               {member.roadmap && member.roadmap.trim().length > 0 && (
                 <PortfolioCard title={tx.sections.roadmap} icon={Compass}>
                   <p className="whitespace-pre-line text-sm leading-relaxed text-laps-navy/80">

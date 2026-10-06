@@ -59,7 +59,7 @@ interface RequestOpts {
   swallow401?: boolean;
 }
 
-async function request<T>(path: string, opts: RequestOpts = {}): Promise<T> {
+export async function request<T>(path: string, opts: RequestOpts = {}): Promise<T> {
   const { method = "GET", body, signal, swallow401 = false } = opts;
   const res = await fetch(`${API_BASE}${path}`, {
     method,

@@ -34,6 +34,7 @@ public class SpaController {
             "/team",
             "/team/{*rest}",
             "/projects",
+            "/impactos",
             "/projects/{*rest}",
             "/contact",
             "/aboutus",
