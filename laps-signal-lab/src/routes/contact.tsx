@@ -91,7 +91,6 @@ function ContactPage() {
                 value={CONTACT_EMAIL}
                 href={`mailto:${CONTACT_EMAIL}`}
               />
-              <InfoRow label={labels.phoneLabel} value="+55 (98) 3245-5400" href="tel:+559832455400" />
             </dl>
 
             <div className="mt-10">

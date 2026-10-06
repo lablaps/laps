@@ -124,9 +124,8 @@ function ProjectsPage() {
           {/* The top rule belongs to the rows; without it the empty state would
               sit under a stray hairline that framed nothing. */}
           <div
-            className={`grid md:grid-cols-2 lg:grid-cols-3 ${
-              projects.length > 0 ? "border-t border-laps-navy/15" : ""
-            }`}
+            className={`grid md:grid-cols-2 lg:grid-cols-3 ${projects.length > 0 ? "border-t border-laps-navy/15" : ""
+              }`}
           >
             {projects.map((p, i) => {
               const title = pickI18n(p, lang, "title");
@@ -189,7 +188,7 @@ function ProjectsPage() {
                   <div className="mt-6 flex items-end justify-between gap-4 border-t border-laps-navy/15 pt-5">
                     <div>
                       <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/40">
-                        {lang === "pt" ? "Orientadores" : lang === "fr" ? "Directeurs" : "Advisors"}
+                        {lang === "pt" ? "Pesquisadores" : lang === "fr" ? "Chercheur" : "Researchers"}
                       </span>
                       <div className="mt-2 flex -space-x-1.5">
                         {p.leaders?.slice(0, 5).map((l) => {
