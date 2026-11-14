@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  *       lab did not stop them logging in afterwards.</li>
  *   <li>{@code JwtAuthFilter} trusted any correctly-signed token, so even once
  *       login was closed, a token minted before the removal stayed valid for the
- *       rest of its TTL (8h in production).</li>
+ *       rest of its TTL.</li>
  * </ul>
  *
  * <p>Applying this at both points makes removal take effect on the next request

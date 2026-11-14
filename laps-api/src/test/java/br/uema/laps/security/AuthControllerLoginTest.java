@@ -6,6 +6,7 @@ import br.uema.laps.member.MemberStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +21,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -53,7 +55,7 @@ class AuthControllerLoginTest {
         // real single-use semantics, not to burn CPU in a unit test.
         proofOfWork = new ProofOfWorkService(8, Duration.ofMinutes(5));
 
-        when(jwtService.issue(anyString(), any(), anyString())).thenReturn("signed-jwt");
+        when(jwtService.issue(anyString(), anyLong())).thenReturn("signed-jwt");
 
         controller = new AuthController(
                 memberRepository,
@@ -86,6 +88,7 @@ class AuthControllerLoginTest {
         m.setStatus(status);
         m.setDeletedAt(deletedAt);
         m.setPasswordHash("$2a$12$storedhashvalue");
+        m.setAuthVersion(4L);
         return m;
     }
 
@@ -104,7 +107,11 @@ class AuthControllerLoginTest {
                 new MockHttpServletRequest());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).containsEntry("token", "signed-jwt");
+        assertThat(response.getHeaders().getFirst(HttpHeaders.SET_COOKIE))
+                .contains("laps_jwt=signed-jwt")
+                .contains("HttpOnly");
+        assertThat(response.getBody()).doesNotContainKey("token");
+        verify(jwtService).issue(anyString(), org.mockito.ArgumentMatchers.eq(4L));
     }
 
     @Test
@@ -119,7 +126,7 @@ class AuthControllerLoginTest {
                 .hasMessageContaining("401");
 
         // No token may be minted on this path.
-        verify(jwtService, never()).issue(anyString(), any(), anyString());
+        verify(jwtService, never()).issue(anyString(), anyLong());
     }
 
     @Test
@@ -131,7 +138,7 @@ class AuthControllerLoginTest {
                 loginRequest("joao-silva", "correct-password"),
                 new MockHttpServletRequest()))
                 .isInstanceOf(ResponseStatusException.class);
-        verify(jwtService, never()).issue(anyString(), any(), anyString());
+        verify(jwtService, never()).issue(anyString(), anyLong());
     }
 
     @Test
@@ -192,7 +199,7 @@ class AuthControllerLoginTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("400");
 
-        verify(jwtService, never()).issue(anyString(), any(), anyString());
+        verify(jwtService, never()).issue(anyString(), anyLong());
         verify(memberRepository, never()).findBySlug(anyString());
     }
 

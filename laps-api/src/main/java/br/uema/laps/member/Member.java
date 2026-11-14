@@ -46,6 +46,15 @@ public class Member {
     @Column(name = "must_change_password", nullable = false)
     private boolean mustChangePassword = true;
 
+    /**
+     * Monotonically increases whenever an existing credential is replaced.
+     * JWTs carry this value so a password change can revoke every older token
+     * without storing individual tokens or their signatures in the database.
+     */
+    @JsonIgnore
+    @Column(name = "auth_version", nullable = false)
+    private long authVersion = 0;
+
     @JsonIgnore
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;

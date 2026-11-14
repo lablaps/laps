@@ -35,11 +35,8 @@ export function Partners() {
                   alt={partner.name}
                   loading="lazy"
                   decoding="async"
-                  className={`partner-logo partner-logo--${partner.id} h-full w-full object-contain ${partner.id === "uema" ? "dark:hidden" : ""}`}
+                  className={`partner-logo partner-logo--${partner.id} h-full w-full object-contain`}
                 />
-                {partner.id === "uema" && (
-                  <img src="/images/partners/uema-white.png" alt={partner.name} loading="lazy" decoding="async" className="hidden h-full w-full object-contain dark:block" />
-                )}
               </div>
               <div className="mt-7 border-t border-laps-navy/15 pt-5">
                 <h3 className="text-lg font-semibold text-laps-navy">{partner.title}</h3>

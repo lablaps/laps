@@ -27,7 +27,7 @@ export interface Impact {
   updatedAt: string;
 }
 export interface ImpactPage { content: Impact[]; totalElements: number; totalPages: number; }
-export type ImpactFilters = { memberId?: string; kind?: string; from?: string; to?: string; q?: string; page?: number };
+export type ImpactFilters = { memberId?: string; kind?: string; from?: string; to?: string; q?: string; page?: number; size?: number };
 export const impactApi = {
   list: (filters: ImpactFilters = {}) => {
     const params = new URLSearchParams({ size: "12" });

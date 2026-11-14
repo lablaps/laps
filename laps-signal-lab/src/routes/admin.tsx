@@ -66,7 +66,6 @@ import { initials, type Tier } from "@/lib/team-data";
 import { TIER_CLASS, TIER_CONFIG } from "@/lib/tier-visual";
 import lapsLogo from "@/assets/laps-logo2.png";
 import LapsLogoMono from "@/components/LapsLogoMono";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -257,11 +256,6 @@ function AdminPage() {
         }}
       >
         <div className="absolute inset-0 opacity-[0.07] [background:radial-gradient(circle_at_1px_1px,#74B5F2_1px,transparent_0)_0_0/22px_22px]" />
-        {/* onDark: this banner keeps its dark treatment in both themes, so the
-            toggle needs light-on-dark styling regardless of the active theme. */}
-        <div className="absolute right-5 top-5 z-10">
-          <ThemeToggle variant="onDark" />
-        </div>
         <div className="relative mx-auto flex max-w-4xl flex-col items-center justify-center gap-6 px-6 md:flex-row md:gap-10">
           <div className="flex w-full max-w-[260px] shrink-0 items-center justify-center md:max-w-[280px]">
             <LapsLogoMono />

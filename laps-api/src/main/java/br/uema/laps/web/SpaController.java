@@ -3,6 +3,9 @@ package br.uema.laps.web;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * Single-page-app fallback. The compiled SPA lives at classpath:/static/ (the
@@ -28,6 +31,13 @@ import org.springframework.web.bind.annotation.GetMapping;
  */
 @Controller
 public class SpaController {
+
+    /** Raw Vite/React source is never a deployable resource. */
+    @GetMapping({"/src", "/src/{*rest}"})
+    @ResponseStatus(NOT_FOUND)
+    public void rawSourceNotFound() {
+        // Deliberately empty: the stable contract is the 404 status.
+    }
 
     @GetMapping(value = {
             "/",

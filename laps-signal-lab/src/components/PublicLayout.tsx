@@ -7,8 +7,6 @@ import { useLang } from "@/hooks/use-lang";
 import { type Lang } from "@/lib/i18n";
 import { LANG_FLAGS } from "@/lib/lang-flags";
 import { useAuth } from "@/hooks/use-auth";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { useTheme } from "@/hooks/use-theme";
 import { WaveStrip } from "@/components/WaveStrip";
 import lapsLogoColor from "@/assets/laps-logo.png";
 import lapsLogoWhite from "@/assets/laps-logo1.png";
@@ -68,7 +66,6 @@ function LangSwitcher({
 export function PublicLayout({ children }: { children: ReactNode }) {
   const { lang, setLang, t } = useLang();
   const auth = useAuth();
-  const { isDark } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { pathname, hash } = useLocation();
@@ -130,11 +127,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       >
         <div className="mx-auto grid max-w-[1600px] grid-cols-[1fr_auto] items-center gap-4 px-6 py-3 md:grid-cols-[1fr_auto_1fr] md:px-10 lg:px-16">
           <Link to="/" className="flex items-center gap-2.5">
-            {/* The header background flips with the theme, so the mark has to
-                as well. The white PNG already existed for the dark footer —
-                dark mode just gives it a second home. */}
             <img
-              src={isDark ? lapsLogoWhite : lapsLogoColor}
+              src={lapsLogoColor}
               alt="LAPS"
               className="h-14 w-auto"
             />
@@ -225,7 +219,6 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="hidden items-center justify-end gap-2 md:flex">
-            <ThemeToggle className="h-8 w-8 rounded-md border border-laps-navy/20" />
             {auth.isAuthenticated && (
               <Link
                 to={auth.isManager ? "/admin" : "/portal"}
@@ -304,7 +297,6 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               )}
               <div className="flex items-center gap-2 px-2 pt-2">
                 <LangSwitcher lang={lang} setLang={setLang} />
-                <ThemeToggle />
               </div>
             </nav>
           </div>

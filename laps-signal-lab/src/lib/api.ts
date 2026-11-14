@@ -193,7 +193,6 @@ export interface ApiGraph {
 }
 
 export interface LoginResponse {
-  token: string;
   memberId: string;
   username: string;
   email: string | null;

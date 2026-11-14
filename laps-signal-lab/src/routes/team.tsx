@@ -3,7 +3,7 @@ import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-rout
 import { motion } from "framer-motion";
 // Crown / Shield / Briefcase / Microscope / GraduationCap / Users went with the
 // per-tier icon chips; ArrowDown went with the arrow stapled to the photo CTA.
-import { Network, Triangle, List, Search, Filter, X } from "lucide-react";
+import { Network, Triangle, List, Search, Filter, X, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLang } from "@/hooks/use-lang";
 import { useTeamRoster, type RosterMember } from "@/hooks/use-team-roster";
@@ -17,10 +17,14 @@ import teamPhoto from "@/assets/laps-team.jpeg";
 
 type View = "mesh" | "pyramid" | "list";
 
+// Key order is tab order. The roster leads because a visitor comes to this page
+// to find a person; the force graph is kept as the last tab, where it is an
+// exploration aid rather than the page's first impression — it shows that
+// people are connected, not who they are or what they work on.
 const VIEW_ICON: Record<View, typeof Network> = {
-  mesh: Network,
-  pyramid: Triangle,
   list: List,
+  pyramid: Triangle,
+  mesh: Network,
 };
 
 const TIER_ORDER: Tier[] = ["head", "collaborator", "doctorate", "master", "undergrad"];
@@ -36,7 +40,7 @@ export const Route = createFileRoute("/team")({
       {
         name: "description",
         content:
-          "The LAPS researcher network — head, doctoral students, MSc students and undergrad researchers, presented as an interactive neural mesh, hierarchy and list.",
+          "The LAPS research team — head, collaborators, doctoral, master's and undergraduate researchers, with their research areas, projects and publications.",
       },
     ],
   }),
@@ -45,19 +49,19 @@ export const Route = createFileRoute("/team")({
 function TeamPage() {
   const { t, lang } = useLang();
   const { members, tierCounts } = useTeamRoster();
-  const [view, setView] = useState<View>("mesh");
-  const networkRef = useRef<HTMLElement>(null);
+  const [view, setView] = useState<View>("list");
+  const rosterRef = useRef<HTMLElement>(null);
 
   /**
-   * Hand-off from the team photo into the graph: force the mesh view (the
-   * visitor asked for the network, not whichever tab was last active) and scroll
+   * Hand-off from the team photo into the roster: force the list view (the
+   * visitor asked to meet people, not whichever tab was last active) and scroll
    * it into frame. Honours prefers-reduced-motion — a long smooth scroll is a
    * common vestibular trigger.
    */
-  function goToNetwork() {
-    setView("mesh");
+  function goToRoster() {
+    setView("list");
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    networkRef.current?.scrollIntoView({
+    rosterRef.current?.scrollIntoView({
       behavior: reduced ? "auto" : "smooth",
       block: "start",
     });
@@ -129,7 +133,7 @@ function TeamPage() {
         </div>
       </section>
 
-      {/* TEAM PHOTO — the first impression, and the hand-off into the graph */}
+      {/* TEAM PHOTO — the first impression, and the hand-off into the roster */}
       <section className="relative bg-surface pt-16">
         <div className="mx-auto max-w-[1280px] px-6 md:px-10">
           {/* Square and unshadowed. A 24px radius with a 70px tinted drop shadow
@@ -165,10 +169,10 @@ function TeamPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={goToNetwork}
+                  onClick={goToRoster}
                   className="mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-md bg-white px-5 py-2.5 text-sm font-semibold text-laps-ink transition-colors duration-150 hover:bg-laps-signal hover:text-white active:translate-y-px"
                 >
-                  <Network className="h-4 w-4" />
+                  <Users className="h-4 w-4" />
                   {t.structure.teamPhoto.cta}
                 </button>
               </div>
@@ -178,7 +182,7 @@ function TeamPage() {
       </section>
 
       {/* VIEW TABS */}
-      <section ref={networkRef} className="relative scroll-mt-24 bg-surface pt-16">
+      <section ref={rosterRef} className="relative scroll-mt-24 bg-surface pt-16">
         <div className="mx-auto max-w-[1280px] px-6 md:px-10">
           {/* Flush-left tabs on a rule, marked by the same 2px accent the header
               nav uses. The floating capsule with a sliding pill inside it was

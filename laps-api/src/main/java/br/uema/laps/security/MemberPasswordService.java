@@ -2,6 +2,7 @@ package br.uema.laps.security;
 
 import br.uema.laps.member.Member;
 import br.uema.laps.member.MemberRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,7 +74,11 @@ public class MemberPasswordService {
         if (member.getPasswordHash() != null && !member.getPasswordHash().isBlank()) {
             return null;
         }
-        return forceReset(member);
+        String temp = generateTempPassword();
+        member.setPasswordHash(passwordEncoder.encode(temp));
+        member.setMustChangePassword(true);
+        memberRepository.save(member);
+        return temp;
     }
 
     /**
@@ -85,10 +90,15 @@ public class MemberPasswordService {
      */
     @Transactional
     public String forceReset(Member member) {
+        Member target = member.getId() == null
+                ? member
+                : memberRepository.findByIdForUpdate(member.getId())
+                        .orElseThrow(() -> new EntityNotFoundException("member not found: " + member.getId()));
         String temp = generateTempPassword();
-        member.setPasswordHash(passwordEncoder.encode(temp));
-        member.setMustChangePassword(true);
-        memberRepository.save(member);
+        target.setPasswordHash(passwordEncoder.encode(temp));
+        target.setMustChangePassword(true);
+        target.setAuthVersion(Math.incrementExact(target.getAuthVersion()));
+        memberRepository.save(target);
         return temp;
     }
 }

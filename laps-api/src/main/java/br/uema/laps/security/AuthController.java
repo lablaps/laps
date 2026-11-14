@@ -117,14 +117,9 @@ public class AuthController {
 
         String role = managerAllowlist.roleFor(member);
 
-        String jwt = jwtService.issue(
-                member.getId().toString(),
-                member.getEmail() != null ? member.getEmail() : member.getSlug(),
-                role
-        );
+        String jwt = jwtService.issue(member.getId().toString(), member.getAuthVersion());
 
         Map<String, Object> body = new HashMap<>();
-        body.put("token", jwt);
         body.put("memberId", member.getId());
         body.put("username", member.getSlug());
         body.put("email", member.getEmail());

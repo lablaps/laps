@@ -59,9 +59,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = extractToken(request);
 
         if (token != null) {
+            Claims claims;
             Member member;
             try {
-                Claims claims = jwtService.parseClaims(token);
+                claims = jwtService.parseClaims(token);
                 member = loadSubject(claims).orElse(null);
             } catch (Exception ex) {
                 // Token present but invalid/expired. Clear the bad cookie and respond
@@ -76,9 +77,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // A correctly-signed token is not on its own proof of a live account.
             // Membership is re-checked here on every request so that removing a
             // member takes effect immediately rather than whenever their token
-            // happens to expire — up to LAPS_JWT_TTL (8h in production) later.
+            // happens to expire.
             if (!accessPolicy.mayAuthenticate(member)) {
                 reject(request, response, "account_inactive", "This account is no longer active");
+                return;
+            }
+
+            Long tokenVersion = authenticationVersion(claims);
+            if (tokenVersion == null || tokenVersion != member.getAuthVersion()) {
+                reject(request, response, "session_revoked", "Session revoked — please log in again");
                 return;
             }
 
@@ -100,6 +107,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private Optional<Member> loadSubject(Claims claims) {
         return memberRepository.findById(UUID.fromString(claims.getSubject()));
+    }
+
+    private Long authenticationVersion(Claims claims) {
+        Object value = claims.get("ver");
+        return value instanceof Number number ? number.longValue() : null;
     }
 
     private void reject(HttpServletRequest request, HttpServletResponse response, String code, String message)

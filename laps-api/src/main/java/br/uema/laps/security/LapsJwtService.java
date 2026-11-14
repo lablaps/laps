@@ -29,13 +29,15 @@ public class LapsJwtService {
         this.ttl = ttl;
     }
 
-    public String issue(String memberId, String email, String role) {
+    public String issue(String memberId, long authVersion) {
+        if (authVersion < 0) {
+            throw new IllegalArgumentException("authVersion must not be negative");
+        }
         Instant now = Instant.now();
         return Jwts.builder()
                 .issuer(issuer)
                 .subject(memberId)
-                .claim("email", email)
-                .claim("role", role)
+                .claim("ver", authVersion)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(ttl)))
                 .signWith(signingKey)

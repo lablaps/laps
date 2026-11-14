@@ -19,6 +19,8 @@ import br.uema.laps.publication.PublicationSpecifications;
 import br.uema.laps.publication.PublicationStatus;
 import br.uema.laps.publication.PublicationType;
 import br.uema.laps.security.AuthenticatedMember;
+import br.uema.laps.security.AuthCookies;
+import br.uema.laps.security.LapsJwtService;
 import br.uema.laps.security.ManagerAllowlist;
 import br.uema.laps.security.RateLimitGuard;
 import br.uema.laps.translate.TranslationService;
@@ -36,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,8 +94,9 @@ public class MyPortalController {
     private final RateLimitGuard rateLimitGuard;
     private final EmailService emailService;
     private final EmailSendBudget emailSendBudget;
-
     private final ManagerAllowlist managerAllowlist;
+    private final LapsJwtService jwtService;
+    private final AuthCookies authCookies;
 
     public MyPortalController(
             MemberRepository memberRepository,
@@ -104,7 +108,9 @@ public class MyPortalController {
             RateLimitGuard rateLimitGuard,
             EmailService emailService,
             EmailSendBudget emailSendBudget,
-            ManagerAllowlist managerAllowlist) {
+            ManagerAllowlist managerAllowlist,
+            LapsJwtService jwtService,
+            AuthCookies authCookies) {
         this.memberRepository = memberRepository;
         this.memberProjectRepository = memberProjectRepository;
         this.projectRepository = projectRepository;
@@ -115,6 +121,8 @@ public class MyPortalController {
         this.emailService = emailService;
         this.emailSendBudget = emailSendBudget;
         this.managerAllowlist = managerAllowlist;
+        this.jwtService = jwtService;
+        this.authCookies = authCookies;
     }
 
     @GetMapping("/advisors")
@@ -199,7 +207,7 @@ public class MyPortalController {
     public ResponseEntity<Map<String, Object>> changePassword(
             @RequestBody ChangePasswordRequest req,
             HttpServletRequest request) {
-        Member me = loadMe();
+        Member me = loadMeForUpdate();
         // The current-password check below is an online guessing oracle for
         // anyone holding a stolen session, and it was unmetered. Keyed on the
         // member id so the limit follows the account, not the browser.
@@ -231,8 +239,12 @@ public class MyPortalController {
         }
         me.setPasswordHash(passwordEncoder.encode(req.newPassword()));
         me.setMustChangePassword(false);
-        memberRepository.save(me);
-        return ResponseEntity.ok(Map.of("message", "Password updated"));
+        me.setAuthVersion(Math.incrementExact(me.getAuthVersion()));
+        Member saved = memberRepository.save(me);
+        String jwt = jwtService.issue(saved.getId().toString(), saved.getAuthVersion());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, authCookies.issue(jwt, request).toString())
+                .body(Map.of("message", "Password updated"));
     }
 
     /**
@@ -509,6 +521,12 @@ public class MyPortalController {
     private Member loadMe() {
         UUID myId = AuthenticatedMember.id();
         return memberRepository.findById(myId)
+                .orElseThrow(() -> new EntityNotFoundException("member not found: " + myId));
+    }
+
+    private Member loadMeForUpdate() {
+        UUID myId = AuthenticatedMember.id();
+        return memberRepository.findByIdForUpdate(myId)
                 .orElseThrow(() -> new EntityNotFoundException("member not found: " + myId));
     }
 

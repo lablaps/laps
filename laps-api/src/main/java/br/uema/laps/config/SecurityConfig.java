@@ -93,6 +93,10 @@ public class SecurityConfig {
                         antMatcher(HttpMethod.GET, "/assets/**"),
                         antMatcher(HttpMethod.GET, "/images/**"),
                         antMatcher(HttpMethod.GET, "/static/**"),
+                        // Explicitly handled as 404 by SpaController so guessed
+                        // development-source paths are never reported as 401.
+                        antMatcher(HttpMethod.GET, "/src"),
+                        antMatcher(HttpMethod.GET, "/src/**"),
                         antMatcher(HttpMethod.GET, "/team"),
                         antMatcher(HttpMethod.GET, "/team/**"),
                         antMatcher(HttpMethod.GET, "/projects"),

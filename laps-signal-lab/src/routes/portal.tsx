@@ -39,7 +39,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import PortalGuide, { type GuideStepId } from "@/components/PortalGuide";
 import { EmailVerificationDialog } from "@/components/EmailVerificationDialog";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   ExchangePlacementPicker,
   type Placement,
@@ -294,7 +293,6 @@ function PortalPage() {
           </Link>
           <div className="flex items-center gap-2">
             <PortalLangSwitcher />
-            <ThemeToggle className="h-8 w-8" />
             {/* Gerenciadores and coordenadores work in both halves of the app —
                 their own portfolio and the lab-wide console. Rendered off
                 auth.isManager (the resolved security role, which covers both
@@ -542,10 +540,18 @@ function FullNameEditor({ me }: { me: MyProfile }) {
 const BANNER_CANVAS_W = 1200;
 const BANNER_CANVAS_H = 300;
 
-// Square export for avatars. 512 covers the largest place the avatar renders
-// (the 144px portal hero at 3x DPR) without pushing the PNG near the API's
-// 5 MiB multipart cap.
-const AVATAR_CANVAS_SIZE = 512;
+// Portrait export for member photos: 4:5, rectangular, JPEG.
+//
+// The public profile shows the photo as a full-bleed portrait card with the
+// name set over it, so the export has to be the whole picture. It used to be a
+// 512² PNG with a circular alpha mask, which in a rectangular frame rendered as
+// a disc floating on a coloured background. Every other avatar on the site is
+// a CSS circle (rounded-full + object-cover), so a rectangular source still
+// reads as a circle there — the mask was never needed to get the round look.
+// 800×1000 covers the ~22rem portrait card at 2x DPR; as a 0.92 JPEG it stays
+// far under the API's 5 MiB multipart cap.
+const AVATAR_EXPORT_W = 800;
+const AVATAR_EXPORT_H = 1000;
 
 function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tier] }) {
   const qc = useQueryClient();
@@ -797,7 +803,6 @@ function ImageTransformEditor({
   frameW,
   frameH,
   title,
-  circular = false,
   onConfirm,
   onCancel,
 }: {
@@ -805,8 +810,6 @@ function ImageTransformEditor({
   frameW: number;
   frameH: number;
   title: string;
-  /** Circular mask + round export, for avatars. */
-  circular?: boolean;
   onConfirm: (blob: Blob) => void;
   onCancel: () => void;
 }) {
@@ -859,18 +862,12 @@ function ImageTransformEditor({
     const ctx = canvasRef.current.getContext("2d")!;
     ctx.clearRect(0, 0, frameW, frameH);
     ctx.save();
-    if (circular) {
-      ctx.beginPath();
-      ctx.arc(frameW / 2, frameH / 2, Math.min(frameW, frameH) / 2, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
-    }
     ctx.translate(frameW / 2 + offset.x, frameH / 2 + offset.y);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.scale(scale, scale);
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
     ctx.restore();
-  }, [img, scale, rotation, offset, frameW, frameH, circular]);
+  }, [img, scale, rotation, offset, frameW, frameH]);
 
   // Ratio between canvas pixels and displayed CSS pixels
   function pixelRatio() {
@@ -911,9 +908,9 @@ function ImageTransformEditor({
   function confirm() {
     canvasRef.current?.toBlob(
       (blob) => { if (blob) onConfirm(blob); },
-      // A circular crop needs alpha for the corners, so PNG; the banner stays
-      // JPEG because it is a full-bleed rectangle and compresses far better.
-      circular ? "image/png" : "image/jpeg",
+      // Every export is a full rectangle, so there is no alpha to preserve and
+      // JPEG compresses a photograph far better than PNG.
+      "image/jpeg",
       0.92
     );
   }
@@ -933,7 +930,7 @@ function ImageTransformEditor({
         </div>
 
         {/* Canvas preview — same aspect as the exported image */}
-        <div className={`mb-3 overflow-hidden border border-laps-navy/10 bg-laps-ghost/30 ${circular ? "mx-auto max-w-xs rounded-full" : "rounded-xl"}`}>
+        <div className={`mb-3 overflow-hidden border border-laps-navy/10 bg-laps-ghost/30 ${frameH > frameW ? "mx-auto max-w-xs rounded-xl" : "rounded-xl"}`}>
           {!img ? (
             <div className="flex items-center justify-center py-12">
               <p className="text-xs text-laps-navy/40">Carregando imagem…</p>
@@ -1085,7 +1082,7 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
   // The editor hands back the already-cropped square, so what gets uploaded is
   // exactly what was previewed — no server-side guessing about the focal point.
   function handleEditorConfirm(blob: Blob) {
-    const file = new File([blob], "avatar.png", { type: "image/png" });
+    const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
     setEditorFile(null);
     uploadMutation.mutate(file);
   }
@@ -1097,10 +1094,9 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
       {editorFile && (
         <ImageTransformEditor
           file={editorFile}
-          frameW={AVATAR_CANVAS_SIZE}
-          frameH={AVATAR_CANVAS_SIZE}
+          frameW={AVATAR_EXPORT_W}
+          frameH={AVATAR_EXPORT_H}
           title="Ajustar foto de perfil"
-          circular
           onConfirm={handleEditorConfirm}
           onCancel={() => setEditorFile(null)}
         />

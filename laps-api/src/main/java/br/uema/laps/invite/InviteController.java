@@ -196,7 +196,7 @@ public class InviteController {
 
         // Issue JWT and auto-login
         String role = managerAllowlist.roleFor(saved);
-        String jwt = jwtService.issue(saved.getId().toString(), saved.getEmail(), role);
+        String jwt = jwtService.issue(saved.getId().toString(), saved.getAuthVersion());
 
         Map<String, Object> body = new HashMap<>();
         body.put("memberId", saved.getId());

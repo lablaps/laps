@@ -73,7 +73,9 @@ class MyPortalPublicationTest {
                 mock(RateLimitGuard.class),
                 mock(EmailService.class),
                 mock(EmailSendBudget.class),
-                new ManagerAllowlist(List.of()));
+                new ManagerAllowlist(List.of()),
+                mock(br.uema.laps.security.LapsJwtService.class),
+                mock(br.uema.laps.security.AuthCookies.class));
 
         me = new Member();
         me.setId(ME);

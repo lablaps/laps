@@ -188,7 +188,7 @@ function ProjectsPage() {
                   <div className="mt-6 flex items-end justify-between gap-4 border-t border-laps-navy/15 pt-5">
                     <div>
                       <span className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/40">
-                        {lang === "pt" ? "Pesquisadores" : lang === "fr" ? "Chercheur" : "Researchers"}
+                        {lang === "pt" ? "Pesquisadores" : lang === "fr" ? "Chercheurs" : "Researchers"}
                       </span>
                       <div className="mt-2 flex -space-x-1.5">
                         {p.leaders?.slice(0, 5).map((l) => {

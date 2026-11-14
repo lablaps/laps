@@ -12,6 +12,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Does the application still wire up?
@@ -89,5 +90,12 @@ class ApplicationContextSmokeTest {
     void partnerLogoDoesNotRequireAuthentication() throws Exception {
         mockMvc.perform(get("/images/partners/uema.png"))
                 .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
+    }
+
+    @Test
+    @DisplayName("raw frontend source paths return 404 rather than source code or an authentication error")
+    void rawFrontendSourceIsNotPublished() throws Exception {
+        mockMvc.perform(get("/src/lib/api.ts"))
+                .andExpect(status().isNotFound());
     }
 }

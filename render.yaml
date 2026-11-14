@@ -46,7 +46,7 @@ services:
       - key: LAPS_JWT_SECRET
         sync: false
       - key: LAPS_JWT_TTL
-        value: PT8H
+        value: PT1H
 
       # --- CORS — same-origin in the monolith, but the admin SPA running on
       # localhost during dev sometimes calls prod. Override in the dashboard if

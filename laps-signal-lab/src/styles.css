@@ -2,6 +2,11 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* The site is light-only. The variant is kept pointing at a .dark class that
+   nothing sets, so a stray `dark:` utility (shadcn components ship with them)
+   can never match. Deleting this line would NOT make them inert: Tailwind 4
+   falls back to prefers-color-scheme, and visitors whose OS is dark would get
+   half-dark components on a light page. */
 @custom-variant dark (&:is(.dark *));
 
 /* Archivo carries the whole interface at several weights; IBM Plex Mono is the
@@ -54,16 +59,14 @@
   --color-laps-light: var(--laps-light);
   --color-laps-ghost: var(--laps-ghost);
   --color-laps-white: var(--laps-white);
-  /* Added for dark mode. Every utility below compiles to var(--token), including
-     its /opacity variants via color-mix — which is what lets the whole app flip
-     by redefining values under .dark instead of annotating ~1,500 class names.
-       --surface     card/panel background. Replaces literal bg-white.
-       --laps-ink    a surface that stays dark in BOTH themes (footer, hero).
-                     Split out of --laps-navy, which had to invert to stay
-                     legible as the primary text colour.
-       --laps-accent filled-button background. Split out of --laps-blue for
-                     contrast: text on dark wants a brighter blue than white
-                     text on a button does. */
+  /* Role tokens. They were introduced for a dark theme (since removed) and are
+     kept because they name what a colour is *for*, not what it looks like —
+     the same hex doing two jobs is how a later palette change breaks one of
+     them silently.
+       --surface     card/panel background. Use instead of literal bg-white.
+       --laps-ink    a dark surface (footer, hero, CTA bands). Same hex as
+                     --laps-navy today, but navy is text and ink is a surface.
+       --laps-accent filled-button background, distinct from --laps-blue (text). */
   --color-surface: var(--surface);
   --color-laps-ink: var(--laps-ink);
   --color-laps-accent: var(--laps-accent);
@@ -85,14 +88,11 @@
      CTA bands, the footer. Split for the same reason --laps-accent was split
      from --laps-blue — a colour tuned for contrast against paper is not the
      same colour that reads against navy. #0B6FD4 on #193A59 is 2.3:1, which
-     is illegible at the 10-11px label sizes those surfaces use it for.
-     Does not flip between themes: it is always on a dark surface. */
+     is illegible at the 10-11px label sizes those surfaces use it for. */
   --color-laps-signal-ink: var(--laps-signal-ink);
-  /* Primary-button fill. Split out of --laps-ink because the two want opposite
-     things in dark mode: --laps-ink is a *surface* that must stay darker than
-     the page, while a filled button must stay lighter than it or it reads as a
-     hole punched in the background. Using ink for both meant every primary
-     action on the site disappeared in dark mode except its label. */
+  /* Primary-button fill. Kept separate from --laps-ink: one is an action, the
+     other a surface, and a button that shares its colour with the band it sits
+     on stops reading as something to press. */
   --color-laps-cta: var(--laps-cta);
   --font-sans: 'Archivo', system-ui, sans-serif;
   --font-display: 'Archivo', system-ui, sans-serif;
@@ -151,8 +151,6 @@
      Structural panels now go fully square via rounded-none, and this base is
      reserved for controls. */
   --radius: 0.125rem;
-  /* Light is the default theme. Nothing is applied until the user opts in, and
-     the .dark class is written by the inline script in __root.tsx before paint. */
   color-scheme: light;
 
   --laps-navy: #193A59;
@@ -190,106 +188,6 @@
   --border: oklch(0.9 0.02 240);
   --input: oklch(0.9 0.02 240);
   --ring: oklch(0.5 0.1 250);
-}
-
-/* ── Dark theme ────────────────────────────────────────────────────────────
-   Values, not class names. The app's ~1,500 colour utilities all resolve to
-   the variables above, so redefining them here re-themes every page, including
-   the /opacity variants Tailwind builds with color-mix.
-
-   The inversions that carry the most weight:
-     --laps-navy   #193A59 → pale.  446 of its 618 uses are text-*, so it is the
-                             primary text colour and has to flip. The 60-odd
-                             places that used it as a dark *surface* were moved
-                             to --laps-ink, which does not flip.
-     --laps-ghost  pale → dark.  130 of 148 uses are bg-*: the subtle surface.
-     --surface     white → near-black. Stands in for literal bg-white.
-
-   text-white is deliberately untouched: it sits on filled buttons and on
-   --laps-ink surfaces, both of which stay dark here, so it stays white. */
-.dark {
-  color-scheme: dark;
-
-  --laps-navy: #DCE8F5;
-  --laps-blue: #5AA9E6;
-  --laps-light: #8FC5F7;
-  --laps-ghost: #1A2632;
-  --laps-white: #121B26;
-  --surface: #121B26;
-  /* Slightly lifted off --background so a hero or footer still separates from
-     the page instead of merging into it. */
-  --laps-ink: #0E1822;
-  /* Darker than --laps-blue on purpose: this one carries white label text, and
-     the brighter blue that reads well *as* text fails contrast *under* it. */
-  --laps-accent: #1D6FC0;
-  /* Lifted well off the light value. #0B6FD4 on a near-black panel reads as a
-     dark, muddy blue at the 11px label sizes this accent is mostly used at —
-     and it would sit too close to --laps-accent (#1D6FC0), which is a *button
-     fill* in dark mode. The marker has to stay clearly brighter than the thing
-     it might be mistaken for. */
-  --laps-signal: #6FB6FF;
-  /* Lighter than the page, not darker — see the note on --color-laps-cta. */
-  --laps-cta: #2C7CD1;
-  --laps-paper: #0E1822;
-
-  --background: oklch(0.17 0.02 250);
-  --foreground: oklch(0.93 0.02 250);
-  --card: oklch(0.21 0.02 250);
-  --card-foreground: oklch(0.93 0.02 250);
-  --primary: oklch(0.62 0.13 250);
-  --primary-foreground: oklch(0.15 0.02 250);
-  --secondary: oklch(0.26 0.02 250);
-  --secondary-foreground: oklch(0.93 0.02 250);
-  --muted: oklch(0.26 0.02 250);
-  --muted-foreground: oklch(0.70 0.03 250);
-  --accent: oklch(0.32 0.05 250);
-  --accent-foreground: oklch(0.93 0.02 250);
-  --border: oklch(0.30 0.02 250);
-  --input: oklch(0.30 0.02 250);
-  --ring: oklch(0.55 0.10 250);
-
-  /* Status palettes — warning (amber), success (emerald), error (red) and the
-     violet/purple role badges. ~146 uses across the app, all following the same
-     shape: a -50/-100 tint as the panel, -200/-300 as its border, -600..-900 as
-     the text on it.
-
-     Tailwind's own palette entries are variables too, so the ramp is redefined
-     rather than annotated. Note it is also *inverted*: in light mode -900 is the
-     darkest (most contrast against a pale panel), so on a dark panel the same
-     class has to become the lightest. Leaving these alone was not an option —
-     bg-amber-50 is a near-white card, and eleven of them glowing on a dark page
-     is the single most obvious way a retrofitted dark mode looks unfinished. */
-  --color-amber-50: oklch(0.24 0.04 75);
-  --color-amber-100: oklch(0.28 0.05 75);
-  --color-amber-200: oklch(0.42 0.07 75);
-  --color-amber-300: oklch(0.50 0.09 75);
-  --color-amber-600: oklch(0.80 0.12 80);
-  --color-amber-700: oklch(0.85 0.10 82);
-  --color-amber-800: oklch(0.89 0.07 84);
-  --color-amber-900: oklch(0.93 0.05 86);
-
-  --color-emerald-50: oklch(0.24 0.04 165);
-  --color-emerald-100: oklch(0.28 0.05 165);
-  --color-emerald-200: oklch(0.42 0.07 165);
-  --color-emerald-600: oklch(0.80 0.13 165);
-  --color-emerald-700: oklch(0.86 0.11 165);
-
-  --color-red-50: oklch(0.24 0.05 20);
-  --color-red-100: oklch(0.28 0.06 20);
-  --color-red-200: oklch(0.42 0.09 20);
-  --color-red-600: oklch(0.75 0.15 20);
-  --color-red-700: oklch(0.82 0.12 20);
-
-  --color-violet-50: oklch(0.25 0.05 300);
-  --color-violet-200: oklch(0.42 0.08 300);
-  --color-violet-700: oklch(0.83 0.11 300);
-
-  --color-purple-50: oklch(0.25 0.05 315);
-  --color-purple-200: oklch(0.42 0.08 315);
-  --color-purple-700: oklch(0.84 0.11 315);
-
-  --color-slate-100: oklch(0.26 0.02 250);
-  --color-slate-200: oklch(0.32 0.02 250);
 }
 
 html {
@@ -372,9 +270,4 @@ html {
 /* Follow the transparent artwork, rather than outlining its image box. */
 .partner-logo--imesc {
   filter: drop-shadow(1px 0 0 #124d9b) drop-shadow(-1px 0 0 #124d9b) drop-shadow(0 1px 0 #124d9b) drop-shadow(0 -1px 0 #124d9b);
-}
-.dark .partner-logo--imesc { filter: none; }
-.dark .partner-logo--abin,
-.dark .partner-logo--biosolo {
-  filter: drop-shadow(1px 0 0 rgba(255, 255, 255, .9)) drop-shadow(-1px 0 0 rgba(255, 255, 255, .9)) drop-shadow(0 1px 0 rgba(255, 255, 255, .9)) drop-shadow(0 -1px 0 rgba(255, 255, 255, .9));
 }

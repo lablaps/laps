@@ -67,7 +67,7 @@ services:
       DB_SSLMODE: ${DB_SSLMODE:-disable}
       # JWT — required.
       LAPS_JWT_SECRET: ${LAPS_JWT_SECRET:?LAPS_JWT_SECRET is required}
-      LAPS_JWT_TTL: ${LAPS_JWT_TTL:-PT8H}
+      LAPS_JWT_TTL: ${LAPS_JWT_TTL:-PT1H}
       # Manager allowlist — comma-separated. Empty means no managers can log in.
       LAPS_MANAGER_EMAILS: ${LAPS_MANAGER_EMAILS:-}
       # Bootstrap admin (first boot only). Leave blank to skip.
