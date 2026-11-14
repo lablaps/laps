@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as ProjectsRouteImport } from './routes/projects'
+import { Route as PremiosEBolsasRouteImport } from './routes/premios-e-bolsas'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImpactosRouteImport } from './routes/impactos'
@@ -30,6 +31,11 @@ const TeamRoute = TeamRouteImport.update({
 const ProjectsRoute = ProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PremiosEBolsasRoute = PremiosEBolsasRouteImport.update({
+  id: '/premios-e-bolsas',
+  path: '/premios-e-bolsas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortalRoute = PortalRouteImport.update({
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/impactos': typeof ImpactosRoute
   '/login': typeof LoginRoute
   '/portal': typeof PortalRoute
+  '/premios-e-bolsas': typeof PremiosEBolsasRoute
   '/projects': typeof ProjectsRoute
   '/team': typeof TeamRouteWithChildren
   '/join/$token': typeof JoinTokenRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/impactos': typeof ImpactosRoute
   '/login': typeof LoginRoute
   '/portal': typeof PortalRoute
+  '/premios-e-bolsas': typeof PremiosEBolsasRoute
   '/projects': typeof ProjectsRoute
   '/team': typeof TeamRouteWithChildren
   '/join/$token': typeof JoinTokenRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/impactos': typeof ImpactosRoute
   '/login': typeof LoginRoute
   '/portal': typeof PortalRoute
+  '/premios-e-bolsas': typeof PremiosEBolsasRoute
   '/projects': typeof ProjectsRoute
   '/team': typeof TeamRouteWithChildren
   '/join/$token': typeof JoinTokenRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/impactos'
     | '/login'
     | '/portal'
+    | '/premios-e-bolsas'
     | '/projects'
     | '/team'
     | '/join/$token'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/impactos'
     | '/login'
     | '/portal'
+    | '/premios-e-bolsas'
     | '/projects'
     | '/team'
     | '/join/$token'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/impactos'
     | '/login'
     | '/portal'
+    | '/premios-e-bolsas'
     | '/projects'
     | '/team'
     | '/join/$token'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   ImpactosRoute: typeof ImpactosRoute
   LoginRoute: typeof LoginRoute
   PortalRoute: typeof PortalRoute
+  PremiosEBolsasRoute: typeof PremiosEBolsasRoute
   ProjectsRoute: typeof ProjectsRoute
   TeamRoute: typeof TeamRouteWithChildren
   JoinTokenRoute: typeof JoinTokenRoute
@@ -199,6 +212,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof ProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/premios-e-bolsas': {
+      id: '/premios-e-bolsas'
+      path: '/premios-e-bolsas'
+      fullPath: '/premios-e-bolsas'
+      preLoaderRoute: typeof PremiosEBolsasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portal': {
@@ -293,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImpactosRoute: ImpactosRoute,
   LoginRoute: LoginRoute,
   PortalRoute: PortalRoute,
+  PremiosEBolsasRoute: PremiosEBolsasRoute,
   ProjectsRoute: ProjectsRoute,
   TeamRoute: TeamRouteWithChildren,
   JoinTokenRoute: JoinTokenRoute,

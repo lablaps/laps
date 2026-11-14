@@ -1184,10 +1184,6 @@ function EditPanel({
   const [lattesUrl, setLattesUrl] = useState(member.lattesUrl ?? "");
   const [githubUrl, setGithubUrl] = useState(member.githubUrl ?? "");
   const [photoUrl, setPhotoUrl] = useState(member.photoUrl ?? "");
-  // Bio is single-source: managers type PT, the backend auto-translates to
-  // EN/FR on save (see TranslationService). The two extra textareas were
-  // removed because most managers don't speak fluent EN/FR.
-  const [bioPt, setBioPt] = useState(member.bioPt ?? "");
   const [status, setStatus] = useState<MemberStatusEnum>(member.status);
 
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -1237,10 +1233,9 @@ function EditPanel({
         lattesUrl: lattesUrl || null,
         githubUrl: githubUrl || null,
         photoUrl: photoUrl || null,
-        // EN/FR bios are auto-translated server-side from bioPt; the SPA
-        // intentionally does not send bioEn/bioFr so the manager can't
-        // accidentally overwrite a freshly-translated value.
-        bioPt: bioPt || null,
+        // bioPt is deliberately not sent. Bios are no longer edited or shown
+        // anywhere; AdminController reads an absent bioPt as "leave alone",
+        // so stored bios survive a save untouched.
         status,
         // Empty string clears the country. AdminController reads null as
         // "field not sent, leave it alone", so `|| null` made "Nenhum país"
@@ -1441,19 +1436,6 @@ function EditPanel({
                 <FieldCard label="Destino">
                   <ExchangePlacementPicker value={placement} onChange={setPlacement} />
                 </FieldCard>
-              </Section>
-
-              <Section title="Bio (Português)">
-                <p className="mb-2 text-[11px] text-laps-navy/55">
-                  Escreva em português. A tradução para inglês e francês é gerada automaticamente ao salvar.
-                </p>
-                <BioField
-                  label="Texto"
-                  value={bioPt}
-                  onChange={(v) => setBioPt(v.slice(0, 500))}
-                  rows={5}
-                  maxLength={500}
-                />
               </Section>
 
               <Section title="Vínculos de pesquisa">

@@ -1,6 +1,6 @@
 # Public profile redesign, credibility and engineering hygiene
 
-Date: 2026-11-14 · Status: Phases 1–3 implemented (uncommitted), Phases 4+ proposed
+Date: 2026-11-14 · Status: Phases 1–3 + decisions implemented (uncommitted), Phases 4+ proposed
 
 ## Core scope (evaluation)
 
@@ -47,7 +47,7 @@ what do they work on, and where is the evidence" — in that order.**
   (areas + interest tags).
 - Everything else is an **accordion** (first section open): Projects (each
   project is itself collapsible; rows with no details are static), Publications
-  (with **Google Scholar** button + external-link icon), **Honras e Bolsas /
+  (with **Google Scholar** button + external-link icon), **Prêmios e Bolsas /
   Honours & Awards** (impacts of kind AWARD, SCHOLARSHIP, DOCTORAL_SCHOLARSHIP),
   Research roadmap, Languages, Co-authors.
 - Fixed: exchange chip was hard-coded "Intercambista" + Portuguese country
@@ -61,22 +61,51 @@ Verification: `tsc --noEmit` clean; no new non-formatting ESLint findings
 visually checked desktop + 390px against a mock API (photo, no-photo, open
 sections, Scholar link, `/team` default tab).
 
-## Decisions needed
+## Decisions (resolved 2026-11-14)
 
-1. **Brand fonts never load in production.** `styles.css` `@import`s Google
-   Fonts, but (a) Tailwind expansion puts it after other rules, where browsers
-   ignore it, and (b) both CSPs (`SecurityConfig`, `nginx.conf`) only allow
-   `'self'` for styles and fonts. The site renders in system fallback today.
-   *Recommendation:* self-host with `@fontsource/archivo` +
-   `@fontsource/ibm-plex-mono` — fixes both, needs no CSP change, and stops
-   sending visitor IPs to Google (LGPD).
-2. **Bio ("Sobre")** is gone from the profile but still edited (and
-   machine-translated) in the portal. Remove it from the portal too, or show it
-   somewhere (e.g. the network graph side panel only)?
-3. **Home-page counters** (years / publications / projects / researchers) are
-   the same kind of volume metric removed from profiles. Keep or replace?
-4. Official lab name: the site says *Aquisição* e Processamento de Sinais,
-   `CLAUDE.md` says *Análise*. Confirm and align.
+1. **Fonts — self-host. Done.** The Google Fonts `@import` sat below Tailwind's
+   expansion (ignored by browsers) and was blocked by both CSPs
+   (`font-src 'self'`), so the site rendered in system-ui. Now bundled from
+   `@fontsource/archivo` + `@fontsource/ibm-plex-mono` (pinned 5.3.0): 30 local
+   `@font-face` rules, no Google requests, no CSP change. `bun.lock` was not
+   regenerated — see Phase 7 (one package manager).
+2. **Bio — removed from the portal and the admin member dialog. Done.**
+   Members curate Research Areas + "Interesses de pesquisa" instead. Stored
+   bios stay in the database (admin no longer sends `bioPt`, which
+   `AdminController` reads as "leave alone"). Follow-up: drop `bio_*` columns
+   and the MyMemory translation path once nothing reads them.
+3. **Home-page counters — keep.**
+4. **Lab name — Laboratório de Aquisição e Processamento de Sinais. Done**
+   (email footer and `CLAUDE.md` were the only "Análise" occurrences).
+5. Section name **"Prêmios e Bolsas"**; profile projects are collapsible on the
+   profile only (the `/projects` page is unchanged).
+
+## Found while running the stack (fixed)
+
+- **SPA API base was chosen by port.** `resolveApiBase()` treated any port
+  other than 80/443/8080 as the Vite dev server and sent API calls (with
+  credentials) to `:8080`. A production jar on any other `APP_HOST_PORT`
+  therefore called a different service and every data page failed. It now
+  uses build mode: production builds are same-origin; dev builds use `:8080`;
+  `VITE_API_BASE` still overrides (needed for `vite preview`).
+- First real run of V30–V33 against Postgres (local volume was at V29):
+  applied cleanly.
+
+## Round 2 (requested 2026-11-14) — one phase at a time, user approves each
+
+- [x] **Phase 4 — Impactos → Prêmios e Bolsas.** Copy in PT/EN/FR
+  ("Honours & Awards", "Distinctions et bourses"); page moved to
+  `/premios-e-bolsas`, `/impactos` redirects; SpaController + SecurityConfig
+  map the new path (route test extended, fails first). Internal names
+  (`impactApi`, `/api/v1/impacts`, table `impact`) unchanged.
+  *Open question:* the category list still includes Contribuição /
+  Experiência internacional / Outro, which do not fit the new name.
+- [ ] **Phase 5 — "Undergrad" → "Undergraduate"** in every user-facing string.
+- [ ] **Phase 6 — /portal redesign** to match the profile (portrait card,
+  accordions).
+- [ ] **Phase 7 — remove the black gradient** from the profile photo card.
+
+The earlier follow-ups below are renumbered after these.
 
 ## Follow-up phases
 

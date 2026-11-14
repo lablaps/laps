@@ -349,7 +349,10 @@ function PortalPage() {
               </div>
             )}
 
-            <AboutEditor me={me} />
+            {/* No bio editor: the public profile no longer shows a free-text
+                "about" — it leads with research areas and interests, which say
+                what someone works on in a form a visitor can scan. Stored bios
+                are kept in the database, just no longer edited or shown. */}
             <ResearchAreasEditor
               me={me}
               dbAreas={areasQuery.data ?? []}
@@ -1396,113 +1399,6 @@ function InfoRow({
   );
 }
 
-// ───── About / Bio editor (trilingual) ─────
-
-const BIO_LANGS: { key: "bioPt" | "bioEn" | "bioFr"; tab: "pt" | "en" | "fr"; placeholder: string }[] = [
-  { key: "bioPt", tab: "pt", placeholder: "Escreva sua bio em português…" },
-  { key: "bioEn", tab: "en", placeholder: "Write your bio in English…" },
-  { key: "bioFr", tab: "fr", placeholder: "Écrivez votre bio en français…" },
-];
-
-function AboutEditor({ me }: { me: MyProfile }) {
-  const qc = useQueryClient();
-  const { t } = useLang();
-  const [editing, setEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"pt" | "en" | "fr">("pt");
-  const [values, setValues] = useState({ bioPt: me.bioPt ?? "", bioEn: me.bioEn ?? "", bioFr: me.bioFr ?? "" });
-
-  const mutation = useMutation({
-    mutationFn: (patch: { bioPt?: string; bioEn?: string; bioFr?: string }) => api.meUpdate(patch),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["me"] });
-      setEditing(false);
-      toast.success(t.portal.saved);
-    },
-    onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
-  });
-
-  const currentDef = BIO_LANGS.find((b) => b.tab === activeTab)!;
-  const currentValue = values[currentDef.key];
-  const currentStored = me[currentDef.key] ?? "";
-
-  return (
-    <PortfolioCard
-      title="SOBRE"
-      icon={UserCheck}
-      action={
-        !editing ? (
-          <button
-            type="button"
-            onClick={() => {
-              setValues({ bioPt: me.bioPt ?? "", bioEn: me.bioEn ?? "", bioFr: me.bioFr ?? "" });
-              setEditing(true);
-            }}
-            className="inline-flex items-center gap-1 rounded-md border border-laps-navy/15 px-2 py-1 text-[10px] font-semibold text-laps-navy/60 hover:border-laps-blue/30 hover:text-laps-blue"
-          >
-            <Edit2 className="h-3 w-3" /> Editar
-          </button>
-        ) : null
-      }
-    >
-      {/* Language tab switcher */}
-      <div className="mb-3 flex gap-1 rounded-lg border border-laps-navy/10 bg-laps-ghost/30 p-0.5">
-        {BIO_LANGS.map((b) => (
-          <button
-            key={b.tab}
-            type="button"
-            onClick={() => setActiveTab(b.tab)}
-            className={`flex-1 rounded-md py-1 text-[10px] font-bold uppercase tracking-wider transition ${
-              activeTab === b.tab
-                ? "bg-surface text-laps-blue shadow-sm"
-                : "text-laps-navy/50 hover:text-laps-navy/70"
-            }`}
-          >
-            {t.portal.bioTab[b.tab]}
-          </button>
-        ))}
-      </div>
-
-      {editing ? (
-        <div className="space-y-2">
-          <textarea
-            value={currentValue}
-            onChange={(e) => setValues((v) => ({ ...v, [currentDef.key]: e.target.value }))}
-            rows={4}
-            className="w-full rounded-md border border-laps-navy/15 bg-surface px-3 py-2 text-sm text-laps-navy outline-none focus:border-laps-blue/40 focus:ring-2 focus:ring-laps-blue/15"
-            placeholder={currentDef.placeholder}
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => mutation.mutate(values)}
-              disabled={mutation.isPending}
-              className="inline-flex items-center gap-1.5 rounded-md bg-laps-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-laps-cta disabled:opacity-60"
-            >
-              <Save className="h-3.5 w-3.5" />
-              {mutation.isPending ? "Salvando…" : "Salvar"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditing(false)}
-              className="rounded-md border border-laps-navy/15 px-3 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm leading-relaxed text-laps-navy/80">
-          {currentStored || (
-            <span className="italic text-laps-navy/40">
-              Sem bio em {t.portal.bioTab[activeTab].toLowerCase()}. Clique em Editar para adicionar.
-            </span>
-          )}
-        </p>
-      )}
-    </PortfolioCard>
-  );
-}
-
 // ───── Research areas editor ─────
 
 function ResearchAreasEditor({
@@ -1751,7 +1647,7 @@ function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInter
 
   return (
     <PortfolioCard
-      title="INTERESSES"
+      title="INTERESSES DE PESQUISA"
       icon={Sparkles}
       action={
         dirty || newTag.trim() ? (

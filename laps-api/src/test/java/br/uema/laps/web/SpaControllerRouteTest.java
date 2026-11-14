@@ -44,6 +44,9 @@ class SpaControllerRouteTest {
             "/team/6e2c5d66-848e-4757-9092-910d0e9e15c1",
             "/projects",
             "/projects/anything",
+            // Prêmios e Bolsas, and its old address, which the SPA redirects.
+            "/premios-e-bolsas",
+            "/impactos",
             "/contact",
             "/aboutus",
             "/exchange",

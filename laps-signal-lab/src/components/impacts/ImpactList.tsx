@@ -42,7 +42,7 @@ export function MemberImpacts({ memberId }: { memberId: string }) {
   const [page, setPage] = useState(0);
   const query = useQuery({ queryKey: ["impacts", memberId, page], queryFn: () => impactApi.list({ memberId, page }) });
   return <section aria-label={t.title} className="rounded-lg border border-laps-navy/15 bg-surface p-6">
-    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">{t.title}{query.data && <span className="ml-3 font-mono text-sm font-normal tabular-nums text-laps-navy/55">{query.data.totalElements}</span>}</h2><Link to="/impactos" className="inline-flex min-h-10 items-center text-sm text-laps-signal underline underline-offset-4">{t.browse}</Link></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">{t.title}{query.data && <span className="ml-3 font-mono text-sm font-normal tabular-nums text-laps-navy/55">{query.data.totalElements}</span>}</h2><Link to="/premios-e-bolsas" className="inline-flex min-h-10 items-center text-sm text-laps-signal underline underline-offset-4">{t.browse}</Link></div>
     {query.isPending ? <p role="status">{t.loading}</p> : query.isError ? <div role="alert"><p>{t.error}</p><button className={impactButton} onClick={() => query.refetch()}>{t.retry}</button></div> : <>
       {!query.data.content.length && <p className="mt-4 text-sm text-laps-navy/60">{t.empty}</p>}
       {query.data.content.map(impact => <ImpactCard key={impact.id} impact={impact} />)}

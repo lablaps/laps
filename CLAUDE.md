@@ -1,6 +1,6 @@
 # LAPS — lab platform (UEMA)
 
-Public site, member portal and admin console for **LAPS** (Laboratório de Análise e
+Public site, member portal and admin console for **LAPS** (Laboratório de Aquisição e
 Processamento de Sinais) at Universidade Estadual do Maranhão. Portuguese-first,
 with EN/FR translations. Runs as a single deployable: one Spring Boot jar serving
 both the REST API and the compiled React SPA.

@@ -100,6 +100,7 @@ public class SecurityConfig {
                         antMatcher(HttpMethod.GET, "/team"),
                         antMatcher(HttpMethod.GET, "/team/**"),
                         antMatcher(HttpMethod.GET, "/projects"),
+                        antMatcher(HttpMethod.GET, "/premios-e-bolsas"),
                         antMatcher(HttpMethod.GET, "/impactos"),
                         antMatcher(HttpMethod.GET, "/projects/**"),
                         antMatcher(HttpMethod.GET, "/contact"),

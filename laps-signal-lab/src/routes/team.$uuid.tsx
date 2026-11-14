@@ -953,7 +953,7 @@ const TX: Record<
     sections: {
       projects: "Projetos",
       publications: "Publicações",
-      honours: "Honras e Bolsas",
+      honours: "Prêmios e Bolsas",
       roadmap: "Roteiro de pesquisa",
       languages: "Idiomas",
       coauthors: "Coautores no LAPS",

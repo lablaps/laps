@@ -1,6 +1,20 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+/* Brand fonts, self-hosted (bundled into /assets by Vite). They must stay up
+   here with the other @imports: the old remote Google Fonts @import sat below
+   Tailwind's expansion, where browsers are required to ignore it, and the CSP
+   (font-src 'self') would have blocked it anyway — so the site had been
+   rendering in system-ui. Self-hosting also keeps visitor IPs off Google
+   (LGPD). Weights match what the UI uses; add a weight here before using it. */
+@import "@fontsource/archivo/400.css";
+@import "@fontsource/archivo/500.css";
+@import "@fontsource/archivo/600.css";
+@import "@fontsource/archivo/700.css";
+@import "@fontsource/archivo/800.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
 
 /* The site is light-only. The variant is kept pointing at a .dark class that
    nothing sets, so a stray `dark:` utility (shadcn components ship with them)
@@ -22,7 +36,6 @@
    Replaces Space Grotesk + Montserrat, which were the generic pick: Space
    Grotesk in particular is the single most over-reached-for "tasteful" font in
    generated frontends, and it gave the lab a startup voice, not a research one. */
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @theme inline {
   /* Stated outright rather than derived as var(--radius) ± 4px. The derived

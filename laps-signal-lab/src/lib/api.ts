@@ -7,24 +7,25 @@ import { solveChallenge, type Challenge } from "@/lib/proof-of-work";
  * Resolve the API base URL.
  *
  * Priority:
- *   1. VITE_API_BASE — explicit override (production split-host setups).
- *   2. Same-origin ("") — when the monolith serves the SPA and /api/v1/* from
- *      the same host (Render web service, docker-compose laps-app).
- *   3. http://<host>:8080 — when the SPA is loaded from a Vite dev server
- *      (port 5173) and the backend is on :8080. Detected at runtime.
+ *   1. VITE_API_BASE — explicit override (split-host setups, mock APIs).
+ *   2. Production build → same-origin (""). The monolith serves the SPA and
+ *      /api/v1/* from one host (Render web service, docker-compose laps-app),
+ *      whatever port that host is published on.
+ *   3. Dev server → http://<host>:8080, where `mvn spring-boot:run` listens.
+ *
+ * This used to be decided by the page's port: anything other than
+ * 80/443/8080 was assumed to be the Vite dev server. A production jar
+ * published on any other port (APP_HOST_PORT is a documented compose knob)
+ * then sent every API call — cookies included — to :8080 on the same host,
+ * which is someone else's service or nothing; the CSP blocked it and every
+ * data page rendered the error screen. Build mode is the actual signal.
  */
 function resolveApiBase(): string {
   const fromEnv = import.meta.env.VITE_API_BASE as string | undefined;
   if (fromEnv !== undefined && fromEnv !== "") return fromEnv;
-  if (typeof window !== "undefined" && window.location) {
-    const port = window.location.port;
-    // Vite dev server runs on :5173 by default; lovable sandbox uses other
-    // ports too but the backend pairing is always :8080. Same-origin in every
-    // other case — that's the monolith deploy.
-    if (port && port !== "8080" && port !== "" && port !== "80" && port !== "443") {
-      const proto = window.location.protocol === "https:" ? "https" : "http";
-      return `${proto}://${window.location.hostname}:8080`;
-    }
+  if (import.meta.env.DEV && typeof window !== "undefined" && window.location) {
+    const proto = window.location.protocol === "https:" ? "https" : "http";
+    return `${proto}://${window.location.hostname}:8080`;
   }
   return "";
 }

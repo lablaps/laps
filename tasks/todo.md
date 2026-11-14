@@ -34,9 +34,15 @@ Plan: [`docs/superpowers/plans/2026-11-14-public-profile-and-credibility.md`](..
 - [x] Phase 1: /team opens on List; network graph demoted to last tab; i18n tier-label fixes.
 - [x] Phase 2: dark mode removed site-wide.
 - [x] Phase 3: profile redesign (portrait hero, research interests, accordions, Honours & Awards, Scholar button); portrait photo export.
-- [ ] Decide: font loading (self-host recommended), bio fate, home counters, official lab name.
+- [x] Decisions: fonts self-hosted; bio removed from portal/admin; home counters kept; lab name = Aquisição; "Prêmios e Bolsas".
 - [ ] Phase 4: dedicated Google Scholar field (after JWT work is committed).
 - [ ] Phase 5: legacy circular photo re-upload path.
 - [ ] Phase 6: retire banner editor, then banner columns.
 - [ ] Phase 7: CI, formatting commit, admin.tsx hooks fix, dead code, lockfile, README/CLAUDE.md.
 - [ ] Phase 8: DB as single source of truth for publications/areas; nav order.
+
+### Round 2 (one phase at a time)
+- [x] Phase 4: Impactos → Prêmios e Bolsas (copy, URL + redirect, backend route).
+- [ ] Phase 5: "Undergrad" → "Undergraduate".
+- [ ] Phase 6: /portal redesign with accordions.
+- [ ] Phase 7: remove black gradient from profile photo.

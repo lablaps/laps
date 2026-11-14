@@ -119,7 +119,7 @@ public class EmailService {
                 Se você não pediu este código, ignore este email — sua conta
                 continua segura e nada foi alterado.
 
-                LAPS — Laboratório de Análise e Processamento de Sinais (UEMA)
+                LAPS — Laboratório de Aquisição e Processamento de Sinais (UEMA)
                 """.formatted(toName == null || toName.isBlank() ? "" : " " + toName, code, minutes);
 
         return send(toEmail, toName, subject, verificationHtml(toName, code, minutes), text);

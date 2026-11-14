@@ -103,7 +103,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       ],
     },
     { to: "/", hash: "parceiros", label: t.partners.nav },
-    { to: "/impactos", label: impactCopy[lang].title },
+    { to: "/premios-e-bolsas", label: impactCopy[lang].title },
     { to: "/contact", label: t.nav.contato },
   ];
 

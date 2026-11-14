@@ -44,6 +44,8 @@ public class SpaController {
             "/team",
             "/team/{*rest}",
             "/projects",
+            "/premios-e-bolsas",
+            // Old address; the SPA redirects it to /premios-e-bolsas.
             "/impactos",
             "/projects/{*rest}",
             "/contact",
