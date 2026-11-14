@@ -233,7 +233,7 @@ export const translations = {
       tiers: [
         { label: "Doutorando(a)s", value: 10 },
         { label: "MSc Students", value: 14 },
-        { label: "Undergrads", value: 21 },
+        { label: "Undergraduates", value: 21 },
         { label: "Total", value: 46 },
       ],
       researchersTitle: "Researcher Network",
@@ -290,7 +290,7 @@ export const translations = {
       opportunity: {
         title: "Opportunities at LAPS — at every level",
         body:
-          "LAPS supports international mobility for the entire research body: undergrads, MSc and doctoral students. Partner-university agreements, CAPES/CNPq cooperation calls, Erasmus+ and BRAFITEC programs and host-institution grants open doors in European and American labs. If you're in the lab, there's a path for you to join the next generation of exchange researchers.",
+          "LAPS supports international mobility for the entire research body: undergraduates, MSc and doctoral students. Partner-university agreements, CAPES/CNPq cooperation calls, Erasmus+ and BRAFITEC programs and host-institution grants open doors in European and American labs. If you're in the lab, there's a path for you to join the next generation of exchange researchers.",
       },
       labels: {
         students: "exchange researchers",

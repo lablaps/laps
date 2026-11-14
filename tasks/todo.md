@@ -43,6 +43,8 @@ Plan: [`docs/superpowers/plans/2026-11-14-public-profile-and-credibility.md`](..
 
 ### Round 2 (one phase at a time)
 - [x] Phase 4: Impactos → Prêmios e Bolsas (copy, URL + redirect, backend route).
-- [ ] Phase 5: "Undergrad" → "Undergraduate".
-- [ ] Phase 6: /portal redesign with accordions.
-- [ ] Phase 7: remove black gradient from profile photo.
+- [x] Phase 5: "Undergrad" → "Undergraduate"; remove photo gradient.
+- [ ] Phase 6: News API (managers only; image, tags, title, subtitle, people, external link).
+- [ ] Phase 7: /noticias + nav (Home ▾ Sobre/Parceiros; Notícias ▾ Projetos/Intercâmbio/Prêmios e Bolsas).
+- [ ] Phase 8: remove Impacts API entirely (drop table).
+- [ ] Phase 9: /portal redesign with accordions.

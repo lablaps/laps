@@ -93,17 +93,42 @@ sections, Scholar link, `/team` default tab).
 
 ## Round 2 (requested 2026-11-14) — one phase at a time, user approves each
 
-- [x] **Phase 4 — Impactos → Prêmios e Bolsas.** Copy in PT/EN/FR
-  ("Honours & Awards", "Distinctions et bourses"); page moved to
-  `/premios-e-bolsas`, `/impactos` redirects; SpaController + SecurityConfig
-  map the new path (route test extended, fails first). Internal names
-  (`impactApi`, `/api/v1/impacts`, table `impact`) unchanged.
-  *Open question:* the category list still includes Contribuição /
-  Experiência internacional / Outro, which do not fit the new name.
-- [ ] **Phase 5 — "Undergrad" → "Undergraduate"** in every user-facing string.
-- [ ] **Phase 6 — /portal redesign** to match the profile (portrait card,
-  accordions).
-- [ ] **Phase 7 — remove the black gradient** from the profile photo card.
+Direction: **Notícias is the main navigation tool.** Prizes and scholarships
+are news items with type tags, not a separate data model; the Impacts API is
+removed entirely. Header (Equipe and Contato stay where they are):
+`Equipe · Home ▾ (Sobre, Parceiros) · Notícias ▾ (Projetos, Intercâmbio, Prêmios e Bolsas) · Contato`.
+
+- [x] **Phase 4 — Impactos → Prêmios e Bolsas** (copy, `/premios-e-bolsas`,
+  `/impactos` redirect, backend route + test).
+- [x] **Phase 5 — "Undergrad" → "Undergraduate"** in every user-facing string
+  (EN exchange copy, tier census, code comments; applied SQL migrations left
+  untouched — editing them breaks Flyway checksums), and **black gradient
+  removed** from the profile photo card. White caption text keeps legibility
+  through a glyph-hugging text-shadow, not an overlay.
+- [ ] **Phase 6 — News API (backend).** `news` entity: image, title,
+  subtitle, tags, associated people (members), optional external link.
+  Managers only — create/edit/delete in the admin console. Public list
+  endpoint filterable by tag and by person. Image via the existing media
+  upload. Flyway migration + tests (fail first).
+  Tags: a fixed type set used for filtering (Prêmio, Bolsa, Nacional,
+  Internacional) plus free-form tags.
+- [ ] **Phase 7 — Notícias page + new navigation.** `/noticias` as cards
+  (image, tags, title, subtitle, people, external link); the dropdown header
+  above (desktop + mobile); `/premios-e-bolsas` becomes Notícias filtered by
+  the Prêmio/Bolsa tags; the profile's "Prêmios e Bolsas" section reads news
+  tagged that way and associated with the person; people on a card link to
+  their profiles.
+- [ ] **Phase 8 — Remove the Impacts API entirely.** Backend entity,
+  controller, service, repository, DTOs, kind enum and their tests; a Flyway
+  migration dropping table `impact`; frontend `lib/impacts.ts`,
+  `components/impacts/*` and the portal editor. Runs after Phase 7 so no page
+  loses its data source mid-way. **Deletes any production impact rows.**
+- [ ] **Phase 9 — /portal redesign** to match the profile (portrait card,
+  accordions). Last, so it is not built around the Impacts editor that
+  Phase 8 deletes.
+
+Prerequisite for Phase 6: commit the staged security work (V33) first, so the
+new migration lands on top of it rather than in the same diff.
 
 The earlier follow-ups below are renumbered after these.
 

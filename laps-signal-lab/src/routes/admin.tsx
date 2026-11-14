@@ -1693,7 +1693,7 @@ function FieldCard({ label, children }: { label: React.ReactNode; children: Reac
 
 // ───── Publication approval queue ─────
 //
-// Members submit publications from their portal (any tier — undergrads
+// Members submit publications from their portal (any tier — undergraduates
 // included) and they stay off the public site until approved here. The section
 // renders nothing at all when the queue is empty, so the page only grows a
 // moderation panel on the days there is something to moderate.

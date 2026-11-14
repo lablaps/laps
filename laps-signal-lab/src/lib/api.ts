@@ -415,7 +415,7 @@ export const api = {
    * the only endpoint that returns unapproved rows, and only ever the caller's.
    */
   myPublications: () => request<ApiPublication[]>("/api/v1/me/publications"),
-  /** Submits a publication for manager review. Open to every tier, undergrads included. */
+  /** Submits a publication for manager review. Open to every tier, undergraduates included. */
   meSubmitPublication: (body: PublicationSubmission) =>
     request<ApiPublication>("/api/v1/me/publications", { method: "POST", body }),
   /** Approved publications for one member — what the public profile renders. */

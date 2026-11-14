@@ -402,18 +402,16 @@ function TeamMemberPage() {
                   </span>
                 </div>
               )}
-              {/* Scrim sized to the caption, not the frame: it exists so white
-                  text clears contrast over a bright photo, and covering the
-                  whole image would mute the face the card is for. */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/85 via-black/45 to-transparent"
-              />
-              <figcaption className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+              {/* No scrim: the photo is shown untouched. Legibility of white
+                  text over a bright photo comes from a shadow hugging the
+                  glyphs instead — it darkens only the pixels around the
+                  letters, so the face and the rest of the image keep their
+                  real tones. */}
+              <figcaption className="absolute inset-x-0 bottom-0 p-5 [text-shadow:0_1px_2px_rgb(0_0_0/0.7),0_0_14px_rgb(0_0_0/0.45)] md:p-6">
                 <h1 className="font-display text-2xl font-bold leading-tight text-balance text-white md:text-3xl">
                   {member.fullName}
                 </h1>
-                <p className="mt-1.5 text-sm font-medium text-white/85">{roleTitle}</p>
+                <p className="mt-1.5 text-sm font-medium text-white">{roleTitle}</p>
               </figcaption>
             </figure>
 
