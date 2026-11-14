@@ -105,13 +105,21 @@ removed entirely. Header (Equipe and Contato stay where they are):
   untouched — editing them breaks Flyway checksums), and **black gradient
   removed** from the profile photo card. White caption text keeps legibility
   through a glyph-hugging text-shadow, not an overlay.
-- [ ] **Phase 6 — News API (backend).** `news` entity: image, title,
-  subtitle, tags, associated people (members), optional external link.
-  Managers only — create/edit/delete in the admin console. Public list
-  endpoint filterable by tag and by person. Image via the existing media
-  upload. Flyway migration + tests (fail first).
-  Tags: a fixed type set used for filtering (Prêmio, Bolsa, Nacional,
-  Internacional) plus free-form tags.
+- [x] **Phase 6 — News API + console editor.** V34 (`news`, `news_category`,
+  `news_member`; prose header), package `br.uema.laps.news` (entity, input,
+  view, service, public + admin controllers). Public `GET /api/v1/news`
+  (`?category=` any-of, `?memberId=`) and `/{id}`; manager-only
+  `POST/PUT/DELETE /api/v1/admin/news`, audited. Service refuses unknown or
+  removed people, non-http(s) links, and images that are neither `/uploads/`
+  nor https. Tests first: 13 service, 4 validation, 2 migration-contract,
+  2 security smoke (180 backend tests green). V34 verified on real Postgres
+  under `ddl-auto=validate`. Console: `components/admin/NewsSection.tsx`
+  (trilingual title/subtitle, image upload, link, categories, tags, ordered
+  people), request body checked against `NewsInput`.
+  **Bug found and fixed on the way:** the project researcher picker and the
+  publication author picker shared the `["admin","members"]` cache key with a
+  different fetcher and shape, so their searches always returned nothing
+  (confirmed by A/B test). One hook now owns that key: `hooks/use-admin-roster.ts`.
 - [ ] **Phase 7 — Notícias page + new navigation.** `/noticias` as cards
   (image, tags, title, subtitle, people, external link); the dropdown header
   above (desktop + mobile); `/premios-e-bolsas` becomes Notícias filtered by

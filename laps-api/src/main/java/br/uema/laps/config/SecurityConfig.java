@@ -119,6 +119,7 @@ public class SecurityConfig {
                         antMatcher(HttpMethod.GET, "/api/v1/projects/**"),
                         antMatcher(HttpMethod.GET, "/api/v1/publications/**"),
                         antMatcher(HttpMethod.GET, "/api/v1/impacts/**"),
+                        antMatcher(HttpMethod.GET, "/api/v1/news/**"),
                         antMatcher(HttpMethod.GET, "/api/v1/areas"),
                         antMatcher(HttpMethod.GET, "/api/v1/graph"),
                         antMatcher(HttpMethod.GET, "/api/v1/export"),

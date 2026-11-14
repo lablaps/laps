@@ -12,6 +12,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -90,6 +91,22 @@ class ApplicationContextSmokeTest {
     void partnerLogoDoesNotRequireAuthentication() throws Exception {
         mockMvc.perform(get("/images/partners/uema.png"))
                 .andExpect(result -> assertThat(result.getResponse().getStatus()).isNotEqualTo(401));
+    }
+
+    @Test
+    @DisplayName("anyone can read the news list — it is the public site's main feed")
+    void newsIsPublic() throws Exception {
+        mockMvc.perform(get("/api/v1/news"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("publishing news without a manager session is refused")
+    void newsWritesNeedAManager() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/news")
+                        .contentType("application/json")
+                        .content("{}"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

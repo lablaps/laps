@@ -2,6 +2,8 @@ import { useMemo, useState, useEffect } from "react";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { NewsSection } from "@/components/admin/NewsSection";
+import { useAdminRoster } from "@/hooks/use-admin-roster";
 import {
   Folder,
   Plus,
@@ -366,6 +368,7 @@ function AdminPage() {
 
             <PublicationApprovalSection />
             <PublicationSection />
+            <NewsSection />
 
             {/* Member grid */}
             <section>
@@ -2271,13 +2274,7 @@ function AuthorPicker({
   authors: AuthorDraft[];
   onChange: (next: AuthorDraft[]) => void;
 }) {
-  const membersQuery = useQuery({
-    queryKey: ["admin", "members"],
-    queryFn: () => api.members(),
-    staleTime: 30_000,
-  });
-  // Memoised so the search below re-ranks on keystrokes, not on every render.
-  const allMembers = useMemo(() => membersQuery.data?.content ?? [], [membersQuery.data]);
+  const { members: allMembers } = useAdminRoster();
   const byId = useMemo(() => Object.fromEntries(allMembers.map((m) => [m.id, m])), [allMembers]);
 
   const [q, setQ] = useState("");
@@ -2795,15 +2792,7 @@ function ResearcherPicker({
   leaders: { memberId: string; role: string }[];
   onChange: (next: { memberId: string; role: string }[]) => void;
 }) {
-  const membersQuery = useQuery({
-    // Distinct from the public ["members"] key: the same endpoint returns an
-    // unredacted payload for MANAGER callers, so sharing one cache entry across
-    // auth states served the admin UI a redacted roster (blank emails).
-    queryKey: ["admin", "members"],
-    queryFn: () => api.members(),
-    staleTime: 30_000,
-  });
-  const allMembers = membersQuery.data?.content ?? [];
+  const { members: allMembers } = useAdminRoster();
   const byId = useMemo(() => Object.fromEntries(allMembers.map((m) => [m.id, m])), [allMembers]);
 
   const [q, setQ] = useState("");
