@@ -53,7 +53,7 @@ const STEPS: GuideStep[] = [
     target: "email",
     icon: Mail,
     title: "Agora cadastre seu email",
-    body: "Senha trocada — seu perfil está liberado. Abra o cartão «Contato & Links», toque em «Editar» e preencha o campo «Email (login e recuperação)». Esse email passa a ser o seu login e o caminho para recuperar a conta se você esquecer a senha. Não esqueça de salvar.",
+    body: "Senha trocada — seu perfil está liberado. Na seção «Contato e links» (já aberta), toque em «Editar» e preencha o campo «Email (login e recuperação)». Esse email passa a ser o seu login e o caminho para recuperar a conta se você esquecer a senha. Não esqueça de salvar.",
     cta: "Mostrar onde cadastrar",
     pin: "Toque em «Editar» aqui",
   },

@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   ArrowLeft,
   BookOpen,
-  Briefcase,
   Calendar,
   CheckCircle2,
+  ChevronDown,
   Clock,
   Compass,
   Crown,
@@ -16,21 +17,17 @@ import {
   EyeOff,
   Globe,
   GraduationCap,
-  ImageIcon,
   KeyRound,
   LayoutDashboard,
   Lock,
   Mail,
   MapPin,
-  Microscope,
-  Palette,
   Plus,
   Save,
   Shield,
   Sparkles,
   Upload,
   UserCheck,
-  Users,
   X,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -156,26 +153,6 @@ const tierConfig = TIER_CONFIG;
 
 // ───── Preset banner options ─────
 
-const BANNER_PRESETS = [
-  { label: "Navy Blue", value: "#0B4E8D" },
-  { label: "Sky", value: "#0EA5E9" },
-  { label: "Violet", value: "#7C3AED" },
-  { label: "Emerald", value: "#059669" },
-  { label: "Amber", value: "#D97706" },
-  { label: "Rose", value: "#E11D48" },
-  { label: "Slate", value: "#475569" },
-  { label: "Teal", value: "#0D9488" },
-];
-
-/**
- * Turns a failed profile write into something the member can act on.
- *
- * Every editor on this page mapped all errors to "Falha ao salvar. Tente
- * novamente." — which, for the one failure new members reliably hit, is advice
- * that loops forever: the write guard refuses profile edits for as long as the
- * temporary password is live, so retrying can only fail again. The API reports
- * it in English, so match on it and say what actually unblocks them.
- */
 function saveErrorMessage(err: unknown, fallback: string) {
   if (err instanceof ApiError && err.status === 403) {
     if (/temporary password/i.test(err.message)) {
@@ -191,7 +168,32 @@ function PortalPage() {
   const navigate = useNavigate();
   const auth = useAuth();
   const me = auth.member;
-  const { t } = useLang();
+  const { t, lang } = useLang();
+
+  // Which onboarding step the member is actually blocked on. Ordered to match
+  // what the API allows — the temporary password has to go first, because every
+  // profile write is refused until it does. Computed before the loading return
+  // below because the effect that follows depends on it, and hooks may not
+  // come after a conditional return.
+  const guideStep: GuideStepId | null = !me
+    ? null
+    : auth.mustChangePassword
+      ? "password"
+      : !me.email
+        ? "email"
+        : !auth.emailVerified
+          ? "verify"
+          : null;
+
+  // Open sections. Research areas and interests start open — they are what
+  // the public profile leads with. The section the onboarding guide points at
+  // is forced open, or the guide would scroll to a closed header.
+  const [openSections, setOpenSections] = useState<string[]>(["areas", "interests"]);
+  useEffect(() => {
+    if (guideStep === "email") {
+      setOpenSections((open) => (open.includes("contact") ? open : [...open, "contact"]));
+    }
+  }, [guideStep]);
 
   useEffect(() => {
     if (!auth.isLoading && !auth.isAuthenticated) {
@@ -263,21 +265,15 @@ function PortalPage() {
     ? me.interests.split(",").map((s) => s.trim()).filter(Boolean)
     : [];
 
-  // Role start date
+  // Same role title and dates the public profile shows.
+  const roleTitle = t.exchange.tier[tierKey];
   const roleStart = me.currentRoleStartedAt
-    ? new Date(me.currentRoleStartedAt).toLocaleDateString("pt-BR", { year: "numeric", month: "short" })
+    ? new Date(me.currentRoleStartedAt).toLocaleDateString(
+        lang === "pt" ? "pt-BR" : lang === "fr" ? "fr-FR" : "en-US",
+        { year: "numeric", month: "short" },
+      )
     : null;
-
-  // Which onboarding step the member is actually blocked on. Ordered to match
-  // what the API allows — the temporary password has to go first, because every
-  // profile write is refused until it does.
-  const guideStep: GuideStepId | null = auth.mustChangePassword
-    ? "password"
-    : !me.email
-      ? "email"
-      : !auth.emailVerified
-        ? "verify"
-        : null;
+  const joined = formatJoined(me, lang as JoinedLang);
 
   return (
     <div className="min-h-screen bg-laps-paper">
@@ -323,63 +319,82 @@ function PortalPage() {
           </div>
         </div>
 
-        {/* HERO CARD */}
-        <HeroCard
-          me={me}
-          cfg={cfg}
-          tierKey={tierKey}
-          roleStart={roleStart}
-          memberAreas={memberAreas}
-          portfolioProjects={portfolioProjects}
-        />
+        {/* HERO — the portrait card exactly as visitors see it, and beside
+            it the account prompts that block editing. The stat tiles and the
+            cover banner are gone, as on the public profile; the "Publicações"
+            tile had been hard-coded to 0 for everyone. */}
+        <div className="mt-4 grid gap-8 md:grid-cols-[minmax(0,20rem)_1fr] md:items-start lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-12">
+          <PortraitEditor me={me} cfg={cfg} roleTitle={roleTitle} />
 
-        {/* TWO-COLUMN BODY */}
-        <div className="mt-8 grid gap-6 md:grid-cols-[1fr_2fr]">
-          {/* SIDEBAR */}
-          <aside className="flex flex-col gap-6">
-            <FullNameEditor me={me} />
-            <div data-guide="email" className="scroll-mt-24">
-              <ContactEditor me={me} />
-            </div>
+          <div className="flex min-w-0 flex-col gap-6">
+            {(roleStart || joined) && (
+              <div className="flex flex-wrap gap-2">
+                {joined && (
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-laps-navy/15 bg-surface px-2.5 py-1 text-xs font-medium text-laps-navy/75">
+                    <Calendar className="h-3.5 w-3.5" /> {joined}
+                  </span>
+                )}
+                {roleStart && (
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-laps-navy/15 bg-surface px-2.5 py-1 text-xs font-medium text-laps-navy/75">
+                    <Calendar className="h-3.5 w-3.5" /> {roleTitle} · {roleStart}
+                  </span>
+                )}
+              </div>
+            )}
             {auth.mustChangePassword && <FirstLoginBanner hasEmail={!!me.email} />}
             {!auth.emailVerified && (
               <div data-guide="verify" className="scroll-mt-24">
                 <EmailVerificationBanner me={me} />
               </div>
             )}
+            <p className="max-w-prose text-sm leading-relaxed text-pretty text-laps-navy/65">
+              {t.portal.editHint}
+            </p>
+          </div>
+        </div>
 
-            {/* No bio editor: the public profile no longer shows a free-text
-                "about" — it leads with research areas and interests, which say
-                what someone works on in a form a visitor can scan. Stored bios
-                are kept in the database, just no longer edited or shown. */}
-            <ResearchAreasEditor
-              me={me}
-              dbAreas={areasQuery.data ?? []}
-              currentAreas={memberAreas}
-            />
-            <InterestsEditor me={me} currentInterests={memberInterests} />
-            <LanguagesEditor me={me} />
-            <JoinedLapsEditor me={me} />
-            <UndergradProgramCard me={me} />
-            <ExchangeCountryEditor me={me} />
-          </aside>
+        {/* BODY — every editor is a section of one accordion, in the order the
+            public profile reads: what you research first, then the work, then
+            the details. No bio editor: the profile leads with research areas
+            and interests instead (stored bios are kept, just not edited). */}
+        <AccordionPrimitive.Root
+          type="multiple"
+          value={openSections}
+          onValueChange={setOpenSections}
+          className="mt-14 border-t border-laps-navy/15"
+        >
+          <ResearchAreasEditor
+            me={me}
+            dbAreas={areasQuery.data ?? []}
+            currentAreas={memberAreas}
+          />
+          <InterestsEditor me={me} currentInterests={memberInterests} />
+          <ProjectsSection
+            me={me}
+            allMembers={allMembers}
+            portfolioProjects={portfolioProjects}
+            myProjectLinks={myProjectLinks}
+            allProjects={allProjects}
+          />
+          <PublicationsSection />
+          <RoadmapEditor me={me} />
+          <LanguagesEditor me={me} />
+          <FullNameEditor me={me} />
+          <div data-guide="email" className="scroll-mt-24">
+            <ContactEditor me={me} />
+          </div>
+          <JoinedLapsEditor me={me} />
+          <UndergradProgramCard me={me} />
+          <ExchangeCountryEditor me={me} />
+        </AccordionPrimitive.Root>
 
-          {/* MAIN */}
-          <main className="flex flex-col gap-6">
-            <RoadmapEditor me={me} />
-            <ProjectsSection
-              me={me}
-              allMembers={allMembers}
-              portfolioProjects={portfolioProjects}
-              myProjectLinks={myProjectLinks}
-              allProjects={allProjects}
-            />
-            <PublicationsSection />
-            <PasswordChangeCard
-              emailVerified={auth.emailVerified}
-              mustChangePassword={auth.mustChangePassword}
-            />
-          </main>
+        {/* Security stays outside the accordion: a temporary password blocks
+            every other write, so this must never be hidden behind a header. */}
+        <div className="mt-10">
+          <PasswordChangeCard
+            emailVerified={auth.emailVerified}
+            mustChangePassword={auth.mustChangePassword}
+          />
         </div>
 
         <div className="pb-16" />
@@ -388,88 +403,6 @@ function PortalPage() {
       {/* Walks a new member through password → email → verificação, in the only
           order the API accepts. Renders nothing once all three are done. */}
       <PortalGuide step={guideStep} />
-    </div>
-  );
-}
-
-// ───── Hero card ─────
-
-function HeroCard({
-  me,
-  cfg,
-  tierKey,
-  roleStart,
-  memberAreas,
-  portfolioProjects,
-}: {
-  me: MyProfile;
-  cfg: (typeof tierConfig)[Tier];
-  tierKey: Tier;
-  roleStart: string | null;
-  memberAreas: string[];
-  portfolioProjects: ApiProject[];
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-md border border-laps-navy/20 bg-surface">
-      {/* Banner */}
-      <BannerEditor me={me} cfg={cfg} />
-
-      <div className="px-6 pb-10 md:px-10">
-        {/* Avatar */}
-        <AvatarEditor me={me} cfg={cfg} />
-
-        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-start md:justify-between md:gap-8">
-          <div className="min-w-0 flex-1">
-            <h1 className="font-display text-3xl font-bold leading-tight text-laps-navy md:text-4xl">
-              {me.fullName}
-            </h1>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {/* Outlined, mono, no glyph. The role chip used to be a filled
-                  pastel capsule led by a Crown / Shield / Microscope icon —
-                  the word beside it already said which tier this is. */}
-              <span
-                className={`inline-flex items-center rounded-sm border px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] ${cfg.chip}`}
-              >
-                {cfg.label}
-              </span>
-              {roleStart && (
-                <span className="inline-flex items-center gap-1.5 rounded-sm border border-laps-navy/20 px-2.5 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/60">
-                  <Calendar className="h-3 w-3" /> desde {roleStart}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 md:shrink-0">
-            {me.linkedinUrl && (
-              <a
-                href={me.linkedinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-laps-cta px-3 py-2 text-xs font-semibold text-white transition hover:bg-laps-accent"
-              >
-                LinkedIn
-              </a>
-            )}
-          </div>
-        </div>
-
-        {/* Quick stats */}
-        <QuickStats memberAreas={memberAreas} portfolioProjects={portfolioProjects} />
-      </div>
-    </div>
-  );
-}
-
-// ───── Quick stats (i18n) ─────
-
-function QuickStats({ memberAreas, portfolioProjects }: { memberAreas: string[]; portfolioProjects: ApiProject[] }) {
-  const { t } = useLang();
-  return (
-    <div className="mt-8 grid gap-3 sm:grid-cols-3">
-      <StatCard icon={Compass} label={t.portal.statAreas} value={memberAreas.length} />
-      <StatCard icon={Sparkles} label={t.portal.statProjects} value={portfolioProjects.length} />
-      <StatCard icon={BookOpen} label={t.portal.statPubs} value={0} />
     </div>
   );
 }
@@ -493,7 +426,7 @@ function FullNameEditor({ me }: { me: MyProfile }) {
   });
 
   return (
-    <PortfolioCard title={t.portal.fullName} icon={UserCheck}>
+    <PortfolioCard section="name" title={t.portal.fullName} icon={UserCheck}>
       {editing ? (
         <div className="flex gap-2">
           <Input
@@ -538,9 +471,6 @@ function FullNameEditor({ me }: { me: MyProfile }) {
 // ───── Banner editor ─────
 
 // Canvas dimensions for the banner output image
-const BANNER_CANVAS_W = 1200;
-const BANNER_CANVAS_H = 300;
-
 // Portrait export for member photos: 4:5, rectangular, JPEG.
 //
 // The public profile shows the photo as a full-bleed portrait card with the
@@ -554,193 +484,6 @@ const BANNER_CANVAS_H = 300;
 const AVATAR_EXPORT_W = 800;
 const AVATAR_EXPORT_H = 1000;
 
-function BannerEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tier] }) {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [customColor, setCustomColor] = useState(me.bannerColor ?? "");
-  const [editorFile, setEditorFile] = useState<File | null>(null);
-  const bannerRef = useRef<HTMLInputElement>(null);
-
-  const saveMutation = useMutation({
-    mutationFn: (patch: { bannerColor?: string; bannerImageUrl?: string }) =>
-      api.meUpdate(patch),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["me"] });
-      setOpen(false);
-    },
-    onError: () => toast.error("Falha ao salvar capa. Tente novamente."),
-  });
-
-  const uploadMutation = useMutation({
-    mutationFn: (file: File) => api.meUploadBanner(file),
-    onSuccess: (res) => { saveMutation.mutate({ bannerImageUrl: res.url }); },
-    onError: () => toast.error("Falha ao enviar imagem. Tente novamente."),
-  });
-
-  function handleEditorConfirm(blob: Blob) {
-    const file = new File([blob], "banner.jpg", { type: "image/jpeg" });
-    setEditorFile(null);
-    uploadMutation.mutate(file);
-  }
-
-  const bannerStyle = me.bannerImageUrl
-    ? { backgroundImage: `url(${resolveMediaUrl(me.bannerImageUrl)})`, backgroundSize: "cover", backgroundPosition: "center" }
-    : me.bannerColor
-      ? { background: `linear-gradient(to right, ${me.bannerColor}, ${me.bannerColor}99)` }
-      : undefined;
-
-  return (
-    <>
-      {/* Image transform editor modal */}
-      {editorFile && (
-        <ImageTransformEditor
-          file={editorFile}
-          frameW={BANNER_CANVAS_W}
-          frameH={BANNER_CANVAS_H}
-          title="Ajustar imagem da capa"
-          onConfirm={handleEditorConfirm}
-          onCancel={() => setEditorFile(null)}
-        />
-      )}
-
-      <div
-        // Flat tier colour when the member has not set a banner. The default
-        // used to be a three-stop gradient per tier, which meant the fallback
-        // was louder than any banner someone actually chose.
-        className={`relative h-40 md:h-48 ${!me.bannerImageUrl && !me.bannerColor ? cfg.band : ""}`}
-        style={bannerStyle}
-      >
-        <svg
-          className="absolute bottom-0 left-0 h-10 w-full text-white/45"
-          viewBox="0 0 200 20"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M0,10 Q25,2 50,10 T100,10 T150,10 T200,10"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            fill="none"
-          />
-        </svg>
-
-        {/* Uploading overlay */}
-        {(uploadMutation.isPending || saveMutation.isPending) && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <p className="text-xs font-semibold text-white">Salvando…</p>
-          </div>
-        )}
-
-        {/* Edit button */}
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-md bg-black/40 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-black/60"
-        >
-          <Palette className="h-3.5 w-3.5" /> Editar capa
-        </button>
-
-        {/* Banner editor panel */}
-        {open && (
-          <div className="absolute right-4 top-14 z-10 w-72 rounded-md border border-laps-navy/30 bg-surface p-4">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-              Cor de fundo
-            </p>
-            <div className="mb-3 grid grid-cols-4 gap-2">
-              {BANNER_PRESETS.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => saveMutation.mutate({ bannerColor: p.value, bannerImageUrl: "" })}
-                  title={p.label}
-                  className="h-8 w-full rounded-lg border-2 border-transparent transition hover:border-laps-blue/50"
-                  style={{ background: p.value }}
-                />
-              ))}
-            </div>
-            <div className="mb-3 flex gap-2">
-              <input
-                type="color"
-                value={customColor || "#0B4E8D"}
-                onChange={(e) => setCustomColor(e.target.value)}
-                className="h-9 w-10 cursor-pointer rounded border border-laps-navy/20 p-0.5"
-              />
-              <input
-                type="text"
-                value={customColor}
-                onChange={(e) => setCustomColor(e.target.value)}
-                placeholder="#0B4E8D"
-                className="flex-1 rounded-md border border-laps-navy/15 px-2 text-xs text-laps-navy"
-              />
-              <button
-                type="button"
-                onClick={() => saveMutation.mutate({ bannerColor: customColor, bannerImageUrl: "" })}
-                disabled={!customColor || saveMutation.isPending}
-                className="rounded-md bg-laps-accent px-3 text-xs font-semibold text-white hover:bg-laps-ink disabled:opacity-60"
-              >
-                OK
-              </button>
-            </div>
-            <div className="border-t border-laps-navy/10 pt-3">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-laps-navy/55">
-                Imagem de capa
-              </p>
-              <input
-                ref={bannerRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) { setEditorFile(file); setOpen(false); }
-                  e.target.value = "";
-                }}
-              />
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => bannerRef.current?.click()}
-                  disabled={uploadMutation.isPending || saveMutation.isPending}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md border border-laps-blue/25 bg-surface px-3 py-1.5 text-xs font-semibold text-laps-blue transition hover:bg-laps-ghost disabled:opacity-60"
-                >
-                  <ImageIcon className="h-3.5 w-3.5" />
-                  Selecionar imagem…
-                </button>
-                {me.bannerImageUrl && (
-                  <button
-                    type="button"
-                    onClick={() => saveMutation.mutate({ bannerImageUrl: "" })}
-                    className="rounded-md border border-red-200 bg-surface px-2 text-xs text-red-600 hover:bg-red-50"
-                    title="Remover imagem"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-              <p className="mt-1.5 text-[10px] text-laps-navy/40">
-                Após selecionar, você poderá ajustar posição, escala e rotação.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="mt-3 w-full rounded-md bg-laps-ghost/60 py-1.5 text-xs font-semibold text-laps-navy/70 hover:bg-laps-ghost"
-            >
-              Fechar
-            </button>
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
-// ───── Image transform editor (shared by capa + foto) ─────
-
-/**
- * Canvas bounding box of the output frame, expressed in the image's own rotated
- * frame. Rotating the frame instead of the image keeps the coverage maths in one
- * coordinate system.
- */
 function rotatedFrameExtent(w: number, h: number, deg: number) {
   const r = (deg * Math.PI) / 180;
   const c = Math.abs(Math.cos(r));
@@ -1063,7 +806,17 @@ function SliderControl({
 
 // ───── Avatar editor ─────
 
-function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tier] }) {
+// ───── Portrait editor ─────
+
+/**
+ * The member's photo as the public profile shows it: a 4:5 portrait with the
+ * name and role set on it. What you see here is what visitors see.
+ *
+ * The change-photo control is a real, always-visible button (top-right), not
+ * a hover overlay — the old circular avatar only revealed its upload icon on
+ * mouse hover, so it could not be reached by keyboard or on a phone.
+ */
+function PortraitEditor({ me, cfg, roleTitle }: { me: MyProfile; cfg: (typeof tierConfig)[Tier]; roleTitle: string }) {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [editorFile, setEditorFile] = useState<File | null>(null);
@@ -1080,8 +833,8 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
     onError: () => toast.error("Falha ao enviar foto. Verifique o formato e tente novamente."),
   });
 
-  // The editor hands back the already-cropped square, so what gets uploaded is
-  // exactly what was previewed — no server-side guessing about the focal point.
+  // The editor hands back the already-cropped portrait, so what gets uploaded
+  // is exactly what was previewed — no server-side guessing about the focal point.
   function handleEditorConfirm(blob: Blob) {
     const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
     setEditorFile(null);
@@ -1091,7 +844,7 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
   const busy = uploadMutation.isPending || saveMutation.isPending;
 
   return (
-    <div className="-mt-20 flex flex-col items-start gap-1">
+    <figure className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-md bg-laps-ink md:mx-0 md:max-w-none">
       {editorFile && (
         <ImageTransformEditor
           file={editorFile}
@@ -1102,47 +855,51 @@ function AvatarEditor({ me, cfg }: { me: MyProfile; cfg: (typeof tierConfig)[Tie
           onCancel={() => setEditorFile(null)}
         />
       )}
-      {/* A 2px ring in the tier's own colour instead of a 4px pastel halo plus
-          a shadow-xl. The badge that sat in the corner held the same tier glyph
-          as the role chip two lines below it. */}
-      <div className={`group relative h-36 w-36 shrink-0 rounded-full bg-surface p-1 ring-2 ${cfg.ring}`}>
-        {me.photoUrl ? (
-          <img src={resolveMediaUrl(me.photoUrl)} alt={me.fullName} className="h-full w-full rounded-full object-cover" />
-        ) : (
-          <div className={`flex h-full w-full items-center justify-center rounded-full ${cfg.fill} text-4xl font-bold text-white`}>
-            {initials(me.fullName)}
-          </div>
-        )}
-        {/* Upload / saving overlay */}
-        {busy ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/50">
-            <p className="text-[10px] font-semibold text-white">
-              {uploadMutation.isPending ? "Enviando…" : "Salvando…"}
-            </p>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100"
-          >
-            <Upload className="h-6 w-6 text-white" />
-          </button>
-        )}
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) setEditorFile(file);
-            // Reset so re-picking the same file still fires onChange.
-            e.target.value = "";
-          }}
+      {me.photoUrl ? (
+        <img
+          src={resolveMediaUrl(me.photoUrl)}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover object-top outline outline-1 -outline-offset-1 outline-black/10"
         />
-      </div>
-    </div>
+      ) : (
+        <div aria-hidden className={`absolute inset-0 flex items-center justify-center ${cfg.fill}`}>
+          <span className="font-display text-7xl font-bold text-white/90">{initials(me.fullName)}</span>
+        </div>
+      )}
+
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => fileRef.current?.click()}
+        className="absolute right-3 top-3 inline-flex min-h-10 items-center gap-1.5 rounded-md bg-white/90 px-3 text-xs font-semibold text-laps-navy backdrop-blur transition-colors hover:bg-white disabled:opacity-70 active:scale-[0.96]"
+      >
+        <Upload className="h-3.5 w-3.5" aria-hidden />
+        {busy
+          ? uploadMutation.isPending ? "Enviando…" : "Salvando…"
+          : me.photoUrl ? "Trocar foto" : "Enviar foto"}
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) setEditorFile(file);
+          // Reset so re-picking the same file still fires onChange.
+          e.target.value = "";
+        }}
+      />
+
+      {/* Same caption treatment as the public profile: no scrim, a shadow
+          hugging the glyphs keeps white text legible over a bright photo. */}
+      <figcaption className="absolute inset-x-0 bottom-0 p-5 [text-shadow:0_1px_2px_rgb(0_0_0/0.7),0_0_14px_rgb(0_0_0/0.45)] md:p-6">
+        <p className="font-display text-2xl font-bold leading-tight text-balance text-white md:text-3xl">
+          {me.fullName}
+        </p>
+        <p className="mt-1.5 text-sm font-medium text-white">{roleTitle}</p>
+      </figcaption>
+    </figure>
   );
 }
 
@@ -1215,7 +972,8 @@ function ContactEditor({ me }: { me: MyProfile }) {
 
   return (
     <PortfolioCard
-      title="CONTATO & LINKS"
+      section="contact"
+      title="Contato e links"
       icon={Mail}
       action={
         !editing && !lockedByTempPassword ? (
@@ -1456,7 +1214,8 @@ function ResearchAreasEditor({
 
   return (
     <PortfolioCard
-      title="ÁREAS DE PESQUISA"
+      section="areas"
+      title="Áreas de pesquisa"
       icon={Compass}
       action={
         dirty ? (
@@ -1645,7 +1404,8 @@ function InterestsEditor({ me, currentInterests }: { me: MyProfile; currentInter
 
   return (
     <PortfolioCard
-      title="INTERESSES DE PESQUISA"
+      section="interests"
+      title="Interesses de pesquisa"
       icon={Sparkles}
       action={
         dirty || newTag.trim() ? (
@@ -1774,7 +1534,8 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
 
   return (
     <PortfolioCard
-      title="IDIOMAS"
+      section="languages"
+      title="Idiomas"
       icon={Globe}
       action={
         dirty ? (
@@ -1930,11 +1691,13 @@ function RoadmapEditor({ me }: { me: MyProfile }) {
     onError: (err) => toast.error(saveErrorMessage(err, t.portal.errorSave)),
   });
 
-  if (!editing && !me.roadmap) return null;
-
+  // Always rendered. It used to return null when the member had no roadmap
+  // yet, but the only way into edit mode is the Editar button on this very
+  // section — so nobody without a roadmap could ever write one.
   return (
     <PortfolioCard
-      title="ROTEIRO DE PESQUISA"
+      section="roadmap"
+      title="Roteiro de pesquisa"
       icon={Compass}
       action={
         !editing ? (
@@ -1975,8 +1738,12 @@ function RoadmapEditor({ me }: { me: MyProfile }) {
             </button>
           </div>
         </div>
-      ) : (
+      ) : me.roadmap ? (
         <p className="whitespace-pre-line text-sm leading-relaxed text-laps-navy/80">{me.roadmap}</p>
+      ) : (
+        <p className="text-sm italic text-laps-navy/55">
+          Nenhum roteiro ainda. Use «Editar» para descrever as próximas etapas da sua pesquisa.
+        </p>
       )}
     </PortfolioCard>
   );
@@ -2001,7 +1768,7 @@ function ProjectsSection({
   const qc = useQueryClient();
 
   return (
-    <PortfolioCard title="PROJETOS" icon={Sparkles}>
+    <PortfolioCard section="projects" title="Projetos" icon={Sparkles}>
       <div className="space-y-3">
         {/* Existing projects */}
         {portfolioProjects.map((p) => (
@@ -2092,7 +1859,7 @@ function PublicationsSection() {
   const pendingCount = mine.filter((p) => p.approvalStatus === "PENDING").length;
 
   return (
-    <PortfolioCard title="PUBLICAÇÕES" icon={BookOpen}>
+    <PortfolioCard section="publications" title="Publicações" icon={BookOpen}>
       <div className="space-y-3">
         {myPublicationsQuery.isLoading && (
           <p className="text-sm italic text-laps-navy/45">Carregando…</p>
@@ -3043,7 +2810,8 @@ function JoinedLapsEditor({ me }: { me: MyProfile }) {
 
   return (
     <PortfolioCard
-      title="ENTRADA NO LAPS"
+      section="joined"
+      title="Entrada no LAPS"
       icon={Calendar}
       action={
         !editing ? (
@@ -3151,7 +2919,7 @@ function UndergradProgramCard({ me }: { me: MyProfile }) {
   const meta = program ? UNDERGRAD_PROGRAMS[program] : null;
 
   return (
-    <PortfolioCard title="CURSO DE GRADUAÇÃO" icon={GraduationCap}>
+    <PortfolioCard section="program" title="Curso de graduação" icon={GraduationCap}>
       <div className="flex items-center justify-between gap-2">
         {meta ? (
           <span className={`rounded-md px-2 py-1 text-xs font-semibold ${meta.badge}`}>
@@ -3232,7 +3000,7 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
   // Members see the country their coordinator assigned, but cannot touch it.
   if (!isManager) {
     return (
-      <PortfolioCard title={t.portal.exchangeCountry} icon={MapPin}>
+      <PortfolioCard section="exchange" title={t.portal.exchangeCountry} icon={MapPin}>
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm text-laps-navy/80">{current}</span>
           <span
@@ -3250,7 +3018,7 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
   }
 
   return (
-    <PortfolioCard title={t.portal.exchangeCountry} icon={MapPin}>
+    <PortfolioCard section="exchange" title={t.portal.exchangeCountry} icon={MapPin}>
       {editing ? (
         <div className="space-y-2">
           <ExchangePlacementPicker value={value} onChange={setValue} />
@@ -3294,55 +3062,48 @@ function ExchangeCountryEditor({ me }: { me: MyProfile }) {
 
 // ───── Shared UI components ─────
 
+/**
+ * One collapsible portal section. Every editor renders through this, so the
+ * whole portal reads like the public profile: a ruled accordion instead of a
+ * wall of boxed cards.
+ *
+ * `section` is the accordion key and must be stable — not the title, which is
+ * translated, so keying by title closed every open section on a language
+ * switch. PortalPage owns which sections are open (it has to open the one the
+ * onboarding guide is pointing at).
+ *
+ * `action` (an editor's Save button) sits beside the trigger, not inside it:
+ * a button nested in the trigger button is invalid HTML and swallows clicks.
+ */
 function PortfolioCard({
+  section,
   title,
   icon: IconComp,
   children,
   action,
 }: {
+  section: string;
   title: string;
   icon: typeof Crown;
   children: React.ReactNode;
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-md border border-laps-navy/15 bg-surface p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-laps-ghost text-laps-blue">
-            <IconComp className="h-4 w-4" />
-          </span>
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-laps-navy/70">
-            {title}
-          </h3>
-        </div>
+    <AccordionPrimitive.Item value={section} className="border-b border-laps-navy/15">
+      <AccordionPrimitive.Header className="flex items-center gap-3">
+        <AccordionPrimitive.Trigger className="group flex min-h-16 flex-1 items-center gap-3 py-4 text-left">
+          <IconComp className="h-4 w-4 shrink-0 text-laps-navy/40" aria-hidden />
+          <span className="font-display text-lg font-bold text-laps-navy">{title}</span>
+          <ChevronDown
+            className="ml-auto h-4 w-4 shrink-0 text-laps-navy/45 transition-transform duration-200 group-data-[state=open]:rotate-180"
+            aria-hidden
+          />
+        </AccordionPrimitive.Trigger>
         {action}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function StatCard({
-  icon: IconComp,
-  label,
-  value,
-}: {
-  icon: typeof Crown;
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-laps-blue/12 bg-surface p-4">
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-laps-ghost text-laps-blue">
-        <IconComp className="h-5 w-5" />
-      </span>
-      <div>
-        <div className="font-display text-2xl font-bold text-laps-navy">{value}</div>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-laps-navy/60">
-          {label}
-        </div>
-      </div>
-    </div>
+      </AccordionPrimitive.Header>
+      <AccordionPrimitive.Content className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+        <div className="pb-8">{children}</div>
+      </AccordionPrimitive.Content>
+    </AccordionPrimitive.Item>
   );
 }

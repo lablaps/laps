@@ -137,9 +137,17 @@ removed entirely. Header (Equipe and Contato stay where they are):
   focus); the mobile menu dropped parent items; hash links (Parceiros) were
   marked active on every home visit; the footer listed only top-level items.
   177 backend tests green.
-- [ ] **Phase 9 — /portal redesign** to match the profile (portrait card,
-  accordions). Last, so it is not built around the Impacts editor that
-  Phase 8 deletes.
+- [x] **Phase 9 — /portal redesign.** Hero mirrors the public profile: a
+  4:5 portrait card (name + role on the photo, no scrim) with an always-visible
+  photo button (the old circular avatar's upload control was hover-only). Cover
+  banner editor, stat tiles and circular avatar removed. Every editor is now a
+  section of one controlled accordion (`PortfolioCard` → accordion item keyed
+  by a stable `section`, not the translated title), ordered like the public
+  profile; the onboarding guide's target section is forced open; the password
+  card stays outside the accordion. Fixed on the way: the "Publicações" stat
+  tile was hard-coded to 0; **members without a roadmap could never create one**
+  (the section returned null and its own Editar button was the only way in —
+  since 87c5cb7, May); guide copy named the old card title.
 
 Prerequisite for Phase 6: commit the staged security work (V33) first, so the
 new migration lands on top of it rather than in the same diff.
