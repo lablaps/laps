@@ -3,7 +3,7 @@ export type Lang = "pt" | "en" | "fr";
 export const translations = {
   pt: {
     partners: { nav: "Parceiros", title: "Nossos parceiros institucionais" },
-    nav: { sobre: "Sobre", equipe: "Equipe", home: "Home", projetos: "Projetos", intercambio: "Intercâmbio", contato: "Contato", portal: "Meu Perfil", admin: "Gerenciar", login: "Entrar" },
+    nav: { sobre: "Sobre", equipe: "Equipe", home: "Home", projetos: "Projetos", intercambio: "Intercâmbio", noticias: "Notícias", contato: "Contato", portal: "Meu Perfil", admin: "Gerenciar", login: "Entrar" },
     tagline: "Laboratório de Aquisição e Processamento de Sinais",
     hero: {
       label: "LAPS · Laboratório de Aquisição e Processamento de Sinais",
@@ -178,7 +178,7 @@ export const translations = {
   },
   en: {
     partners: { nav: "Partners", title: "Our institutional partners" },
-    nav: { sobre: "About", equipe: "Team", home: "Home", projetos: "Projects", intercambio: "International Exchange", contato: "Contact", portal: "My Profile", admin: "Manage", login: "Sign in" },
+    nav: { sobre: "About", equipe: "Team", home: "Home", projetos: "Projects", intercambio: "International Exchange", noticias: "News", contato: "Contact", portal: "My Profile", admin: "Manage", login: "Sign in" },
     tagline: "Signal Acquisition and Processing Laboratory",
     hero: {
       label: "LAPS · Signal Acquisition and Processing Laboratory",
@@ -343,7 +343,7 @@ export const translations = {
   },
   fr: {
     partners: { nav: "Partenaires", title: "Nos partenaires institutionnels" },
-    nav: { sobre: "À propos", equipe: "Équipe", home: "Accueil", projetos: "Projets", intercambio: "Échange International", contato: "Contact", portal: "Mon Profil", admin: "Gérer", login: "Connexion" },
+    nav: { sobre: "À propos", equipe: "Équipe", home: "Accueil", projetos: "Projets", intercambio: "Échange International", noticias: "Actualités", contato: "Contact", portal: "Mon Profil", admin: "Gérer", login: "Connexion" },
     tagline: "Laboratoire d'Acquisition et Traitement des Signaux",
     hero: {
       label: "LAPS · Laboratoire d'Acquisition et Traitement des Signaux",

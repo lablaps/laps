@@ -19,6 +19,64 @@ export const NEWS_CATEGORY_LABEL: Record<NewsCategory, Record<Lang, string>> = {
   INTERNATIONAL: { pt: "Internacional", en: "International", fr: "International" },
 };
 
+/**
+ * "Prêmios e Bolsas" is the news feed filtered to these. Shared by the page,
+ * the nav and the profile section so the three can never disagree on what
+ * counts as an honour.
+ */
+export const HONOUR_CATEGORIES: NewsCategory[] = ["AWARD", "SCHOLARSHIP"];
+
+/** Copy for the Prêmios e Bolsas page and its nav entry. */
+export const HONOURS_COPY: Record<
+  Lang,
+  { title: string; intro: string; empty: string; all: string }
+> = {
+  pt: {
+    title: "Prêmios e Bolsas",
+    intro: "Prêmios, bolsas e reconhecimentos de quem faz o LAPS.",
+    empty: "Nenhum prêmio ou bolsa publicado ainda.",
+    all: "Todos",
+  },
+  en: {
+    title: "Honours & Awards",
+    intro: "Awards, scholarships and recognitions earned by the people behind LAPS.",
+    empty: "No honours or awards published yet.",
+    all: "All",
+  },
+  fr: {
+    title: "Distinctions et bourses",
+    intro: "Prix, bourses et distinctions des personnes qui font le LAPS.",
+    empty: "Aucune distinction ou bourse publiée pour l’instant.",
+    all: "Tout",
+  },
+};
+
+/** Copy for the Notícias page — the main feed. */
+export const NEWS_COPY: Record<Lang, { title: string; intro: string; empty: string; all: string }> =
+  {
+    pt: {
+      title: "Notícias",
+      intro:
+        "O que acontece no LAPS: projetos, intercâmbios, prêmios e bolsas de quem faz o laboratório.",
+      empty: "Nenhuma notícia publicada ainda.",
+      all: "Todas",
+    },
+    en: {
+      title: "News",
+      intro:
+        "What is happening at LAPS: projects, exchanges, awards and scholarships from the people in the lab.",
+      empty: "No news published yet.",
+      all: "All",
+    },
+    fr: {
+      title: "Actualités",
+      intro:
+        "Ce qui se passe au LAPS : projets, échanges, prix et bourses des membres du laboratoire.",
+      empty: "Aucune actualité publiée pour l’instant.",
+      all: "Toutes",
+    },
+  };
+
 export interface NewsText {
   pt: string | null;
   en: string | null;

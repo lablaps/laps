@@ -1,5 +1,5 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
-import { useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Linkedin,
   ExternalLink,
@@ -26,13 +26,12 @@ import {
 } from "@/lib/api";
 import { applyOverlay, decoratePhotoUrl } from "@/lib/static-source";
 import {
-  impactApi,
-  impactCopy,
-  impactKinds,
-  impactText,
-  type Impact,
-  type ImpactKind,
-} from "@/lib/impacts";
+  HONOUR_CATEGORIES,
+  NEWS_CATEGORY_LABEL,
+  newsApi,
+  newsText,
+  type ApiNews,
+} from "@/lib/news";
 import { PublicLayout } from "@/components/PublicLayout";
 import {
   Accordion,
@@ -60,17 +59,6 @@ const TIER_BY_ROLE: Record<string, Tier> = {
   MASTER: "master",
   UNDERGRAD: "undergrad",
 };
-
-/**
- * Impact kinds that count as an honour or award on the profile.
- *
- * The profile used to embed the full Impacts feed, which also carries
- * contributions, international experiences and "other" — useful on /impactos,
- * but on a researcher's page it buried the recognitions under self-reported
- * activity. Funding and prizes are what a reader of an academic profile looks
- * for, so the profile shows those and links nothing else.
- */
-const HONOUR_KINDS: ImpactKind[] = ["AWARD", "SCHOLARSHIP", "DOCTORAL_SCHOLARSHIP"];
 
 const PUB_TYPE_LABELS: Record<string, { pt: string; en: string; fr: string }> = {
   JOURNAL: { pt: "Periódico", en: "Journal", fr: "Revue" },
@@ -292,20 +280,17 @@ function TeamMemberPage() {
     .map((slug) => allMembers.find((m) => m.slug === slug))
     .filter((m): m is ApiMember => Boolean(m));
 
-  // One query per honour kind: the endpoint filters a single kind at a time,
-  // and a client-side filter over one page of the unfiltered feed would drop
-  // honours that fell onto page two. 100 is the server's page-size ceiling.
-  const honourQueries = useQueries({
-    queries: HONOUR_KINDS.map((kind) => ({
-      queryKey: ["impacts", member.id, kind, "honours"],
-      queryFn: () => impactApi.list({ memberId: member.id, kind, size: 100 }),
-      staleTime: 5 * 60 * 1000,
-    })),
+  // Prêmios e Bolsas on a profile = news tagged AWARD or SCHOLARSHIP that
+  // names this person. One request: the API matches any of the categories and
+  // returns newest first. 100 is its page ceiling — far beyond what one
+  // person accumulates.
+  const honoursQuery = useQuery({
+    queryKey: ["news", "honours", member.id],
+    queryFn: () => newsApi.list({ categories: HONOUR_CATEGORIES, memberId: member.id, size: 100 }),
+    staleTime: 5 * 60 * 1000,
   });
-  const honoursSettled = honourQueries.every((q) => !q.isPending);
-  const honours: Impact[] = honourQueries
-    .flatMap((q) => q.data?.content ?? [])
-    .sort((a, b) => b.details.occurredOn.localeCompare(a.details.occurredOn));
+  const honoursSettled = !honoursQuery.isPending;
+  const honours: ApiNews[] = honoursQuery.data?.content ?? [];
 
   const roleStart = member.currentRoleStartedAt ? formatDate(member.currentRoleStartedAt, L) : null;
 
@@ -746,30 +731,38 @@ function TeamMemberPage() {
                 <Section value="honours" title={tx.sections.honours} count={honours.length}>
                   <ul className="border-t border-laps-navy/10">
                     {honours.map((h) => {
-                      const d = h.details;
-                      const link = d.evidence.find((e) => /^https?:\/\//i.test(e.url));
+                      const subtitle = newsText(h.subtitle, L);
                       return (
                         <li key={h.id} className="border-b border-laps-navy/10 py-4">
                           <p className="font-semibold leading-snug text-pretty text-laps-navy">
-                            {impactText(d.title, L)}
+                            {newsText(h.title, L)}
                           </p>
+                          {subtitle && (
+                            <p className="mt-1 max-w-prose text-sm leading-relaxed text-pretty text-laps-navy/70">
+                              {subtitle}
+                            </p>
+                          )}
                           <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-laps-navy/65">
-                            {d.organization && <span>{d.organization}</span>}
-                            <time dateTime={d.occurredOn} className="font-mono tabular-nums">
-                              {formatDate(d.occurredOn, L)}
+                            <time dateTime={h.publishedOn} className="font-mono tabular-nums">
+                              {formatDate(h.publishedOn, L)}
                             </time>
-                            <span className="font-mono uppercase tracking-[0.08em] text-laps-navy/50">
-                              {impactCopy[L].categories[impactKinds.indexOf(d.kind)]}
-                            </span>
+                            {h.categories.map((c) => (
+                              <span
+                                key={c}
+                                className="font-mono uppercase tracking-[0.08em] text-laps-navy/50"
+                              >
+                                {NEWS_CATEGORY_LABEL[c][L]}
+                              </span>
+                            ))}
                           </p>
-                          {link && (
+                          {h.linkUrl && (
                             <a
-                              href={link.url}
+                              href={h.linkUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className={`mt-1 ${TEXT_LINK}`}
                             >
-                              {link.title} <ExternalLink className="h-3 w-3" />
+                              {tx.open} <ExternalLink className="h-3 w-3" />
                             </a>
                           )}
                         </li>

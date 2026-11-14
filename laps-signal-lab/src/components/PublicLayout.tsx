@@ -1,4 +1,4 @@
-import { impactCopy } from "@/lib/impacts";
+import { HONOURS_COPY } from "@/lib/news";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { motion } from "framer-motion";
@@ -90,20 +90,28 @@ export function PublicLayout({ children }: { children: ReactNode }) {
     submenu?: { to: string; label: string; hash?: string }[];
   };
 
+  // Notícias is the main navigation tool; Projetos, Intercâmbio and Prêmios e
+  // Bolsas hang under it, and Sobre / Parceiros under Home. Equipe and Contato
+  // keep their places at either end.
   const navItems: NavItem[] = [
     { to: "/team", label: t.nav.equipe, matchPrefix: "/team" },
-    { to: "/aboutus", label: t.nav.sobre },
-    { to: "/", label: t.nav.home },
     {
-      to: "/projects",
-      label: t.nav.projetos,
+      to: "/",
+      label: t.nav.home,
+      submenu: [
+        { to: "/aboutus", label: t.nav.sobre },
+        { to: "/", hash: "parceiros", label: t.partners.nav },
+      ],
+    },
+    {
+      to: "/noticias",
+      label: t.nav.noticias,
       submenu: [
         { to: "/projects", label: t.nav.projetos },
         { to: "/exchange", label: t.nav.intercambio },
+        { to: "/premios-e-bolsas", label: HONOURS_COPY[lang].title },
       ],
     },
-    { to: "/", hash: "parceiros", label: t.partners.nav },
-    { to: "/premios-e-bolsas", label: impactCopy[lang].title },
     { to: "/contact", label: t.nav.contato },
   ];
 
@@ -111,6 +119,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
     if (prefix) return pathname.startsWith(prefix);
     return pathname === to;
   };
+
+  // A hash link (/#parceiros) is only "here" when the hash matches too —
+  // otherwise Parceiros lit up on every visit to the home page.
+  const linkActive = (l: { to: string; hash?: string }) =>
+    l.hash ? pathname === l.to && hash === l.hash : pathname === l.to && !hash;
 
   return (
     <div className="min-h-screen bg-surface text-laps-navy">
@@ -142,7 +155,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               use, so the whole site reads as one idea. */}
           <nav className="relative hidden items-center justify-center md:flex">
             {navItems.map((it) => {
-              const submenuActive = it.submenu?.some((s) => pathname === s.to);
+              const submenuActive = it.submenu?.some((s) => linkActive(s));
               const active = it.hash ? pathname === it.to && hash === it.hash : (isActive(it.to, it.matchPrefix) && !hash) || !!submenuActive;
               const pill = (
                 <>
@@ -176,18 +189,21 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     >
                       {pill}
                     </Link>
+                    {/* focus-within as well as hover: a hover-only menu was
+                        unreachable by keyboard, so Tab could never land on
+                        the links inside it. */}
                     <div
-                      className="invisible absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100"
+                      className="invisible absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 translate-y-1 opacity-0 transition-[opacity,transform,visibility] duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100"
                     >
                       <div className="rounded-md border border-laps-navy/20 bg-surface p-1">
                         {it.submenu.map((sub) => {
-                          const subActive = pathname === sub.to;
+                          const subActive = linkActive(sub);
                           return (
                             <Link
                               key={sub.hash ?? sub.to}
                               to={sub.to}
                       hash={sub.hash}
-                      onClick={() => setMobileOpen(false)}
+                      onClick={() => { setMobileOpen(false); if (sub.hash) document.getElementById(sub.hash)?.scrollIntoView(); }}
                               className={`block border-l-2 px-3 py-2 text-[13px] font-semibold transition-colors ${subActive
                                 ? "border-laps-signal text-laps-navy"
                                 : "border-transparent text-laps-navy/70 hover:border-laps-navy/30 hover:bg-laps-ghost hover:text-laps-navy"
@@ -257,18 +273,21 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           <div className="md:hidden">
             <nav className="mx-auto mt-px flex flex-col border-t border-laps-navy/15 bg-surface/95 px-6 py-2 backdrop-blur-xl">
               {navItems.flatMap((it) => {
-                // Mobile flattens the submenu into siblings so users don't need
-                // to deal with a hover/long-press affordance on touch devices.
-                const links = it.submenu ?? [{ to: it.to, label: it.label, hash: it.hash }];
+                // Mobile lists the parent and then its submenu, indented — no
+                // hover or long-press on touch. The parent used to be dropped,
+                // which with Home and Notícias as parents would have hidden
+                // both from phones.
+                const parent = { to: it.to, label: it.label, hash: it.hash, child: false };
+                const links = [parent, ...(it.submenu ?? []).map((sub) => ({ ...sub, child: true }))];
                 return links.map((sub) => {
-                  const active = sub.hash ? pathname === sub.to && hash === sub.hash : isActive(sub.to, it.matchPrefix) && !hash;
+                  const active = sub.child ? linkActive(sub) : sub.hash ? pathname === sub.to && hash === sub.hash : isActive(sub.to, it.matchPrefix) && !hash;
                   return (
                     <Link
-                      key={sub.hash ?? sub.to}
+                      key={`${it.to}|${sub.to}|${sub.hash ?? ""}`}
                       to={sub.to}
                       hash={sub.hash}
                       onClick={() => { setMobileOpen(false); if (sub.hash) document.getElementById(sub.hash)?.scrollIntoView(); }}
-                      className={`border-l-2 px-4 py-3 text-sm font-semibold transition-colors ${active
+                      className={`border-l-2 py-3 text-sm font-semibold transition-colors ${sub.child ? "pl-8 pr-4" : "px-4"} ${active
                         ? "border-laps-signal text-laps-navy"
                         : "border-transparent text-laps-navy/70 hover:border-laps-navy/25 hover:text-laps-navy"
                         }`}
@@ -351,8 +370,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 {t.footer.navTitle}
               </h4>
               <ul className="mt-6 space-y-3.5 text-sm text-white/75">
-                {navItems.map((it) => (
-                  <li key={it.hash ?? it.to}>
+                {navItems
+                  .flatMap((it) => [it, ...(it.submenu ?? [])])
+                  .map((it) => (
+                  <li key={`${it.to}|${it.hash ?? ""}|${it.label}`}>
                     <Link
                       to={it.to}
                   hash={it.hash}

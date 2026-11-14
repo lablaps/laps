@@ -120,17 +120,23 @@ removed entirely. Header (Equipe and Contato stay where they are):
   publication author picker shared the `["admin","members"]` cache key with a
   different fetcher and shape, so their searches always returned nothing
   (confirmed by A/B test). One hook now owns that key: `hooks/use-admin-roster.ts`.
-- [ ] **Phase 7 — Notícias page + new navigation.** `/noticias` as cards
-  (image, tags, title, subtitle, people, external link); the dropdown header
-  above (desktop + mobile); `/premios-e-bolsas` becomes Notícias filtered by
-  the Prêmio/Bolsa tags; the profile's "Prêmios e Bolsas" section reads news
-  tagged that way and associated with the person; people on a card link to
-  their profiles.
-- [ ] **Phase 8 — Remove the Impacts API entirely.** Backend entity,
-  controller, service, repository, DTOs, kind enum and their tests; a Flyway
-  migration dropping table `impact`; frontend `lib/impacts.ts`,
-  `components/impacts/*` and the portal editor. Runs after Phase 7 so no page
-  loses its data source mid-way. **Deletes any production impact rows.**
+- [x] **Phase 7 — Impacts API removed entirely** (done before the Notícias
+  page, at the user's request). Backend `impact` package and its tests
+  deleted, public permit removed, **V35 drops table `impact`** (rows deleted,
+  not migrated — the lab's decision). Contract test + smoke test pin the
+  removal. Frontend `lib/impacts.ts`, `components/impacts/*` and the portal
+  editor deleted; Prêmios e Bolsas page and the profile section now read news
+  tagged AWARD or SCHOLARSHIP. 176 backend tests green; V35 verified on
+  Postgres.
+- [x] **Phase 8 — Notícias page + new navigation.** `/noticias` (route
+  test-first in SpaControllerRouteTest; SecurityConfig permit). Shared
+  `components/news/NewsCard.tsx` and `NewsFeed.tsx` — Prêmios e Bolsas is the
+  same feed scoped to AWARD+SCHOLARSHIP. Header: `Equipe · Home ▾ (Sobre,
+  Parceiros) · Notícias ▾ (Projetos, Intercâmbio, Prêmios e Bolsas) · Contato`.
+  Fixed on the way: dropdowns were hover-only (now also open on keyboard
+  focus); the mobile menu dropped parent items; hash links (Parceiros) were
+  marked active on every home visit; the footer listed only top-level items.
+  177 backend tests green.
 - [ ] **Phase 9 — /portal redesign** to match the profile (portrait card,
   accordions). Last, so it is not built around the Impacts editor that
   Phase 8 deletes.

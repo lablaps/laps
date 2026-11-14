@@ -45,6 +45,6 @@ Plan: [`docs/superpowers/plans/2026-11-14-public-profile-and-credibility.md`](..
 - [x] Phase 4: Impactos → Prêmios e Bolsas (copy, URL + redirect, backend route).
 - [x] Phase 5: "Undergrad" → "Undergraduate"; remove photo gradient.
 - [x] Phase 6: News API + console editor (also fixed project/publication picker search).
-- [ ] Phase 7: /noticias + nav (Home ▾ Sobre/Parceiros; Notícias ▾ Projetos/Intercâmbio/Prêmios e Bolsas).
-- [ ] Phase 8: remove Impacts API entirely (drop table).
+- [x] Phase 7: remove Impacts API entirely (V35 drops table); Prêmios e Bolsas reads news.
+- [x] Phase 8: /noticias + nav (Home ▾ Sobre/Parceiros; Notícias ▾ Projetos/Intercâmbio/Prêmios e Bolsas).
 - [ ] Phase 9: /portal redesign with accordions.

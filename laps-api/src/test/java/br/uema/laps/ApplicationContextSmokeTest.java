@@ -101,6 +101,16 @@ class ApplicationContextSmokeTest {
     }
 
     @Test
+    @DisplayName("the removed impacts API no longer answers with data")
+    void impactsApiIsGone() throws Exception {
+        // Anonymous callers get 401 rather than 404: the path is no longer
+        // permitted, so security stops it before the dispatcher can say it is
+        // unmapped. Either way, nothing is served.
+        mockMvc.perform(get("/api/v1/impacts"))
+                .andExpect(result -> assertThat(result.getResponse().getStatus()).isIn(401, 404));
+    }
+
+    @Test
     @DisplayName("publishing news without a manager session is refused")
     void newsWritesNeedAManager() throws Exception {
         mockMvc.perform(post("/api/v1/admin/news")

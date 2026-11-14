@@ -13,6 +13,7 @@ import { Route as TeamRouteImport } from './routes/team'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as PremiosEBolsasRouteImport } from './routes/premios-e-bolsas'
 import { Route as PortalRouteImport } from './routes/portal'
+import { Route as NoticiasRouteImport } from './routes/noticias'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImpactosRouteImport } from './routes/impactos'
 import { Route as ExchangeRouteImport } from './routes/exchange'
@@ -41,6 +42,11 @@ const PremiosEBolsasRoute = PremiosEBolsasRouteImport.update({
 const PortalRoute = PortalRouteImport.update({
   id: '/portal',
   path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NoticiasRoute = NoticiasRouteImport.update({
+  id: '/noticias',
+  path: '/noticias',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/exchange': typeof ExchangeRoute
   '/impactos': typeof ImpactosRoute
   '/login': typeof LoginRoute
+  '/noticias': typeof NoticiasRoute
   '/portal': typeof PortalRoute
   '/premios-e-bolsas': typeof PremiosEBolsasRoute
   '/projects': typeof ProjectsRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/exchange': typeof ExchangeRoute
   '/impactos': typeof ImpactosRoute
   '/login': typeof LoginRoute
+  '/noticias': typeof NoticiasRoute
   '/portal': typeof PortalRoute
   '/premios-e-bolsas': typeof PremiosEBolsasRoute
   '/projects': typeof ProjectsRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/exchange': typeof ExchangeRoute
   '/impactos': typeof ImpactosRoute
   '/login': typeof LoginRoute
+  '/noticias': typeof NoticiasRoute
   '/portal': typeof PortalRoute
   '/premios-e-bolsas': typeof PremiosEBolsasRoute
   '/projects': typeof ProjectsRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/exchange'
     | '/impactos'
     | '/login'
+    | '/noticias'
     | '/portal'
     | '/premios-e-bolsas'
     | '/projects'
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/exchange'
     | '/impactos'
     | '/login'
+    | '/noticias'
     | '/portal'
     | '/premios-e-bolsas'
     | '/projects'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/exchange'
     | '/impactos'
     | '/login'
+    | '/noticias'
     | '/portal'
     | '/premios-e-bolsas'
     | '/projects'
@@ -191,6 +203,7 @@ export interface RootRouteChildren {
   ExchangeRoute: typeof ExchangeRoute
   ImpactosRoute: typeof ImpactosRoute
   LoginRoute: typeof LoginRoute
+  NoticiasRoute: typeof NoticiasRoute
   PortalRoute: typeof PortalRoute
   PremiosEBolsasRoute: typeof PremiosEBolsasRoute
   ProjectsRoute: typeof ProjectsRoute
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       path: '/portal'
       fullPath: '/portal'
       preLoaderRoute: typeof PortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/noticias': {
+      id: '/noticias'
+      path: '/noticias'
+      fullPath: '/noticias'
+      preLoaderRoute: typeof NoticiasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -312,6 +332,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExchangeRoute: ExchangeRoute,
   ImpactosRoute: ImpactosRoute,
   LoginRoute: LoginRoute,
+  NoticiasRoute: NoticiasRoute,
   PortalRoute: PortalRoute,
   PremiosEBolsasRoute: PremiosEBolsasRoute,
   ProjectsRoute: ProjectsRoute,
