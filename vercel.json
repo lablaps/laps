@@ -1,0 +1,16 @@
+{
+  "services": {
+    "laps-app": {
+      "root": "."
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": {
+        "type": "service",
+        "service": "laps-app"
+      }
+    }
+  ]
+}

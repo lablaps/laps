@@ -64,3 +64,10 @@ src/data/team-db.json
 # Logs
 logs/
 *.log
+
+# Build output / dependencies in any subproject (e.g. laps-api, laps-signal-lab)
+node_modules/
+target/
+dist/
+.tanstack/
+.wrangler/
