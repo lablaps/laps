@@ -1,16 +1,10 @@
 {
-  "services": {
-    "laps-app": {
-      "root": "."
-    }
-  },
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "cd laps-signal-lab && npm ci",
+  "buildCommand": "cd laps-signal-lab && npm run build",
+  "outputDirectory": "laps-signal-lab/dist/client",
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": {
-        "type": "service",
-        "service": "laps-app"
-      }
-    }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
