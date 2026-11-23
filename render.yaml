@@ -1,0 +1,135 @@
+# Render Blueprint — LAPS monolith (Spring Boot jar serving SPA + REST API).
+#
+# Two resources land in your Render account when this blueprint is applied:
+#   1. laps-app    — Docker web service (Dockerfile at repo root)
+#   2. laps-db     — managed Postgres
+#
+# The Postgres credentials are wired into the app via `fromDatabase`, so the
+# only secrets you still need to set in the Render dashboard are the ones
+# marked `sync: false` below (JWT secret, bootstrap admin, CORS origins, and
+# the transactional-email provider that delivers verification codes).
+
+databases:
+  - name: laps-db
+    plan: free
+    databaseName: lapsnew
+    user: laps
+    # Render Postgres free tier is 1GB / 30-day retention — good enough for the
+    # research-lab roster. Promote to `starter` when you need a backup window.
+
+services:
+  - type: web
+    name: laps-app
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    pullRequestPreviewsEnabled: false
+    healthCheckPath: /actuator/health
+    # Disk for upload persistence. Render free tier doesn't include disks, so
+    # uploaded photos vanish on every redeploy — promote to a paid plan and add
+    # a `disk:` block here when uploads become load-bearing.
+    envVars:
+      # --- Database ---
+      - key: DATABASE_URL
+        fromDatabase:
+          name: laps-db
+          property: connectionString
+      - key: DB_SSLMODE
+        value: require
+
+      # --- Spring profile ---
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+      # --- JWT (set in dashboard, never committed) ---
+      - key: LAPS_JWT_SECRET
+        sync: false
+      - key: LAPS_JWT_TTL
+        value: PT1H
+
+      # --- CORS — same-origin in the monolith, but the admin SPA running on
+      # localhost during dev sometimes calls prod. Override in the dashboard if
+      # you split this across hosts. ---
+      - key: LAPS_CORS_ALLOWED_ORIGINS
+        sync: false
+
+      # --- Manager allow-list — comma-separated emails. Without at least one
+      # entry, the manager role can never log in. ---
+      - key: LAPS_MANAGER_EMAILS
+        sync: false
+
+      # --- Bootstrap admin (first boot only). Leave blank to skip; fill in to
+      # provision a first manager you can log in as. Rotate the password after
+      # first login. ---
+      - key: LAPS_BOOTSTRAP_EMAIL
+        sync: false
+      - key: LAPS_BOOTSTRAP_FULL_NAME
+        sync: false
+      - key: LAPS_BOOTSTRAP_SLUG
+        sync: false
+      - key: LAPS_BOOTSTRAP_PASSWORD
+        sync: false
+
+      # --- Transactional email (verification codes) ---
+      # Set these in the dashboard. Leaving the provider blank does not break
+      # anything, but it downgrades email verification to "the portal shows you
+      # a code" — which confirms nothing about the address. `brevo` needs only
+      # a sender address authorised by clicking a link; `resend` needs DNS
+      # records on the sending domain. HTTP APIs, so no SMTP port is involved.
+      - key: LAPS_EMAIL_PROVIDER
+        sync: false
+      - key: LAPS_EMAIL_API_KEY
+        sync: false
+      - key: LAPS_EMAIL_FROM
+        sync: false
+      - key: LAPS_EMAIL_FROM_NAME
+        value: LAPS
+      # Send budget. max-per-day sits below Brevo's free 300/day so the ceiling
+      # we hit is our own 429 rather than an opaque rejection from the provider.
+      - key: LAPS_EMAIL_MIN_INTERVAL_SECONDS
+        value: "60"
+      - key: LAPS_EMAIL_MAX_PER_ACCOUNT_PER_DAY
+        value: "5"
+      - key: LAPS_EMAIL_MAX_PER_DAY
+        value: "200"
+
+      # --- Translation provider ---
+      - key: LAPS_TRANSLATE_PROVIDER
+        value: mymemory
+
+      # --- Rate limiter ---
+      - key: LAPS_RATE_AUTH_PER_MIN
+        value: "10"
+      - key: LAPS_RATE_AUTH_BLOCK_SECONDS
+        value: "60"
+      # Trailing X-Forwarded-For entries written by Render's edge. There is no
+      # nginx in this image, so this is NOT the same as the compose value and
+      # must be verified against a real deploy — the procedure is in
+      # .env.example. Wrong-too-low means one attacker can lock out every login.
+      - key: LAPS_TRUSTED_PROXY_HOPS
+        value: "1"
+
+      # --- Session cookie ---
+      # Render terminates TLS at the edge, so the session cookie must always
+      # carry Secure regardless of what the forwarded request looks like.
+      - key: LAPS_COOKIE_SECURE
+        value: "true"
+
+      # --- Media ---
+      # Cloudinary is what makes uploads survive a deploy. The free plan has no
+      # persistent disk, so without these three the local-disk fallback below is
+      # wiped on every redeploy/restart/spin-down while the database keeps its
+      # /uploads/<uuid>.jpg rows — i.e. permanently broken images on /team.
+      # Set all three in the Render dashboard.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      # Fallback path, used only when the Cloudinary vars above are unset.
+      # Ephemeral on the free tier — see above.
+      - key: LAPS_MEDIA_DIR
+        value: /app/uploads

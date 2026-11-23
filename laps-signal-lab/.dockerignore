@@ -1,0 +1,47 @@
+# Anything that lives in node_modules gets reinstalled inside the build stage.
+node_modules/
+.pnp/
+.pnp.*
+
+# Build output — produced inside the build stage.
+dist/
+build/
+.output/
+.vinxi/
+.tanstack/
+.nitro/
+.wrangler/
+.dev.vars
+
+# Local secrets / env — never bake into images.
+.env
+.env.*
+!.env.example
+
+# Editor / IDE
+.idea/
+.vscode/
+*.iml
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test artifacts
+coverage/
+.nyc_output/
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Git metadata
+.git/
+.gitignore
+.gitattributes
+
+# OS detritus
+.DS_Store
+Thumbs.db

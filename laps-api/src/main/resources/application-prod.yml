@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    # DatabaseConfig auto-converts Render's postgresql://user:pass@host/db format
+    # to jdbc:postgresql://host/db + sets username/password. Paste as-is.
+    url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}?sslmode=${DB_SSLMODE:require}}
+
+  jpa:
+    show-sql: false
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-exception: false
+    include-binding-errors: never
+
+  forward-headers-strategy: framework
+
+logging:
+  level:
+    br.uema.laps: INFO
+    org.springframework.web: WARN
+    org.springframework.jdbc: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql: WARN
+
+laps:
+  cors:
+    allowed-origins: ${LAPS_CORS_ALLOWED_ORIGINS}

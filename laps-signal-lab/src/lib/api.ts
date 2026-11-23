@@ -1,0 +1,662 @@
+// Thin typed fetch client for the LAPS Spring Boot backend.
+// JWT travels in an HttpOnly cookie set by /api/v1/auth/login → every request uses credentials:"include".
+
+import { solveChallenge, type Challenge } from "@/lib/proof-of-work";
+
+/**
+ * Resolve the API base URL.
+ *
+ * Priority:
+ *   1. VITE_API_BASE — explicit override (split-host setups, mock APIs).
+ *   2. Production build → same-origin (""). The monolith serves the SPA and
+ *      /api/v1/* from one host (Render web service, docker-compose laps-app),
+ *      whatever port that host is published on.
+ *   3. Dev server → http://<host>:8080, where `mvn spring-boot:run` listens.
+ *
+ * This used to be decided by the page's port: anything other than
+ * 80/443/8080 was assumed to be the Vite dev server. A production jar
+ * published on any other port (APP_HOST_PORT is a documented compose knob)
+ * then sent every API call — cookies included — to :8080 on the same host,
+ * which is someone else's service or nothing; the CSP blocked it and every
+ * data page rendered the error screen. Build mode is the actual signal.
+ */
+function resolveApiBase(): string {
+  const fromEnv = import.meta.env.VITE_API_BASE as string | undefined;
+  if (fromEnv !== undefined && fromEnv !== "") return fromEnv;
+  if (import.meta.env.DEV && typeof window !== "undefined" && window.location) {
+    const proto = window.location.protocol === "https:" ? "https" : "http";
+    return `${proto}://${window.location.hostname}:8080`;
+  }
+  return "";
+}
+
+export const API_BASE = resolveApiBase();
+
+/**
+ * Convert a server-returned URL to one the browser can load.
+ * The backend stores relative paths like "/uploads/uuid.jpg" — prepend
+ * API_BASE so the request always hits the right host (avoids localhost:8080
+ * hardcoded in the DB). Absolute URLs (external avatars, old data) pass through.
+ */
+export function resolveMediaUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `${API_BASE}${url}`;
+}
+
+export class ApiError extends Error {
+  constructor(public readonly status: number, message: string, public readonly body?: unknown) {
+    super(message);
+  }
+}
+
+type Method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+
+interface RequestOpts {
+  method?: Method;
+  body?: unknown;
+  signal?: AbortSignal;
+  /** When true, 401 responses just return null instead of throwing. Useful for /me probes. */
+  swallow401?: boolean;
+}
+
+export async function request<T>(path: string, opts: RequestOpts = {}): Promise<T> {
+  const { method = "GET", body, signal, swallow401 = false } = opts;
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    credentials: "include",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal,
+  });
+
+  if (res.status === 204) return undefined as T;
+  if (res.status === 401 && swallow401) return null as T;
+
+  const text = await res.text();
+  let parsed: unknown = undefined;
+  if (text.length > 0) {
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = text;
+    }
+  }
+
+  if (!res.ok) {
+    const message =
+      (parsed && typeof parsed === "object" && "message" in parsed && typeof parsed.message === "string"
+        ? parsed.message
+        : res.statusText) || `Request failed: ${res.status}`;
+    throw new ApiError(res.status, message, parsed);
+  }
+
+  return parsed as T;
+}
+
+// ───── Types (mirror Spring DTOs) ─────
+
+export type MemberRole =
+  | "UNDERGRAD"
+  | "MASTER"
+  | "DOCTORATE"
+  | "COLLABORATOR"
+  | "HEAD";
+export type MemberStatusEnum = "ACTIVE" | "COMPLETED" | "INACTIVE";
+
+export interface ApiMember {
+  id: string;
+  slug: string;
+  fullName: string;
+  email: string | null;
+  currentRole: MemberRole;
+  currentRoleStartedAt: string | null;
+  status: MemberStatusEnum;
+  bioPt: string | null;
+  bioEn: string | null;
+  bioFr: string | null;
+  photoUrl: string | null;
+  linkedinUrl: string | null;
+  lattesUrl: string | null;
+  githubUrl: string | null;
+  contactEmail: string | null;
+  /** Member-curated link (personal site, ORCID, ResearchGate…). */
+  customUrl: string | null;
+  /** Link text for customUrl; UI falls back to a generic caption when null. */
+  customUrlLabel: string | null;
+  /**
+   * Per-field public visibility. Enforced server-side — when a flag is false the
+   * matching value arrives as null for anonymous callers, so absence of the value
+   * is the real signal. These flags exist so the owner (and managers) can render
+   * the toggle state, not so the SPA can decide what to hide.
+   */
+  showEmail: boolean;
+  showContactEmail: boolean;
+  showLinkedin: boolean;
+  showLattes: boolean;
+  showGithub: boolean;
+  showCustomUrl: boolean;
+  roadmap: string | null;
+  areas: string | null;
+  interests: string | null;
+  bannerColor: string | null;
+  bannerImageUrl: string | null;
+  exchangeCountry: string | null;
+  /**
+   * UF of a placement inside Brazil ("SP", "MA"…). Null for international
+   * placements — the server drops it whenever exchangeCountry is not "BR".
+   */
+  exchangeState: string | null;
+  /** Enum name from UndergradProgram; see lib/undergrad-programs.ts. Null when unknown. */
+  undergradProgram: string | null;
+  /** Academic period the member joined LAPS, "YYYY.1" | "YYYY.2". */
+  joinedSemester: string | null;
+  /** Month the member joined LAPS, ISO "YYYY-MM". No day component by design. */
+  joinedMonth: string | null;
+  languages: string | null;
+  deletedAt: string | null;
+}
+
+export interface AdminMember {
+  member: ApiMember;
+  mustChangePassword: boolean;
+  emailVerified: boolean;
+  canManage: boolean;
+  managementPermissionGranted: boolean;
+  managementAccessFromAllowlist: boolean;
+}
+
+export interface ApiResearchArea {
+  id: number;
+  slug: string;
+  namePt: string;
+  nameEn: string;
+  nameFr: string;
+  color: string;
+}
+
+export interface ApiGraphNode {
+  id: string;
+  kind: "member" | "area";
+  label: string;
+  slug: string;
+  data: Record<string, unknown>;
+}
+export interface ApiGraphEdge {
+  source: string;
+  target: string;
+  kind: "primary-area" | "area" | "co-area";
+  weight: number;
+}
+export interface ApiGraph {
+  nodes: ApiGraphNode[];
+  edges: ApiGraphEdge[];
+}
+
+export interface LoginResponse {
+  memberId: string;
+  username: string;
+  email: string | null;
+  role: "MEMBER" | "MANAGER";
+  mustChangePassword: boolean;
+  emailVerified: boolean;
+}
+
+export interface MyProfile extends ApiMember {
+  username: string;
+  role?: "MEMBER" | "MANAGER";
+  mustChangePassword: boolean;
+  emailVerified: boolean;
+}
+
+export interface ApiMemberProjectLink {
+  memberId: string;
+  projectId: string;
+  role: string;
+  contribution?: string | null;
+}
+
+interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+}
+
+export type ProjectStatus = "ACTIVE" | "COMPLETED";
+
+export interface ApiMemberProject {
+  projectId: string;
+  memberId: string;
+  role: string; // "LEAD" | "CO_LEAD" | "RESEARCHER"
+  /** Free text: what this member says they did on the project. Self-service. */
+  contribution?: string | null;
+  member?: ApiMember;
+}
+
+export interface ApiProject {
+  id: string;
+  slug: string;
+  status: ProjectStatus;
+  /** Year the project was published / completed. Optional. */
+  year?: number | null;
+  /** Optional external link to the article / dataset / project page. */
+  articleUrl?: string | null;
+  tags: string[];
+  titlePt: string;
+  descriptionPt: string;
+  titleEn: string;
+  descriptionEn: string;
+  titleFr: string;
+  descriptionFr: string;
+  areas?: ApiResearchArea[];
+  leaders?: ApiMemberProject[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PublicationType = "JOURNAL" | "CONFERENCE" | "DISSERTATION" | "THESIS" | "WORKSHOP";
+/** The research lifecycle — what stage the work itself is at. */
+export type PublicationStatus = "PUBLISHED" | "IN_PROGRESS" | "COMPLETED" | "IN_PRESS";
+/** Moderation state — orthogonal to the above. Only APPROVED rows are public. */
+export type PublicationApproval = "PENDING" | "APPROVED" | "REJECTED";
+
+export interface ApiPublication {
+  id: string;
+  title: string;
+  venue: string;
+  year: number;
+  doi?: string | null;
+  url?: string | null;
+  type: PublicationType;
+  status: PublicationStatus;
+  abstractText?: string | null;
+  approvalStatus: PublicationApproval;
+  submittedBy?: string | null;
+  reviewedAt?: string | null;
+  /** Why a submission was turned down. Shown back to the member. */
+  reviewNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** What a member fills in when submitting. Approval fields are the server's. */
+export interface PublicationSubmission {
+  title: string;
+  venue: string;
+  year: number;
+  type: PublicationType;
+  status?: PublicationStatus;
+  doi?: string;
+  url?: string;
+  abstractText?: string;
+}
+
+export interface PendingPublication {
+  publication: ApiPublication;
+  submitterName: string | null;
+  submitterSlug: string | null;
+}
+
+/** How a name sits on a paper. AUTHOR is the ordinary case. */
+export type AuthorRole = "AUTHOR" | "ADVISOR" | "CO_ADVISOR";
+
+/**
+ * One name to attach to a publication: a roster member by id, or someone from
+ * another institution by name. Exactly one of the two — the API rejects both.
+ */
+export interface AuthorLink {
+  memberId?: string | null;
+  externalName?: string | null;
+  role?: AuthorRole;
+}
+
+/** An author as the console reads it back. memberId/slug are null when external. */
+export interface AuthorView {
+  memberId: string | null;
+  name: string;
+  slug: string | null;
+  role: AuthorRole;
+  order: number;
+}
+
+/**
+ * A publication plus its author list. The public `ApiPublication` has no
+ * authors field at all — the entity hides the join — so the console reads the
+ * names through this admin-only view.
+ */
+export interface AdminPublication {
+  publication: ApiPublication;
+  authors: AuthorView[];
+}
+
+/** What a manager fills in. `authors` is the whole list: sending it replaces it. */
+export interface AdminPublicationInput {
+  title: string;
+  venue: string;
+  year: number;
+  type: PublicationType;
+  status: PublicationStatus;
+  doi?: string | null;
+  url?: string | null;
+  abstractText?: string | null;
+  authors?: AuthorLink[];
+}
+
+// ───── Endpoints ─────
+
+/**
+ * Fetches a proof-of-work challenge and solves it.
+ *
+ * The server spends the nonce on presentation, so a solution is good for
+ * exactly one attempt — every login or registration pays the cost again. That
+ * is the point: it prices automated attempts without handing visitor data to a
+ * captcha vendor. Expect roughly 200ms on a laptop at the default difficulty.
+ */
+async function solveProofOfWork(): Promise<{ powNonce: string; powSolution: string }> {
+  const challenge = await request<Challenge>("/api/v1/auth/challenge");
+  return { powNonce: challenge.nonce, powSolution: await solveChallenge(challenge) };
+}
+
+export const api = {
+  // Auth — `identifier` is either the username (slug) or the member's email.
+  login: async (identifier: string, password: string) =>
+    request<LoginResponse>("/api/v1/auth/login", {
+      method: "POST",
+      body: { username: identifier, password, ...(await solveProofOfWork()) },
+    }),
+  logout: () => request<void>("/api/v1/auth/logout", { method: "POST" }),
+
+  // Me — extended payload with auth-flow flags (mustChangePassword, emailVerified).
+  me: () => request<MyProfile | null>("/api/v1/me", { swallow401: true }),
+  meUpdate: (body: Partial<MyProfile> & { email?: string; areas?: string; interests?: string; bannerColor?: string; bannerImageUrl?: string; languages?: string }) =>
+    request<ApiMember>("/api/v1/me", { method: "PUT", body }),
+  meChangePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>("/api/v1/me/password", {
+      method: "PUT",
+      body: { currentPassword, newPassword },
+    }),
+  /**
+   * Issues the 6-digit code. `channel` says how it was delivered:
+   *   EMAIL  — it is in the member's inbox, and `code` is absent by design.
+   *   MANUAL — no mail provider is configured on the server, so it comes back
+   *            here instead. Verification then proves nothing about the inbox;
+   *            the dialog says so rather than pretending otherwise.
+   */
+  meRequestEmailVerification: () =>
+    request<{
+      message: string;
+      channel?: "EMAIL" | "MANUAL";
+      code?: string;
+      email?: string;
+      expiresAt?: string;
+      alreadyVerified?: boolean;
+    }>("/api/v1/me/email/request-verification", { method: "POST" }),
+  meVerifyEmail: (code: string) =>
+    request<{ message: string }>("/api/v1/me/email/verify", { method: "POST", body: { code } }),
+  myProjects: () => request<ApiMemberProjectLink[]>("/api/v1/me/projects"),
+  updateMyProjects: (links: { projectId: string; role: string; contribution?: string | null }[]) =>
+    request<void>("/api/v1/me/projects", { method: "PUT", body: links }),
+  meCreateProject: (body: {
+    titlePt: string;
+    descriptionPt?: string;
+    status?: string;
+    year?: number | null;
+    articleUrl?: string;
+    tags?: string[];
+    advisorId?: string | null;
+    participantIds?: string[];
+    myContribution?: string;
+  }) => request<ApiProject>("/api/v1/me/projects/new", { method: "POST", body }),
+
+  /**
+   * The caller's own publications, pending and rejected ones included — this is
+   * the only endpoint that returns unapproved rows, and only ever the caller's.
+   */
+  myPublications: () => request<ApiPublication[]>("/api/v1/me/publications"),
+  /** Submits a publication for manager review. Open to every tier, undergraduates included. */
+  meSubmitPublication: (body: PublicationSubmission) =>
+    request<ApiPublication>("/api/v1/me/publications", { method: "POST", body }),
+  /** Approved publications for one member — what the public profile renders. */
+  publicationsByMember: (memberId: string) =>
+    request<Page<ApiPublication>>(
+      `/api/v1/publications?memberId=${encodeURIComponent(memberId)}&size=200&sort=year,desc`,
+    ),
+
+  adminPendingPublications: () =>
+    request<PendingPublication[]>("/api/v1/admin/publications/pending"),
+  adminApprovePublication: (id: string) =>
+    request<ApiPublication>(`/api/v1/admin/publications/${id}/approve`, { method: "POST" }),
+  adminRejectPublication: (id: string, note?: string) =>
+    request<ApiPublication>(`/api/v1/admin/publications/${id}/reject`, {
+      method: "POST",
+      body: { note: note ?? null },
+    }),
+  /** Member photo upload — multipart to /me/media/photo. */
+  meUploadPhoto: async (file: File): Promise<{ url: string }> => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE}/api/v1/me/media/photo`, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    });
+    const text = await res.text();
+    const parsed = text ? JSON.parse(text) : null;
+    if (!res.ok) {
+      const message =
+        parsed && typeof parsed === "object" && "message" in parsed && typeof parsed.message === "string"
+          ? parsed.message
+          : res.statusText || `Upload failed: ${res.status}`;
+      throw new ApiError(res.status, message, parsed);
+    }
+    // Store the relative path (/uploads/uuid.jpg) in the DB — display code uses
+    // resolveMediaUrl() to prepend API_BASE at render time, so the URL stays
+    // correct even if the backend host changes.
+    return { url: (parsed as { url: string }).url };
+  },
+
+  /** Banner image upload — multipart to /me/media/banner. */
+  meUploadBanner: async (file: File): Promise<{ url: string }> => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${API_BASE}/api/v1/me/media/banner`, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    });
+    const text = await res.text();
+    const parsed = text ? JSON.parse(text) : null;
+    if (!res.ok) {
+      const message =
+        parsed && typeof parsed === "object" && "message" in parsed && typeof parsed.message === "string"
+          ? parsed.message
+          : res.statusText || `Upload failed: ${res.status}`;
+      throw new ApiError(res.status, message, parsed);
+    }
+    return { url: (parsed as { url: string }).url };
+  },
+
+  // Public reads
+  members: () => request<Page<ApiMember>>("/api/v1/members?size=200"),
+  meAdvisors: () => request<ApiMember[]>("/api/v1/me/advisors"),
+  member: (slugOrId: string) => request<ApiMember>(`/api/v1/members/${slugOrId}`),
+  areas: () => request<ApiResearchArea[]>("/api/v1/areas"),
+  projects: () => request<ApiProject[]>("/api/v1/projects"),
+  project: (slugOrId: string) => request<ApiProject>(`/api/v1/projects/${slugOrId}`),
+  graph: () => request<ApiGraph>("/api/v1/graph"),
+
+  // Invites (public + admin)
+  inviteInfo: (token: string) =>
+    request<{ role: MemberRole; expiresAt: string }>(`/api/v1/invites/${token}`),
+
+  inviteRegister: async (
+    token: string,
+    body: {
+      fullName: string;
+      email: string;
+      password: string;
+      photoUrl?: string | null;
+      bio?: string;
+      bioLang?: string;
+      linkedinUrl?: string;
+      lattesUrl?: string;
+      githubUrl?: string;
+    }
+  ) =>
+    request<LoginResponse>(`/api/v1/invites/${token}/register`, {
+      method: "POST",
+      body: { ...body, ...(await solveProofOfWork()) },
+    }),
+
+  // Admin (MANAGER)
+  admin: {
+    members: () => request<AdminMember[]>("/api/v1/admin/members"),
+
+    createMember: (body: {
+      slug: string;
+      fullName: string;
+      email?: string | null;
+      currentRole: MemberRole;
+      currentRoleStartedAt?: string;
+      status?: MemberStatusEnum;
+    }) =>
+      request<{ member: ApiMember; tempPassword: string | null }>(
+        "/api/v1/admin/members",
+        { method: "POST", body }
+      ),
+
+    updateMember: (
+      id: string,
+      body: Partial<Omit<ApiMember, "id" | "slug" | "currentRole">> & {
+        exchangeCountry?: string | null;
+        /** UF, or "" to clear. Ignored unless exchangeCountry is "BR". */
+        exchangeState?: string | null;
+        /** Enum name, or "" to clear. Null is a no-op server-side. */
+        undergradProgram?: string | null;
+        joinedSemester?: string | null;
+        joinedMonth?: string | null;
+      },
+    ) =>
+      request<ApiMember>(`/api/v1/admin/members/${id}`, { method: "PUT", body }),
+
+    deleteMember: (id: string) =>
+      request<void>(`/api/v1/admin/members/${id}`, { method: "DELETE" }),
+
+    promote: (id: string, body: { toRole: MemberRole; effectiveDate?: string; reason?: string; force?: boolean }) =>
+      request<ApiMember>(`/api/v1/admin/members/${id}/promote`, { method: "POST", body }),
+
+    setManagementAccess: (id: string, enabled: boolean) =>
+      request<AdminMember>(`/api/v1/admin/members/${id}/management-access`, {
+        method: "PUT",
+        body: { enabled },
+      }),
+
+    createProject: (body: Record<string, unknown>) =>
+      request<ApiProject>("/api/v1/admin/projects", { method: "POST", body }),
+
+    updateProject: (id: string, body: Record<string, unknown>) =>
+      request<ApiProject>(`/api/v1/admin/projects/${id}`, { method: "PUT", body }),
+
+    deleteProject: (id: string) =>
+      request<void>(`/api/v1/admin/projects/${id}`, { method: "DELETE" }),
+
+    updateMemberProjects: (id: string, projects: { projectId: string; role: string }[]) =>
+      request<void>(`/api/v1/admin/members/${id}/projects`, { method: "PUT", body: projects }),
+
+    updateProjectMembers: (id: string, members: { memberId: string; role: string }[]) =>
+      request<void>(`/api/v1/admin/projects/${id}/members`, { method: "PUT", body: members }),
+
+    /**
+     * The whole publication record — pending and rejected rows included, which
+     * is what makes this different from the public `/publications` search.
+     */
+    publications: () => request<AdminPublication[]>("/api/v1/admin/publications"),
+
+    createPublication: (body: AdminPublicationInput) =>
+      request<AdminPublication>("/api/v1/admin/publications", { method: "POST", body }),
+
+    /** Omitted fields are left alone; omitting `authors` keeps the current list. */
+    updatePublication: (id: string, body: Partial<AdminPublicationInput>) =>
+      request<AdminPublication>(`/api/v1/admin/publications/${id}`, { method: "PUT", body }),
+
+    deletePublication: (id: string) =>
+      request<void>(`/api/v1/admin/publications/${id}`, { method: "DELETE" }),
+
+    /** Per-member auth flags (must-change-password, email verified). Admin only. */
+    authStatus: () =>
+      request<
+        Array<{
+          memberId: string;
+          slug: string;
+          mustChangePassword: boolean;
+          emailVerified: boolean;
+        }>
+      >("/api/v1/admin/auth-status"),
+
+    /**
+     * Issues a NEW random temp password and returns it once.
+     *
+     * Replaces the old `tempPassword` GET, which recomputed a deterministic
+     * value. Random passwords are unrecoverable, so there is no "show it
+     * again" — calling this always changes the member's credential. POST for
+     * that reason: it must never be prefetched or cached.
+     */
+    resetPassword: (id: string) =>
+      request<{ username: string; tempPassword: string }>(
+        `/api/v1/admin/members/${id}/reset-password`,
+        { method: "POST" }
+      ),
+
+    createInvite: (body: { role: MemberRole; validityDays: number }) =>
+      request<{ id: string; token: string; role: MemberRole; expiresAt: string }>(
+        "/api/v1/admin/invites",
+        { method: "POST", body }
+      ),
+
+    /**
+     * Upload a member photo via multipart. Returns `{ url }` — the SPA stores
+     * `url` in member.photoUrl on the next updateMember call.
+     */
+    uploadMemberPhoto: async (file: File): Promise<{ url: string }> => {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`${API_BASE}/api/v1/admin/media/photo`, {
+        method: "POST",
+        credentials: "include",
+        body: form,
+      });
+      const text = await res.text();
+      const parsed = text ? JSON.parse(text) : null;
+      if (!res.ok) {
+        const message =
+          parsed && typeof parsed === "object" && "message" in parsed && typeof parsed.message === "string"
+            ? parsed.message
+            : res.statusText || `Upload failed: ${res.status}`;
+        throw new ApiError(res.status, message, parsed);
+      }
+      return { url: (parsed as { url: string }).url };
+    },
+  },
+};
+
+// ───── Named helpers used by the public team / projects routes ─────
+// Thin shims so route files don't have to know about the `api.x()` wrapper.
+
+export async function fetchMembers(): Promise<ApiMember[]> {
+  const page = await api.members();
+  return page.content;
+}
+
+export async function fetchMember(slugOrId: string): Promise<ApiMember> {
+  return api.member(slugOrId);
+}
+
+export async function fetchProjects(): Promise<ApiProject[]> {
+  return api.projects();
+}
+
+export async function fetchProject(slugOrId: string): Promise<ApiProject> {
+  return api.project(slugOrId);
+}

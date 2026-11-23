@@ -1,0 +1,209 @@
+import { useState, type FormEvent } from "react";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { ShieldCheck, Lock, User, Eye, EyeOff } from "lucide-react";
+import LapsLogoMono from "@/components/LapsLogoMono";
+import { Input } from "@/components/ui/input";
+import { api, ApiError } from "@/lib/api";
+import { useInvalidateAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
+
+// Unlinked, unindexed authentication entry. No public site link points here —
+// managers reach it directly via /login. The backend gates everything underneath;
+// this page just exists to issue the JWT cookie.
+export const Route = createFileRoute("/login")({
+  component: LoginPage,
+  head: () => ({
+    meta: [
+      { title: "Gerenciar | LAPS" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
+});
+
+function LoginPage() {
+  const navigate = useNavigate();
+  const router = useRouter();
+  const invalidateAuth = useInvalidateAuth();
+
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await api.login(identifier.trim(), password);
+      await invalidateAuth();
+      await router.invalidate();
+      toast.success("Login realizado com sucesso!");
+      // Managers go straight to /admin; everyone else lands in /portal where
+      // the must-change-password gate (if any) is enforced inline.
+      //
+      // A manager still on a temporary password is the exception: the gate only
+      // renders in /portal, so sending them to the console would let them work
+      // the whole session on the credential a coordinator read out to them. They
+      // land in /portal, rotate, then take the Central de Comando button across.
+      const dest: "/admin" | "/portal" =
+        res.role === "MANAGER" && !res.mustChangePassword ? "/admin" : "/portal";
+      navigate({ to: dest });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        toast.error("Email ou senha inválidos.");
+      } else {
+        toast.error("Não foi possível entrar. Tente novamente.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
+      {/* Left — animated logo + tagline.
+          Flat ink, a dot grid, and one hairline rule. What this replaces: a
+          radial gradient with two large blurred colour orbs floating over it —
+          the "glow behind the panel" effect that every generated dark hero
+          ships with. It was also the only place on the site with soft blurred
+          colour, so it read as borrowed from somewhere else. */}
+      <aside className="relative flex flex-col justify-between overflow-hidden bg-laps-ink px-10 py-14 text-white lg:px-16 lg:py-20">
+        <div className="absolute inset-0 opacity-[0.09] [background:radial-gradient(circle_at_1px_1px,#74B5F2_1px,transparent_0)_0_0/22px_22px]" />
+
+        {/* Centred. This panel is a single self-contained brand statement with
+            no scanning or comparing to do, so symmetry reads as poise rather
+            than as the default — unlike the content pages, where centring
+            everything is what flattened their hierarchy. */}
+        <div className="relative text-center">
+          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-laps-signal-ink">
+            Interno · Gerenciamento
+          </p>
+        </div>
+
+        <div className="relative mx-auto flex w-full max-w-md flex-col items-center text-center">
+          <LapsLogoMono />
+          <h1 className="font-display mt-10 text-3xl font-extrabold leading-[1.05] text-balance md:text-4xl">
+            Laboratório para Aquisição e Processamento de Sinais
+          </h1>
+          <p className="mt-5 max-w-[46ch] text-sm leading-relaxed text-pretty text-white/60">
+            Acesso restrito ao pessoal autorizado. Gerencie a equipe,
+            publicações e funções do laboratório. Cada alteração é refletida
+            no grafo público da equipe instantaneamente.
+          </p>
+        </div>
+
+        <div className="relative flex items-center justify-center gap-2.5 border-t border-white/15 pt-5 font-mono text-[10px] uppercase tracking-[0.12em] text-white/45">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Seguro · JWT HttpOnly · Sessão de 1 hora
+        </div>
+      </aside>
+
+      {/* Right — login form */}
+      <section className="flex items-center justify-center bg-surface px-6 py-14 lg:px-12">
+        <div className="w-full max-w-sm">
+          <div className="mb-10">
+            <p className="label-tech">Entrar</p>
+            <h2 className="font-display mt-5 text-3xl font-extrabold leading-tight text-laps-navy">
+              Bem-vindo de volta
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-laps-navy/60">
+              Use as credenciais fornecidas pelo coordenador do laboratório.
+            </p>
+          </div>
+
+          <form onSubmit={onSubmit} className="space-y-5" noValidate>
+            <Field
+              label="Usuário ou email"
+              icon={<User className="h-4 w-4" />}
+              htmlFor="identifier"
+            >
+              <Input
+                id="identifier"
+                type="text"
+                inputMode="email"
+                autoComplete="username"
+                placeholder="seu-nome ou voce@uema.br"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                required
+                className="h-11 border-laps-navy/15 bg-surface pl-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+              />
+            </Field>
+
+            <Field
+              label="Senha"
+              icon={<Lock className="h-4 w-4" />}
+              htmlFor="password"
+              trailing={
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="pointer-events-auto absolute inset-y-0 right-3 flex items-center text-laps-navy/40 hover:text-laps-navy/70"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              }
+            >
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="h-11 border-laps-navy/15 bg-surface pl-10 pr-10 text-base text-laps-navy placeholder:text-laps-navy/35 focus-visible:ring-laps-blue"
+              />
+            </Field>
+
+            {/* The arrow glyph that used to slide right on hover is gone — a
+                submit button labelled "Entrar" does not need a direction. */}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="inline-flex h-12 w-full items-center justify-center rounded-md bg-laps-cta px-4 text-sm font-semibold text-white transition-colors duration-150 hover:bg-laps-accent active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submitting ? "Entrando…" : "Entrar"}
+            </button>
+
+          </form>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  icon,
+  htmlFor,
+  trailing,
+  children,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  htmlFor: string;
+  trailing?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label
+        htmlFor={htmlFor}
+        className="block font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/55"
+      >
+        {label}
+      </label>
+      <div className="relative">
+        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-laps-navy/40">
+          {icon}
+        </span>
+        {children}
+        {trailing}
+      </div>
+    </div>
+  );
+}
