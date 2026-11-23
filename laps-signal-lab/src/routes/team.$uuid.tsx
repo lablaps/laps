@@ -172,13 +172,13 @@ export const Route = createFileRoute("/team/$uuid")({
   head: ({ loaderData }) => {
     if (!loaderData) return {};
     const { member } = loaderData;
-    const title = `${member.fullName} — LAPS`;
+    const title = `${member.fullName} | LAPS`;
     return {
       meta: [
         { title },
         {
           name: "description",
-          content: `${member.fullName} · LAPS — Laboratório de Aquisição e Processamento de Sinais`,
+          content: `${member.fullName} · LAPS, Laboratório de Aquisição e Processamento de Sinais`,
         },
         { property: "og:title", content: title },
         { property: "og:type", content: "profile" },
@@ -419,7 +419,7 @@ function TeamMemberPage() {
                           Brazil" would say nothing about where they went. */}
                       {tx.exchange} ·{" "}
                       {member.exchangeState
-                        ? `${brStateName(member.exchangeState)} — ${countryName(member.exchangeCountry, L)}`
+                        ? `${brStateName(member.exchangeState)}, ${countryName(member.exchangeCountry, L)}`
                         : countryName(member.exchangeCountry, L)}
                     </span>
                   )}

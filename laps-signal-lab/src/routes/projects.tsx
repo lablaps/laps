@@ -12,8 +12,8 @@ export const Route = createFileRoute("/projects")({
   component: ProjectsPage,
   head: () => ({
     meta: [
-      { title: "Projects — LAPS" },
-      { name: "description", content: "Active research projects at LAPS — signal processing, AI, diagnostics." },
+      { title: "Projects | LAPS" },
+      { name: "description", content: "Active research projects at LAPS: signal processing, AI, diagnostics." },
     ],
   }),
 });
@@ -230,7 +230,6 @@ function ProjectsPage() {
                     ) : (
                       <span className="inline-flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/60">
                         {lang === "pt" ? "Detalhes" : lang === "fr" ? "Détails" : "Details"}
-                        <span className="h-px w-6 bg-laps-navy/30 transition-all duration-300 group-hover:w-10 group-hover:bg-laps-signal" />
                       </span>
                     )}
                   </div>

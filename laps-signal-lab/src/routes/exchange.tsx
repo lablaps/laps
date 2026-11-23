@@ -22,15 +22,22 @@ import {
 import { CountryFlag, BrStateFlag } from "@/lib/flags";
 import { LANGUAGE_BY_CODE, parseLanguages } from "@/lib/languages-data";
 
+/** Heading for domestic placements whose state was not recorded. */
+const STATE_UNKNOWN: Record<"pt" | "en" | "fr", string> = {
+  pt: "Estado não informado",
+  en: "State not recorded",
+  fr: "État non renseigné",
+};
+
 export const Route = createFileRoute("/exchange")({
   component: ExchangePage,
   head: () => ({
     meta: [
-      { title: "International Exchange — LAPS" },
+      { title: "International Exchange | LAPS" },
       {
         name: "description",
         content:
-          "LAPS researchers and students on academic mobility — the destinations, academic levels and working languages of every member who has studied away.",
+          "LAPS researchers and students on academic mobility: the destinations, academic levels and working languages of every member who has studied away.",
       },
     ],
   }),
@@ -214,7 +221,7 @@ function ExchangePage() {
                             <MapPin className="h-4 w-4 shrink-0 text-laps-navy/35" />
                           )}
                           <h3 className="text-sm font-bold text-laps-navy">
-                            {state ? brStateName(state) : "—"}
+                            {state ? brStateName(state) : STATE_UNKNOWN[lang]}
                             {state && (
                               <span className="ml-2 text-[11px] font-semibold uppercase tracking-wider text-laps-navy/40">
                                 {BR_STATES[state]?.region}

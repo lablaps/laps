@@ -47,13 +47,13 @@ export const translations = {
     structure: {
       teamPhoto: {
         title: "Quem faz o LAPS",
-        caption: "Graduandos, mestrandos, doutorandos e colaboradores — conheça as pessoas que fazem a pesquisa do laboratório.",
+        caption: "Graduandos, mestrandos, doutorandos e colaboradores: conheça as pessoas que fazem a pesquisa do laboratório.",
         cta: "Conhecer a equipe",
         alt: "Equipe do LAPS reunida na UEMA",
       },
       chip: "Nossa Equipe",
       title: "Rede de Pesquisadores do LAPS",
-      body: "Conheça quem faz o LAPS — chefe, doutorandos, mestrandos, graduandos e colaboradores. Abra qualquer perfil para ver áreas de pesquisa, projetos e publicações.",
+      body: "Conheça quem faz o LAPS: chefe, doutorandos, mestrandos, graduandos e colaboradores. Abra qualquer perfil para ver áreas de pesquisa, projetos e publicações.",
       headTitle: "Chefe do Laboratório",
       headSubtitle: "Liderança científica e administrativa do LAPS",
       headRole: "Chefe do Laboratório",
@@ -75,7 +75,7 @@ export const translations = {
         linkedin: "Ver no LinkedIn",
         noLinkedin: "LinkedIn em breve",
         areas: "Áreas de Atuação",
-        bioPending: "Biografia em breve — informações detalhadas serão adicionadas pela coordenação do LAPS.",
+        bioPending: "Biografia em breve. Informações detalhadas serão adicionadas pela coordenação do LAPS.",
         views: {
           mesh: "Rede Neural",
           pyramid: "Hierarquia",
@@ -120,10 +120,10 @@ export const translations = {
       reality: {
         title: "Desafios e imersão cultural",
         body:
-          "Mudar-se para outro país durante a pós-graduação é uma vitória — e também uma rotina dura. Burocracia de visto, custo de vida em outra moeda, distância dos familiares, primeiro inverno fora dos trópicos, idioma técnico em sala de aula e idioma cotidiano na rua: tudo acontece ao mesmo tempo. Nossos intercambistas aprendem a navegar o sistema acadêmico local, defender pesquisa em outra língua, cozinhar em outra cozinha e descobrir que saudade do Maranhão é um sentimento que vira combustível. A imersão cultural não é só turismo: é fazer ciência colaborando lado a lado com pesquisadores de tradições diferentes.",
+          "Mudar-se para outro país durante a pós-graduação é uma vitória, e também uma rotina dura. Burocracia de visto, custo de vida em outra moeda, distância dos familiares, primeiro inverno fora dos trópicos, idioma técnico em sala de aula e idioma cotidiano na rua: tudo acontece ao mesmo tempo. Nossos intercambistas aprendem a navegar o sistema acadêmico local, defender pesquisa em outra língua, cozinhar em outra cozinha e descobrir que saudade do Maranhão é um sentimento que vira combustível. A imersão cultural não é só turismo: é fazer ciência colaborando lado a lado com pesquisadores de tradições diferentes.",
       },
       opportunity: {
-        title: "Oportunidades no LAPS — em qualquer nível",
+        title: "Oportunidades no LAPS, em qualquer nível",
         body:
           "O LAPS apoia mobilidade internacional para todo o corpo de pesquisa: graduação, mestrado e doutorado. Acordos com universidades parceiras, editais de cooperação CAPES/CNPq, programas Erasmus+, BRAFITEC e bolsas de instituições anfitriãs abrem portas em laboratórios da Europa e das Américas. Se você está no laboratório, há um caminho para você fazer parte da próxima geração de intercambistas.",
       },
@@ -151,8 +151,8 @@ export const translations = {
       desc: "Pesquisa de ponta em processamento de sinais e inteligência artificial.",
       navTitle: "Navegação",
       contactTitle: "Contato",
-      address: "Universidade Estadual do Maranhão — UEMA — São Cristóvão, São Luís - MA",
-      rights: "© 2026 LAPS — Todos os direitos reservados",
+      address: "Universidade Estadual do Maranhão (UEMA), São Cristóvão, São Luís - MA",
+      rights: "© 2026 LAPS. Todos os direitos reservados",
     },
     portal: {
       network: "Rede de Pesquisadores",
@@ -215,13 +215,13 @@ export const translations = {
     structure: {
       teamPhoto: {
         title: "The people behind LAPS",
-        caption: "Undergraduates, master's and doctoral students and collaborators — meet the people who do the lab's research.",
+        caption: "Undergraduates, master's and doctoral students and collaborators: meet the people who do the lab's research.",
         cta: "Meet the team",
         alt: "The LAPS team gathered at UEMA",
       },
       chip: "Our Team",
       title: "LAPS Researcher Network",
-      body: "Meet the people behind LAPS — the head, doctoral and master's students, undergraduates and collaborators. Open any profile to see research areas, projects and publications.",
+      body: "Meet the people behind LAPS: the head, doctoral and master's students, undergraduates and collaborators. Open any profile to see research areas, projects and publications.",
       headTitle: "Head of the Laboratory",
       headSubtitle: "Scientific and administrative leadership of LAPS",
       headRole: "Head of the Laboratory",
@@ -243,7 +243,7 @@ export const translations = {
         linkedin: "View on LinkedIn",
         noLinkedin: "LinkedIn coming soon",
         areas: "Research Areas",
-        bioPending: "Bio coming soon — detailed information will be added by the LAPS coordination.",
+        bioPending: "Bio coming soon. Detailed information will be added by the LAPS coordination.",
         views: {
           mesh: "Neural Mesh",
           pyramid: "Hierarchy",
@@ -283,10 +283,10 @@ export const translations = {
       reality: {
         title: "Real challenges and cultural immersion",
         body:
-          "Moving abroad during graduate research is a milestone — and also a hard routine. Visa paperwork, living costs in a new currency, distance from family, the first winter outside the tropics, technical language in the classroom and street language on the metro: it all happens at once. Our exchange researchers learn to navigate a foreign academic system, defend their work in another language, cook in a new kitchen and discover that missing Maranhão becomes its own kind of fuel. Cultural immersion is not tourism — it's doing science alongside researchers from different traditions.",
+          "Moving abroad during graduate research is a milestone, and also a hard routine. Visa paperwork, living costs in a new currency, distance from family, the first winter outside the tropics, technical language in the classroom and street language on the metro: it all happens at once. Our exchange researchers learn to navigate a foreign academic system, defend their work in another language, cook in a new kitchen and discover that missing Maranhão becomes its own kind of fuel. Cultural immersion is not tourism; it's doing science alongside researchers from different traditions.",
       },
       opportunity: {
-        title: "Opportunities at LAPS — at every level",
+        title: "Opportunities at LAPS, at every level",
         body:
           "LAPS supports international mobility for the entire research body: undergraduates, MSc and doctoral students. Partner-university agreements, CAPES/CNPq cooperation calls, Erasmus+ and BRAFITEC programs and host-institution grants open doors in European and American labs. If you're in the lab, there's a path for you to join the next generation of exchange researchers.",
       },
@@ -314,8 +314,8 @@ export const translations = {
       desc: "Frontier research in signal processing and artificial intelligence.",
       navTitle: "Navigation",
       contactTitle: "Contact",
-      address: "State University of Maranhão — UEMA — São Cristóvão, São Luís - MA",
-      rights: "© 2026 LAPS — All rights reserved",
+      address: "State University of Maranhão (UEMA), São Cristóvão, São Luís - MA",
+      rights: "© 2026 LAPS. All rights reserved",
     },
     portal: {
       network: "Researcher Network",
@@ -378,13 +378,13 @@ export const translations = {
     structure: {
       teamPhoto: {
         title: "Ceux qui font le LAPS",
-        caption: "Étudiants en licence, en master, doctorants et collaborateurs — découvrez les personnes qui font la recherche du laboratoire.",
+        caption: "Étudiants en licence, en master, doctorants et collaborateurs : découvrez les personnes qui font la recherche du laboratoire.",
         cta: "Découvrir l'équipe",
         alt: "L'équipe du LAPS réunie à l'UEMA",
       },
       chip: "Notre Équipe",
       title: "Réseau de Chercheurs du LAPS",
-      body: "Découvrez les personnes qui font le LAPS — le chef, les doctorants, les étudiants en master et en licence, et les collaborateurs. Ouvrez un profil pour voir ses domaines de recherche, projets et publications.",
+      body: "Découvrez les personnes qui font le LAPS : le chef, les doctorants, les étudiants en master et en licence, et les collaborateurs. Ouvrez un profil pour voir ses domaines de recherche, projets et publications.",
       headTitle: "Chef du Laboratoire",
       headSubtitle: "Direction scientifique et administrative du LAPS",
       headRole: "Chef du Laboratoire",
@@ -406,7 +406,7 @@ export const translations = {
         linkedin: "Voir sur LinkedIn",
         noLinkedin: "LinkedIn bientôt",
         areas: "Domaines de Recherche",
-        bioPending: "Biographie à venir — des informations détaillées seront ajoutées par la coordination du LAPS.",
+        bioPending: "Biographie à venir. Des informations détaillées seront ajoutées par la coordination du LAPS.",
         views: {
           mesh: "Réseau Neural",
           pyramid: "Hiérarchie",
@@ -446,10 +446,10 @@ export const translations = {
       reality: {
         title: "Défis réels et immersion culturelle",
         body:
-          "Partir à l'étranger pendant la recherche supérieure est une étape majeure — et aussi un quotidien exigeant. Démarches de visa, coût de la vie dans une autre devise, éloignement de la famille, premier hiver hors des tropiques, langue technique en classe et langue de la rue dans le métro : tout arrive en même temps. Nos chercheurs en échange apprennent à naviguer un système universitaire étranger, à défendre leur recherche dans une autre langue, à cuisiner dans une nouvelle cuisine et à découvrir que la nostalgie du Maranhão devient son propre carburant. L'immersion culturelle n'est pas du tourisme — c'est faire de la science aux côtés de chercheurs d'autres traditions.",
+          "Partir à l'étranger pendant la recherche supérieure est une étape majeure, et aussi un quotidien exigeant. Démarches de visa, coût de la vie dans une autre devise, éloignement de la famille, premier hiver hors des tropiques, langue technique en classe et langue de la rue dans le métro : tout arrive en même temps. Nos chercheurs en échange apprennent à naviguer un système universitaire étranger, à défendre leur recherche dans une autre langue, à cuisiner dans une nouvelle cuisine et à découvrir que la nostalgie du Maranhão devient son propre carburant. L'immersion culturelle n'est pas du tourisme ; c'est faire de la science aux côtés de chercheurs d'autres traditions.",
       },
       opportunity: {
-        title: "Opportunités au LAPS — à chaque niveau",
+        title: "Opportunités au LAPS, à chaque niveau",
         body:
           "Le LAPS soutient la mobilité internationale pour l'ensemble de ses chercheurs : étudiants en licence, en master et en doctorat. Accords de partenariat universitaire, appels CAPES/CNPq, programmes Erasmus+ et BRAFITEC, bourses des institutions d'accueil : autant de portes ouvertes vers des laboratoires européens et américains. Si vous êtes au laboratoire, il existe un chemin pour rejoindre la prochaine génération de chercheurs en échange.",
       },
@@ -477,8 +477,8 @@ export const translations = {
       desc: "Recherche de pointe en traitement des signaux et intelligence artificielle.",
       navTitle: "Navigation",
       contactTitle: "Contact",
-      address: "Université d'État du Maranhão — UEMA — São Cristóvão, São Luís - MA",
-      rights: "© 2026 LAPS — Tous droits réservés",
+      address: "Université d'État du Maranhão (UEMA), São Cristóvão, São Luís - MA",
+      rights: "© 2026 LAPS. Tous droits réservés",
     },
     portal: {
       network: "Réseau de Chercheurs",

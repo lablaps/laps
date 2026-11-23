@@ -36,11 +36,11 @@ export const Route = createFileRoute("/team")({
   component: TeamPage,
   head: () => ({
     meta: [
-      { title: "Team — LAPS" },
+      { title: "Team | LAPS" },
       {
         name: "description",
         content:
-          "The LAPS research team — head, collaborators, doctoral, master's and undergraduate researchers, with their research areas, projects and publications.",
+          "The LAPS research team: head, collaborators, doctoral, master's and undergraduate researchers, with their research areas, projects and publications.",
       },
     ],
   }),

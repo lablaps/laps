@@ -70,7 +70,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 // on admin PUT requests (the previous silent-swallow behavior left
                 // SecurityContext empty and the authorization layer returned 403,
                 // which looked like a permission issue rather than session expiry).
-                reject(request, response, "token_invalid", "Session expired — please log in again");
+                reject(request, response, "token_invalid", "Session expired. Please log in again");
                 return;
             }
 
@@ -85,7 +85,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             Long tokenVersion = authenticationVersion(claims);
             if (tokenVersion == null || tokenVersion != member.getAuthVersion()) {
-                reject(request, response, "session_revoked", "Session revoked — please log in again");
+                reject(request, response, "session_revoked", "Session revoked. Please log in again");
                 return;
             }
 

@@ -149,6 +149,28 @@ removed entirely. Header (Equipe and Contato stay where they are):
   (the section returned null and its own Editar button was the only way in —
   since 87c5cb7, May); guide copy named the old card title.
 
+## Round 3 (requested 2026-11-14), one phase at a time
+
+- [x] **Phase 10: no dashes.** Every em/en dash in user-facing text rewritten
+  (page titles use "|", sentences use commas/colons/periods, empty values say
+  "Não informado", select placeholders lose their dash brackets, level labels
+  use "·", numeric ranges use "a"); backend messages users can see (session
+  expiry, author validation, email footer) too. Decorative dashes removed: the
+  14px mark before `.label-tech` and four hover-stub lines. Verified: zero
+  dashes in the compiled bundle; 177 backend tests green.
+- [ ] **Phase 11: /team.** Remove Lista; Hierarquia then Rede Neural stacked
+  vertically (no tabs). Each tier an accordion listing its people one per row.
+  Undergraduates without photos, subtitled with their programme ("Graduando(a)
+  em Engenharia de Computação" / "B.Sc. in Artificial Intelligence").
+- [ ] **Phase 12: members change their own major.** Backend: `undergradProgram`
+  on the portal update (today admin-only); portal editor.
+- [ ] **Phase 13: email first.** On login (and right after /join), anyone with
+  an unverified email goes to a dedicated page to add and verify it before
+  /portal or /admin. After verification the password change is **not**
+  forced: a dismissible reminder suggests it while a temporary password is in
+  use, and the temporary password stays valid (user's decision, risk noted:
+  whoever issued or saw it keeps access until the member changes it).
+
 Prerequisite for Phase 6: commit the staged security work (V33) first, so the
 new migration lands on top of it rather than in the same diff.
 

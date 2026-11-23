@@ -447,7 +447,7 @@ public class AdminController {
             if ((memberId == null) == (externalName == null)) {
                 throw new ResponseStatusException(
                         org.springframework.http.HttpStatus.BAD_REQUEST,
-                        "Each author is either a roster member or an external name — never both, never neither");
+                        "Each author is either a roster member or an external name, never both and never neither");
             }
 
             if (memberId == null) {

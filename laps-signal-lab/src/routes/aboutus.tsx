@@ -8,8 +8,8 @@ export const Route = createFileRoute("/aboutus")({
   component: AboutPage,
   head: () => ({
     meta: [
-      { title: "About — LAPS" },
-      { name: "description", content: "About the LAPS — Signal Acquisition and Processing Laboratory." },
+      { title: "About | LAPS" },
+      { name: "description", content: "About LAPS, the Signal Acquisition and Processing Laboratory." },
     ],
   }),
 });
@@ -130,7 +130,7 @@ function AboutPage() {
                 <ValuesGraph labels={t.values.items} />
               </div>
               <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.12em] text-laps-navy/40">
-                Fig. 01 — {t.values.title}
+                Fig. 01 · {t.values.title}
               </p>
             </div>
           </div>

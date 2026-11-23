@@ -7,8 +7,8 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
   head: () => ({
     meta: [
-      { title: "Contact — LAPS" },
-      { name: "description", content: "Get in touch with LAPS — Signal Acquisition and Processing Laboratory." },
+      { title: "Contact | LAPS" },
+      { name: "description", content: "Get in touch with LAPS, the Signal Acquisition and Processing Laboratory." },
     ],
   }),
 });
@@ -133,7 +133,7 @@ function ContactPage() {
           <div className="lg:col-span-8">
             <div className="border border-laps-navy/20">
               <iframe
-                title="LAPS — Laboratório de Aquisição e Processamento de Sinais"
+                title="LAPS, Laboratório de Aquisição e Processamento de Sinais"
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3985.760580136095!2d-44.20991709999999!3d-2.5842826!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7f69b74faebfacf%3A0x7b51d3fd663371da!2sLAPS%20-%20Laborat%C3%B3rio%20de%20Aquisi%C3%A7%C3%A3o%20e%20Processamento%20de%20Sinais!5e0!3m2!1sen!2sbr!4v1786840299388!5m2!1sen!2sbr"
                 className="block h-[480px] w-full lg:h-[560px]"
                 style={{ border: 0 }}
@@ -148,8 +148,7 @@ function ContactPage() {
               rel="noopener noreferrer"
               className="group mt-3 inline-flex items-center gap-3 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-laps-navy/55 transition-colors hover:text-laps-signal"
             >
-              São Cristóvão, São Luís — MA · {labels.mapsLink}
-              <span className="h-px w-6 bg-laps-navy/30 transition-all duration-300 group-hover:w-10 group-hover:bg-laps-signal" />
+              São Cristóvão, São Luís - MA · {labels.mapsLink}
             </a>
           </div>
         </div>

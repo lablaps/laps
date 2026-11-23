@@ -130,7 +130,7 @@ export const Route = createFileRoute("/portal")({
   component: PortalPage,
   head: () => ({
     meta: [
-      { title: "Meu Perfil — LAPS" },
+      { title: "Meu Perfil | LAPS" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -156,7 +156,7 @@ const tierConfig = TIER_CONFIG;
 function saveErrorMessage(err: unknown, fallback: string) {
   if (err instanceof ApiError && err.status === 403) {
     if (/temporary password/i.test(err.message)) {
-      return "Troque a senha temporária antes de editar o perfil — a seção «Trocar senha» fica no fim da página e não exige email.";
+      return "Troque a senha temporária antes de editar o perfil. A seção «Trocar senha» fica no fim da página e não exige email.";
     }
   }
   return fallback;
@@ -728,7 +728,7 @@ function ImageTransformEditor({
         </div>
 
         <p className="mb-4 text-center text-[10px] leading-relaxed text-laps-navy/35">
-          O zoom vai até o tamanho real da foto — ampliar além disso só perderia
+          O zoom vai até o tamanho real da foto; ampliar além disso só perderia
           nitidez. O mínimo mantém a imagem cobrindo todo o quadro.
         </p>
 
@@ -998,7 +998,7 @@ function ContactEditor({ me }: { me: MyProfile }) {
         <div className="mb-3 flex items-start gap-2 rounded-lg border border-laps-blue/25 bg-laps-ghost/50 px-3 py-2">
           <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0 text-laps-blue" />
           <p className="text-[11px] leading-relaxed font-medium text-laps-navy/75">
-            Troque a senha temporária primeiro — a edição do perfil é liberada logo em seguida. A
+            Troque a senha temporária primeiro. A edição do perfil é liberada logo em seguida. A
             seção <em>Trocar senha</em> fica no fim da página e não exige email.
           </p>
         </div>
@@ -1017,7 +1017,7 @@ function ContactEditor({ me }: { me: MyProfile }) {
         <div className="space-y-3">
           <p className="rounded-lg bg-laps-ghost/40 px-3 py-2 text-[10px] leading-relaxed text-laps-navy/55">
             Use o <Eye className="inline h-3 w-3" /> para escolher o que aparece no
-            seu perfil público. O que estiver oculto não é enviado pela API — some
+            seu perfil público. O que estiver oculto não é enviado pela API: some
             de verdade, não só da tela.
           </p>
 
@@ -1598,7 +1598,7 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
               onChange={(e) => handleCodeChange(e.target.value)}
               className="w-full rounded-md border border-laps-navy/15 bg-surface px-2 py-2 text-xs text-laps-navy focus:outline-none focus:border-laps-blue/40"
             >
-              <option value="">— Selecione o idioma —</option>
+              <option value="">Selecione o idioma</option>
               {availableLangs.map((l) => (
                 <option key={l.code} value={l.code}>
                   {l.flag} {l.name.pt}
@@ -1613,12 +1613,12 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
                   Sistema:{" "}
                   <span className="font-bold">
                     {langDef.system === "CEFR"
-                      ? "CEFR (A1–C2)"
+                      ? "CEFR (A1 a C2)"
                       : langDef.system === "HSK"
-                      ? "HSK (1–6)"
+                      ? "HSK (1 a 6)"
                       : langDef.system === "JLPT"
-                      ? "JLPT (N5–N1)"
-                      : "TOPIK (1–6)"}
+                      ? "JLPT (N5 a N1)"
+                      : "TOPIK (1 a 6)"}
                   </span>
                 </p>
                 <select
@@ -1626,7 +1626,7 @@ function LanguagesEditor({ me }: { me: MyProfile }) {
                   onChange={(e) => setAddLevel(e.target.value)}
                   className="w-full rounded-md border border-laps-navy/15 bg-surface px-2 py-2 text-xs text-laps-navy focus:outline-none focus:border-laps-blue/40"
                 >
-                  <option value="">— Selecione o nível —</option>
+                  <option value="">Selecione o nível</option>
                   <option value="NATIVE">{NATIVE_LEVEL.label.pt}</option>
                   {LEVELS_BY_SYSTEM[langDef.system].map((lv) => (
                     <option key={lv.value} value={lv.value}>
@@ -2286,7 +2286,7 @@ function CreateProjectForm({
             onChange={(e) => setMyContribution(e.target.value)}
             rows={2}
             maxLength={1000}
-            placeholder="Sua contribuição — aparece no seu perfil público"
+            placeholder="Sua contribuição (aparece no seu perfil público)"
             className="w-full rounded-md border border-laps-navy/15 bg-surface px-3 py-2 text-sm text-laps-navy outline-none focus:border-laps-blue/40 focus:ring-2 focus:ring-laps-blue/15"
           />
         </div>
@@ -2384,7 +2384,7 @@ function CreateProjectForm({
               onChange={(e) => setAdvisorId(e.target.value)}
               className="w-full rounded-md border border-laps-navy/15 bg-surface px-2 py-2 text-sm text-laps-navy"
             >
-              <option value="">— Nenhum —</option>
+              <option value="">Nenhum</option>
               {potentialAdvisors.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.fullName}
@@ -2583,7 +2583,7 @@ function FirstLoginBanner({ hasEmail }: { hasEmail: boolean }) {
             <li>Peça o código de 6 dígitos e confirme com o que chegar no email.</li>
           </ol>
           <p className="mt-2 rounded-lg bg-surface/70 px-2.5 py-1.5 text-[11px] leading-relaxed text-laps-navy/60">
-            O email só pode ser salvo <strong>depois</strong> da troca de senha — até lá o perfil
+            O email só pode ser salvo <strong>depois</strong> da troca de senha. Até lá o perfil
             fica bloqueado para edição.
           </p>
         </div>
@@ -2614,7 +2614,7 @@ function EmailVerificationBanner({ me }: { me: MyProfile }) {
             {me.mustChangePassword
               ? "Comece pela seção «Trocar senha». Só depois disso o perfil é liberado para salvar o email e pedir o código."
               : me.email
-                ? "Enviamos um código de 6 dígitos para o seu email — é só digitá-lo para confirmar."
+                ? "Enviamos um código de 6 dígitos para o seu email. É só digitá-lo para confirmar."
                 : "Cadastre um email no formulário de perfil e salve antes de solicitar o código."}
           </p>
 
@@ -2696,11 +2696,11 @@ function PasswordChangeCard({
         <p className="mb-4 text-xs leading-relaxed text-laps-navy/65">
           <strong className="font-semibold text-laps-navy">Comece por aqui.</strong> Digite em
           «Senha atual» a senha temporária que você recebeu e escolha a sua senha definitiva. Você
-          <em> não</em> precisa cadastrar o email antes deste passo — o email vem depois.
+          <em> não</em> precisa cadastrar o email antes deste passo; o email vem depois.
         </p>
       ) : (
         <p className="mb-4 text-xs text-laps-navy/55">
-          Email verificado — defina sua senha pessoal.
+          Email verificado. Defina sua senha pessoal.
         </p>
       )}
       <form onSubmit={submit} className="grid gap-3 md:grid-cols-3">
@@ -2839,7 +2839,7 @@ function JoinedLapsEditor({ me }: { me: MyProfile }) {
               className="h-9 text-sm"
             />
             <p className="mt-1 text-[10px] text-laps-navy/40">
-              Sem dia — apenas o mês em que você começou.
+              Sem dia, apenas o mês em que você começou.
             </p>
           </div>
 
@@ -2870,7 +2870,7 @@ function JoinedLapsEditor({ me }: { me: MyProfile }) {
             </div>
             {semesterIncomplete && (
               <p className="mt-1 text-[10px] font-medium text-amber-600">
-                Escolha o ano e o período — ou limpe os dois.
+                Escolha o ano e o período, ou limpe os dois.
               </p>
             )}
           </div>
@@ -2951,7 +2951,7 @@ function PlacementLabel({ me, empty }: { me: MyProfile; empty: string }) {
         <DestinationFlag country={me.exchangeCountry} state={me.exchangeState} />
       </span>
       {me.exchangeState
-        ? `${brStateName(me.exchangeState)} — ${countryName(me.exchangeCountry, "pt")}`
+        ? `${brStateName(me.exchangeState)}, ${countryName(me.exchangeCountry, "pt")}`
         : countryName(me.exchangeCountry, "pt")}
     </span>
   );

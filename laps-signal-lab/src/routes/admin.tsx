@@ -73,7 +73,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
   head: () => ({
     meta: [
-      { title: "Administração — LAPS" },
+      { title: "Administração | LAPS" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -277,7 +277,7 @@ function AdminPage() {
               Central de Comando
             </h1>
             <p className="mt-3 max-w-[18rem] text-[12px] leading-relaxed text-white/55">
-              Equipe, funções e publicações — cada alteração é refletida no
+              Equipe, funções e publicações. Cada alteração é refletida no
               grafo público da equipe instantaneamente.
             </p>
           </div>
@@ -502,7 +502,7 @@ function CreateMemberDialog({
                 Adicionar novo membro
               </h2>
               <p className="mt-1 text-xs text-laps-navy/55">
-                Digite o nome completo — o sistema gera usuário e senha temporária automaticamente.
+                Digite o nome completo e o sistema gera usuário e senha temporária automaticamente.
               </p>
             </div>
 
@@ -892,8 +892,8 @@ function MemberCard({
 
       {/* Body */}
       <div className="flex flex-1 flex-col gap-2 px-4 py-3 text-[12px] text-laps-navy/70">
-        <Detail label="Email" value={member.email ?? "—"} />
-        <Detail label="Desde" value={member.currentRoleStartedAt ?? "—"} />
+        <Detail label="Email" value={member.email ?? "Não informado"} />
+        <Detail label="Desde" value={member.currentRoleStartedAt ?? "Não informado"} />
         {member.linkedinUrl && (
           <Detail
             label="LinkedIn"
@@ -1079,7 +1079,7 @@ function CredentialsPanel({
 
           {resetMutation.data && (
             <p className="mt-1.5 text-[10px] leading-snug text-amber-900">
-              Copie agora — esta senha não pode ser recuperada depois. Se fechar
+              Copie agora: esta senha não pode ser recuperada depois. Se fechar
               esta tela sem copiar, será preciso redefinir de novo.
             </p>
           )}
@@ -1391,7 +1391,7 @@ function EditPanel({
               <Section title="Curso de Graduação">
                 <p className="mb-3 text-[11px] text-laps-navy/55">
                   De qual bacharelado o membro veio. Independente do cargo no
-                  laboratório — um mestrando ou doutorando também tem curso de
+                  laboratório: um mestrando ou doutorando também tem curso de
                   origem. Deixe em branco se não se aplica.
                 </p>
                 <FieldCard label="Bacharelado">
@@ -1434,7 +1434,7 @@ function EditPanel({
                 <p className="mb-3 text-[11px] text-laps-navy/55">
                   Somente gestores podem atribuir este marcador. O membro verá o badge
                   "Intercambista" no seu portfólio público, e o destino aparece na página de
-                  intercâmbio automaticamente — nacional (por estado) ou internacional.
+                  intercâmbio automaticamente, nacional (por estado) ou internacional.
                 </p>
                 <FieldCard label="Destino">
                   <ExchangePlacementPicker value={placement} onChange={setPlacement} />
@@ -1503,7 +1503,7 @@ function EditPanel({
               {save.isError && (
                 <span className="text-xs text-rose-600 mr-auto">
                   {save.error instanceof ApiError && (save.error.status === 401 || save.error.status === 403)
-                    ? "Sessão expirada — redirecionando para login…"
+                    ? "Sessão expirada. Redirecionando para login…"
                     : save.error instanceof ApiError
                       ? save.error.message
                       : "Falha ao salvar."}
@@ -1778,7 +1778,7 @@ function PublicationApprovalSection() {
                   // The note is what the member reads in their portal, so a
                   // rejection is never a silent disappearance.
                   const note = window.prompt(
-                    "Motivo da recusa (opcional) — o membro verá esta mensagem:",
+                    "Motivo da recusa (opcional). O membro verá esta mensagem:",
                   );
                   if (note === null) return;
                   rejectMutation.mutate({ id: p.id, note: note.trim() || undefined });
@@ -1961,7 +1961,7 @@ function PublicationSection() {
 
               {row.authors.length === 0 ? (
                 <div className="mt-2 text-[11px] italic text-amber-700">
-                  Sem autores vinculados — não aparece no perfil de ninguém.
+                  Sem autores vinculados: não aparece no perfil de ninguém.
                 </div>
               ) : (
                 <div className="mt-2 flex flex-wrap gap-1">
@@ -2068,7 +2068,7 @@ function PublicationEditPanel({
 
   const saveErrorMessage = save.isError
     ? save.error instanceof ApiError && (save.error.status === 401 || save.error.status === 403)
-      ? "Sessão expirada — redirecionando para login…"
+      ? "Sessão expirada. Redirecionando para login…"
       : save.error instanceof ApiError
         ? save.error.message
         : "Falha ao salvar."
@@ -2166,8 +2166,8 @@ function PublicationEditPanel({
               {p && p.approvalStatus !== "APPROVED" && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 text-[11px] leading-relaxed text-amber-900">
                   {p.approvalStatus === "PENDING"
-                    ? "Aguardando revisão — ainda não aparece no site público."
-                    : `Recusada${p.reviewNote ? `: ${p.reviewNote}` : ""} — use Aprovar na fila de revisão para publicar.`}
+                    ? "Aguardando revisão. Ainda não aparece no site público."
+                    : `Recusada${p.reviewNote ? `: ${p.reviewNote}` : ""}. Use Aprovar na fila de revisão para publicar.`}
                 </div>
               )}
             </div>
@@ -2194,7 +2194,7 @@ function PublicationEditPanel({
                 </div>
               </Section>
 
-              <Section title="Autores — na ordem em que assinam o trabalho">
+              <Section title="Autores, na ordem em que assinam o trabalho">
                 <AuthorPicker authors={authors} onChange={setAuthors} />
               </Section>
             </div>
@@ -2310,7 +2310,7 @@ function AuthorPicker({
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar membro por nome, slug ou iniciais — ou digitar um autor externo"
+          placeholder="Buscar membro por nome, slug ou iniciais, ou digitar um autor externo"
           className="h-10 border-laps-navy/15 bg-surface pl-10 focus-visible:ring-laps-blue"
         />
         {typed.length > 0 && (
@@ -2373,7 +2373,7 @@ function AuthorPicker({
 
       {authors.length === 0 ? (
         <p className="rounded-lg border border-dashed py-4 text-center text-xs italic text-laps-navy/45">
-          Nenhum autor vinculado — a publicação não aparecerá no perfil de nenhum membro.
+          Nenhum autor vinculado: a publicação não aparecerá no perfil de nenhum membro.
         </p>
       ) : (
         <div className="flex flex-col gap-2">
@@ -2656,7 +2656,7 @@ function ProjectEditPanel({
   // Friendly inline message — show "session expired" when we know that's what it is.
   const saveErrorMessage = save.isError
     ? save.error instanceof ApiError && (save.error.status === 401 || save.error.status === 403)
-      ? "Sessão expirada — redirecionando para login…"
+      ? "Sessão expirada. Redirecionando para login…"
       : save.error instanceof ApiError
         ? save.error.message
         : "Falha ao salvar."
@@ -2736,7 +2736,7 @@ function ProjectEditPanel({
           {/* RIGHT — content */}
           <div className="flex flex-col md:w-7/12 bg-laps-ghost/5 relative">
             <div className="p-6 md:p-8 flex-1 overflow-y-auto space-y-7">
-              <Section title="Título e descrição — inglês (público padrão)">
+              <Section title="Título e descrição em inglês (público padrão)">
                 <FormField label="Título (EN)" value={titleEn} onChange={setTitleEn} placeholder="ex: GANs on Histological Images" />
                 <div className="mt-2">
                   <BioField label="Descrição (EN)" value={descriptionEn} onChange={setDescriptionEn} rows={3} maxLength={600} />

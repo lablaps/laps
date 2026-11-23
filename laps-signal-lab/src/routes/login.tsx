@@ -14,7 +14,7 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
   head: () => ({
     meta: [
-      { title: "Gerenciar — LAPS" },
+      { title: "Gerenciar | LAPS" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -88,7 +88,7 @@ function LoginPage() {
           </h1>
           <p className="mt-5 max-w-[46ch] text-sm leading-relaxed text-pretty text-white/60">
             Acesso restrito ao pessoal autorizado. Gerencie a equipe,
-            publicações e funções do laboratório — cada alteração é refletida
+            publicações e funções do laboratório. Cada alteração é refletida
             no grafo público da equipe instantaneamente.
           </p>
         </div>

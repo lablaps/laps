@@ -283,15 +283,15 @@ export const projects: Project[] = [
     ],
     i18n: {
       pt: {
-        title: "Base de Dados Ecológica — Reserva Biológica do Gurupi",
+        title: "Base de Dados Ecológica: Reserva Biológica do Gurupi",
         description: "Modelagem de banco de dados geoespacial multidimensional (PostgreSQL + PostGIS) para o monitoramento ecológico contínuo da biodiversidade na Reserva Biológica do Gurupi.",
       },
       en: {
-        title: "Ecological Database — Gurupi Biological Reserve",
+        title: "Ecological Database: Gurupi Biological Reserve",
         description: "Multidimensional geospatial database (PostgreSQL + PostGIS) for continuous ecological biodiversity monitoring at the Gurupi Biological Reserve.",
       },
       fr: {
-        title: "Base de Données Écologique — Réserve Biologique de Gurupi",
+        title: "Base de Données Écologique : Réserve Biologique de Gurupi",
         description: "Modélisation d'une base de données géospatiale multidimensionnelle (PostgreSQL + PostGIS) pour le suivi écologique continu de la biodiversité à la Réserve Biologique de Gurupi.",
       },
     },

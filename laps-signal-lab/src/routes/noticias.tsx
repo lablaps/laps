@@ -12,7 +12,7 @@ import { NEWS_COPY, newsCategories } from "@/lib/news";
 export const Route = createFileRoute("/noticias")({
   head: () => ({
     meta: [
-      { title: "Notícias — LAPS" },
+      { title: "Notícias | LAPS" },
       {
         name: "description",
         content:

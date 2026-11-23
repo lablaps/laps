@@ -126,8 +126,8 @@
    instead of each route inventing its own micro-label.
 
    .label-tech  the mono tick-label that opens a section or names a field.
-                The leading "/" is drawn by ::before so no route has to
-                remember to type it.
+                Text only: the short dash it used to draw before itself was
+                removed with the rest of the site's dashes (2026-11-14).
    .rule-signal a 2px measurement rule in the accent — the mark that says
                 "this one". Replaces the decorative left-border stripes and
                 the icon-in-a-rounded-square chips that were doing this job
@@ -141,17 +141,8 @@
   color: var(--laps-signal);
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-}
-.label-tech::before {
-  content: "";
-  width: 14px;
-  height: 2px;
-  background: var(--laps-signal);
-  flex: none;
 }
 .label-tech-muted { color: color-mix(in oklab, var(--laps-navy) 55%, transparent); }
-.label-tech-muted::before { background: color-mix(in oklab, var(--laps-navy) 30%, transparent); }
 
 /* Tabular numerals everywhere a figure is a measurement, so columns of numbers
    align and a counting animation doesn't shift its own layout. */

@@ -79,10 +79,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "LAPS — Laboratório de Aquisição e Processamento de Sinais" },
+      { title: "LAPS | Laboratório de Aquisição e Processamento de Sinais" },
       { name: "description", content: "Pesquisa de ponta em processamento de sinais e inteligência artificial." },
       { name: "author", content: "LAPS" },
-      { property: "og:title", content: "LAPS — Laboratório de Aquisição e Processamento de Sinais" },
+      { property: "og:title", content: "LAPS | Laboratório de Aquisição e Processamento de Sinais" },
       { property: "og:description", content: "Pesquisa de ponta em processamento de sinais e inteligência artificial." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

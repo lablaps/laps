@@ -48,3 +48,9 @@ Plan: [`docs/superpowers/plans/2026-11-14-public-profile-and-credibility.md`](..
 - [x] Phase 7: remove Impacts API entirely (V35 drops table); Prêmios e Bolsas reads news.
 - [x] Phase 8: /noticias + nav (Home ▾ Sobre/Parceiros; Notícias ▾ Projetos/Intercâmbio/Prêmios e Bolsas).
 - [x] Phase 9: /portal redesign with accordions (also fixed: roadmap could never be created; publications tile hard-coded to 0).
+
+### Round 3 (one phase at a time)
+- [x] Phase 10: remove all dashes (text + decorative).
+- [ ] Phase 11: /team: Hierarquia (accordion tiers) + Rede Neural stacked; no Lista; undergrads by programme, no photos.
+- [ ] Phase 12: members change their own major (backend + portal).
+- [ ] Phase 13: email-first onboarding page (login + /join); password change suggested, not forced.

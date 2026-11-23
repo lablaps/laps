@@ -107,7 +107,7 @@ export const publications: Publication[] = [
   {
     id: "oocyhistdb-rsc-2022",
     title: "OOCYHISTDB: Um conjunto de dados de imagens histológicas para detecção de ovócitos",
-    venue: "Revista de Sistemas e Computação (RSC), v.12, p.61–68",
+    venue: "Revista de Sistemas e Computação (RSC), v.12, p. 61-68",
     year: 2022,
     type: "JOURNAL",
     status: "PUBLISHED",

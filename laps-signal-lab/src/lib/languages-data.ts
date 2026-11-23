@@ -45,12 +45,12 @@ export const NATIVE_LEVEL: LevelDef = {
 // Used for: PT, EN, FR, ES, DE, IT, NL, RU, AR, PL, TR
 
 export const CEFR_LEVELS: LevelDef[] = [
-  { value: "A1", short: "A1", label: { pt: "A1 — Iniciante",              en: "A1 — Beginner",          fr: "A1 — Débutant"              }, rank: 1 },
-  { value: "A2", short: "A2", label: { pt: "A2 — Elementar",              en: "A2 — Elementary",        fr: "A2 — Élémentaire"           }, rank: 2 },
-  { value: "B1", short: "B1", label: { pt: "B1 — Intermediário",          en: "B1 — Intermediate",      fr: "B1 — Intermédiaire"         }, rank: 3 },
-  { value: "B2", short: "B2", label: { pt: "B2 — Intermediário Avançado", en: "B2 — Upper Intermediate", fr: "B2 — Intermédiaire Supérieur" }, rank: 4 },
-  { value: "C1", short: "C1", label: { pt: "C1 — Avançado",               en: "C1 — Advanced",          fr: "C1 — Avancé"                }, rank: 5 },
-  { value: "C2", short: "C2", label: { pt: "C2 — Proficiente",            en: "C2 — Proficient",        fr: "C2 — Maîtrise"              }, rank: 6 },
+  { value: "A1", short: "A1", label: { pt: "A1 · Iniciante",              en: "A1 · Beginner",          fr: "A1 · Débutant"              }, rank: 1 },
+  { value: "A2", short: "A2", label: { pt: "A2 · Elementar",              en: "A2 · Elementary",        fr: "A2 · Élémentaire"           }, rank: 2 },
+  { value: "B1", short: "B1", label: { pt: "B1 · Intermediário",          en: "B1 · Intermediate",      fr: "B1 · Intermédiaire"         }, rank: 3 },
+  { value: "B2", short: "B2", label: { pt: "B2 · Intermediário Avançado", en: "B2 · Upper Intermediate", fr: "B2 · Intermédiaire Supérieur" }, rank: 4 },
+  { value: "C1", short: "C1", label: { pt: "C1 · Avançado",               en: "C1 · Advanced",          fr: "C1 · Avancé"                }, rank: 5 },
+  { value: "C2", short: "C2", label: { pt: "C2 · Proficiente",            en: "C2 · Proficient",        fr: "C2 · Maîtrise"              }, rank: 6 },
 ];
 
 // ─── HSK — 汉语水平考试 (Chinese Proficiency Test) ──────────────────────────
@@ -58,23 +58,23 @@ export const CEFR_LEVELS: LevelDef[] = [
 // HSK 1–6 follows the pre-2021 standard, which remains the most widely cited.
 
 export const HSK_LEVELS: LevelDef[] = [
-  { value: "HSK1", short: "HSK 1", label: { pt: "HSK 1 — Básico (~150 palavras)",          en: "HSK 1 — Basic (~150 words)",          fr: "HSK 1 — Basique (~150 mots)"          }, rank: 1 },
-  { value: "HSK2", short: "HSK 2", label: { pt: "HSK 2 — Básico (~300 palavras)",          en: "HSK 2 — Basic (~300 words)",          fr: "HSK 2 — Basique (~300 mots)"          }, rank: 2 },
-  { value: "HSK3", short: "HSK 3", label: { pt: "HSK 3 — Intermediário (~600 palavras)",   en: "HSK 3 — Intermediate (~600 words)",   fr: "HSK 3 — Intermédiaire (~600 mots)"   }, rank: 3 },
-  { value: "HSK4", short: "HSK 4", label: { pt: "HSK 4 — Intermediário (~1.200 palavras)", en: "HSK 4 — Intermediate (~1,200 words)", fr: "HSK 4 — Intermédiaire (~1 200 mots)" }, rank: 4 },
-  { value: "HSK5", short: "HSK 5", label: { pt: "HSK 5 — Avançado (~2.500 palavras)",      en: "HSK 5 — Advanced (~2,500 words)",     fr: "HSK 5 — Avancé (~2 500 mots)"        }, rank: 5 },
-  { value: "HSK6", short: "HSK 6", label: { pt: "HSK 6 — Proficiente (~5.000 palavras)",   en: "HSK 6 — Proficient (~5,000 words)",   fr: "HSK 6 — Maîtrise (~5 000 mots)"      }, rank: 6 },
+  { value: "HSK1", short: "HSK 1", label: { pt: "HSK 1 · Básico (~150 palavras)",          en: "HSK 1 · Basic (~150 words)",          fr: "HSK 1 · Basique (~150 mots)"          }, rank: 1 },
+  { value: "HSK2", short: "HSK 2", label: { pt: "HSK 2 · Básico (~300 palavras)",          en: "HSK 2 · Basic (~300 words)",          fr: "HSK 2 · Basique (~300 mots)"          }, rank: 2 },
+  { value: "HSK3", short: "HSK 3", label: { pt: "HSK 3 · Intermediário (~600 palavras)",   en: "HSK 3 · Intermediate (~600 words)",   fr: "HSK 3 · Intermédiaire (~600 mots)"   }, rank: 3 },
+  { value: "HSK4", short: "HSK 4", label: { pt: "HSK 4 · Intermediário (~1.200 palavras)", en: "HSK 4 · Intermediate (~1,200 words)", fr: "HSK 4 · Intermédiaire (~1 200 mots)" }, rank: 4 },
+  { value: "HSK5", short: "HSK 5", label: { pt: "HSK 5 · Avançado (~2.500 palavras)",      en: "HSK 5 · Advanced (~2,500 words)",     fr: "HSK 5 · Avancé (~2 500 mots)"        }, rank: 5 },
+  { value: "HSK6", short: "HSK 6", label: { pt: "HSK 6 · Proficiente (~5.000 palavras)",   en: "HSK 6 · Proficient (~5,000 words)",   fr: "HSK 6 · Maîtrise (~5 000 mots)"      }, rank: 6 },
 ];
 
 // ─── JLPT — Japanese Language Proficiency Test ──────────────────────────────
 // Used for: JA (Japanese). Levels run N5 (easiest) → N1 (hardest).
 
 export const JLPT_LEVELS: LevelDef[] = [
-  { value: "N5", short: "N5", label: { pt: "N5 — Básico",         en: "N5 — Basic",         fr: "N5 — Basique"       }, rank: 1 },
-  { value: "N4", short: "N4", label: { pt: "N4 — Elementar",      en: "N4 — Elementary",    fr: "N4 — Élémentaire"   }, rank: 2 },
-  { value: "N3", short: "N3", label: { pt: "N3 — Intermediário",  en: "N3 — Intermediate",  fr: "N3 — Intermédiaire" }, rank: 3 },
-  { value: "N2", short: "N2", label: { pt: "N2 — Pré-Avançado",   en: "N2 — Pre-Advanced",  fr: "N2 — Pré-Avancé"   }, rank: 5 },
-  { value: "N1", short: "N1", label: { pt: "N1 — Avançado",       en: "N1 — Advanced",      fr: "N1 — Avancé"        }, rank: 6 },
+  { value: "N5", short: "N5", label: { pt: "N5 · Básico",         en: "N5 · Basic",         fr: "N5 · Basique"       }, rank: 1 },
+  { value: "N4", short: "N4", label: { pt: "N4 · Elementar",      en: "N4 · Elementary",    fr: "N4 · Élémentaire"   }, rank: 2 },
+  { value: "N3", short: "N3", label: { pt: "N3 · Intermediário",  en: "N3 · Intermediate",  fr: "N3 · Intermédiaire" }, rank: 3 },
+  { value: "N2", short: "N2", label: { pt: "N2 · Pré-Avançado",   en: "N2 · Pre-Advanced",  fr: "N2 · Pré-Avancé"   }, rank: 5 },
+  { value: "N1", short: "N1", label: { pt: "N1 · Avançado",       en: "N1 · Advanced",      fr: "N1 · Avancé"        }, rank: 6 },
 ];
 
 // ─── TOPIK — Test of Proficiency in Korean ──────────────────────────────────
@@ -82,12 +82,12 @@ export const JLPT_LEVELS: LevelDef[] = [
 // TOPIK I covers levels 1–2; TOPIK II covers levels 3–6.
 
 export const TOPIK_LEVELS: LevelDef[] = [
-  { value: "TOPIK1", short: "TOPIK 1", label: { pt: "TOPIK I · Nível 1 — Básico",           en: "TOPIK I · Level 1 — Basic",           fr: "TOPIK I · Niveau 1 — Basique"          }, rank: 1 },
-  { value: "TOPIK2", short: "TOPIK 2", label: { pt: "TOPIK I · Nível 2 — Básico",           en: "TOPIK I · Level 2 — Basic",           fr: "TOPIK I · Niveau 2 — Basique"          }, rank: 2 },
-  { value: "TOPIK3", short: "TOPIK 3", label: { pt: "TOPIK II · Nível 3 — Intermediário",   en: "TOPIK II · Level 3 — Intermediate",   fr: "TOPIK II · Niveau 3 — Intermédiaire"  }, rank: 3 },
-  { value: "TOPIK4", short: "TOPIK 4", label: { pt: "TOPIK II · Nível 4 — Intermediário",   en: "TOPIK II · Level 4 — Intermediate",   fr: "TOPIK II · Niveau 4 — Intermédiaire"  }, rank: 4 },
-  { value: "TOPIK5", short: "TOPIK 5", label: { pt: "TOPIK II · Nível 5 — Avançado",        en: "TOPIK II · Level 5 — Advanced",       fr: "TOPIK II · Niveau 5 — Avancé"         }, rank: 5 },
-  { value: "TOPIK6", short: "TOPIK 6", label: { pt: "TOPIK II · Nível 6 — Avançado",        en: "TOPIK II · Level 6 — Advanced",       fr: "TOPIK II · Niveau 6 — Avancé"         }, rank: 6 },
+  { value: "TOPIK1", short: "TOPIK 1", label: { pt: "TOPIK I · Nível 1 · Básico",           en: "TOPIK I · Level 1 · Basic",           fr: "TOPIK I · Niveau 1 · Basique"          }, rank: 1 },
+  { value: "TOPIK2", short: "TOPIK 2", label: { pt: "TOPIK I · Nível 2 · Básico",           en: "TOPIK I · Level 2 · Basic",           fr: "TOPIK I · Niveau 2 · Basique"          }, rank: 2 },
+  { value: "TOPIK3", short: "TOPIK 3", label: { pt: "TOPIK II · Nível 3 · Intermediário",   en: "TOPIK II · Level 3 · Intermediate",   fr: "TOPIK II · Niveau 3 · Intermédiaire"  }, rank: 3 },
+  { value: "TOPIK4", short: "TOPIK 4", label: { pt: "TOPIK II · Nível 4 · Intermediário",   en: "TOPIK II · Level 4 · Intermediate",   fr: "TOPIK II · Niveau 4 · Intermédiaire"  }, rank: 4 },
+  { value: "TOPIK5", short: "TOPIK 5", label: { pt: "TOPIK II · Nível 5 · Avançado",        en: "TOPIK II · Level 5 · Advanced",       fr: "TOPIK II · Niveau 5 · Avancé"         }, rank: 5 },
+  { value: "TOPIK6", short: "TOPIK 6", label: { pt: "TOPIK II · Nível 6 · Avançado",        en: "TOPIK II · Level 6 · Advanced",       fr: "TOPIK II · Niveau 6 · Avancé"         }, rank: 6 },
 ];
 
 // ─── System → levels map ─────────────────────────────────────────────────────

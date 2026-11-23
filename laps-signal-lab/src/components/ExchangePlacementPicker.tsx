@@ -141,7 +141,7 @@ export function ExchangePlacementPicker({
               onChange={(e) => onChange({ country: BRAZIL, state: e.target.value })}
               className="h-9 w-full rounded-md border border-laps-navy/15 bg-surface px-2 text-sm text-laps-navy focus:border-laps-blue/40 focus:outline-none"
             >
-              <option value="">— Estado não informado —</option>
+              <option value="">Estado não informado</option>
               {REGION_ORDER.map((region) => (
                 <optgroup key={region} label={region}>
                   {BR_STATE_ORDER.filter((uf) => BR_STATES[uf].region === region).map((uf) => (

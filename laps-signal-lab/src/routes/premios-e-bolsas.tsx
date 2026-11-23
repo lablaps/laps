@@ -12,7 +12,7 @@ import { HONOURS_COPY, HONOUR_CATEGORIES } from "@/lib/news";
  * The old /impactos URL redirects here (routes/impactos.tsx).
  */
 export const Route = createFileRoute("/premios-e-bolsas")({
-  head: () => ({ meta: [{ title: "Prêmios e Bolsas — LAPS" }] }),
+  head: () => ({ meta: [{ title: "Prêmios e Bolsas | LAPS" }] }),
   component: HonoursPage,
 });
 

@@ -136,7 +136,6 @@ function Index() {
             onClick={handleScrollClick}
             className="group inline-flex items-center gap-3 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-laps-navy/55 transition-colors hover:text-laps-signal"
           >
-            <span className="h-px w-8 bg-laps-navy/30 transition-all duration-300 group-hover:w-14 group-hover:bg-laps-signal" />
             {t.hero.scrollHint}
           </button>
         </div>
@@ -170,7 +169,6 @@ function Index() {
               className="group inline-flex items-center gap-3 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-laps-navy transition-colors hover:text-laps-signal"
             >
               {t.hero.cta2}
-              <span className="h-px w-10 bg-laps-navy/40 transition-all duration-300 group-hover:w-16 group-hover:bg-laps-signal" />
             </Link>
           </div>
         </div>

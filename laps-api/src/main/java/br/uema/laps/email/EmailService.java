@@ -116,10 +116,10 @@ public class EmailService {
 
                 Ele expira em %d minutos e só pode ser usado uma vez.
 
-                Se você não pediu este código, ignore este email — sua conta
+                Se você não pediu este código, ignore este email: sua conta
                 continua segura e nada foi alterado.
 
-                LAPS — Laboratório de Aquisição e Processamento de Sinais (UEMA)
+                LAPS, Laboratório de Aquisição e Processamento de Sinais (UEMA)
                 """.formatted(toName == null || toName.isBlank() ? "" : " " + toName, code, minutes);
 
         return send(toEmail, toName, subject, verificationHtml(toName, code, minutes), text);
@@ -148,7 +148,7 @@ public class EmailService {
                     O código expira em <strong>%d minutos</strong> e só pode ser usado uma vez.
                   </p>
                   <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8">
-                    Se você não pediu este código, ignore este email — sua conta continua
+                    Se você não pediu este código, ignore este email: sua conta continua
                     segura e nada foi alterado.
                   </p>
                 </div>

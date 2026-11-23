@@ -134,7 +134,7 @@ export function EmailVerificationDialog({ me }: { me: MyProfile }) {
               <div>
                 <p className="font-semibold">Nenhum provedor de email configurado.</p>
                 <p className="mt-0.5 text-amber-900/80">
-                  Nada foi enviado. Use o código abaixo — e configure{" "}
+                  Nada foi enviado. Use o código abaixo e configure{" "}
                   <code className="rounded bg-surface/70 px-1 font-mono">LAPS_EMAIL_PROVIDER</code> no
                   servidor para que a verificação signifique alguma coisa.
                 </p>
